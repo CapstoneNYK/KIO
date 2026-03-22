@@ -1,7 +1,10 @@
+import { SpeechInput } from "../components/SpeechInput";
+
 export default function Home() {
   return (
     <div>
-      <h1>Home</h1>
+      <h1>STT Test</h1>
+      <SpeechInput />
     </div>
   );
 }
