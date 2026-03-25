@@ -18,11 +18,13 @@ export const SpeechInput = () => {
     }
   };
 
-  console.log(transcript);
-
   return (
     <div>
-      <Button text="음성 인식 시작" onClick={handleButtonClick} />
+      <Button
+        text={listening ? "음성 인식 중지" : "음성 인식 시작"}
+        aria-pressed={listening}
+        onClick={handleButtonClick}
+      />
       <p>음성 인식 중 : {listening ? "예" : "아니요"}</p>
       <p>인식된 텍스트 : {transcript}</p>
 
