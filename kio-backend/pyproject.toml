@@ -1,0 +1,12 @@
+[project]
+name = "kio-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.135.2",
+]
+
+[tool.fastapi]
+app = "main:app"
