@@ -1,10 +1,12 @@
 import { SpeechInput } from "../components/SpeechInput";
+import { TopBar } from "../components/TopBar";
 
-export default function Home() {
+export const Home = () => {
   return (
     <div>
+      <TopBar />
       <h1>STT Test</h1>
       <SpeechInput />
     </div>
   );
-}
+};
