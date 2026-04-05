@@ -1,5 +1,5 @@
 import { LuCoffee } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 export const Splash = () => {
   const navigate = useNavigate();
