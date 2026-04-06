@@ -1,9 +1,9 @@
 import { NavBar } from "../components/NavBar";
-import { SpeechInput } from "../components/SpeechInput";
 import { TopBar } from "../components/TopBar";
 import { useState } from "react";
 import { coffee1 } from "../assets";
 import { Card } from "../components/Card";
+import { OrderSummary } from "../components/OrderSummary";
 
 export const Home = () => {
   const categories = [
@@ -46,7 +46,7 @@ export const Home = () => {
   const [activeCategory, setActiveCategory] = useState("전체");
 
   return (
-    <div>
+    <div className="pb-40">
       <TopBar />
       <NavBar
         categories={categories}
@@ -63,8 +63,9 @@ export const Home = () => {
           />
         ))}
       </div>
-      ;<h1>STT Test</h1>
-      <SpeechInput />
+      <div className="fixed bottom-0 left-0 w-full z-50">
+        <OrderSummary />
+      </div>
     </div>
   );
 };
