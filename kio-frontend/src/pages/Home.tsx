@@ -1,5 +1,4 @@
 import { NavBar } from "../components/NavBar";
-import { SpeechInput } from "../components/SpeechInput";
 import { TopBar } from "../components/TopBar";
 import { useState } from "react";
 import { coffee1 } from "../assets";
@@ -68,10 +67,7 @@ export const Home = () => {
           />
         ))}
       </div>
-
-      ;<h1>STT Test</h1>
-      <SpeechInput />
-
+      
       <CartBar />
 
       {selectedItem && (
