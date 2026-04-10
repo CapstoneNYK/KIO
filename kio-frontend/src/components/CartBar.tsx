@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { PiShoppingCartSimple } from "react-icons/pi";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { OptionCounter } from "./OptionCounter";
+import { OrderConfirmModal } from "./OrderConfirmModal";
 
 export const CartBar = () => {
-  const { items, removeItem, updateQuantity } = useCartStore();
+  const { items, removeItem, updateQuantity, clear } = useCartStore();
+  const [showConfirm, setShowConfirm] = useState(false);
 
   if (items.length === 0) return null;
 
@@ -75,11 +78,20 @@ export const CartBar = () => {
       </div>
 
       <button
+        onClick={() => setShowConfirm(true)}
         className="w-full py-4 rounded-xl text-white font-bold text-base active:brightness-95 transition"
         style={{ backgroundColor: "#FFB900" }}
       >
         주문하기
       </button>
+
+      {showConfirm && (
+        <OrderConfirmModal
+          onClose={() => setShowConfirm(false)}
+          onCancelAll={() => { clear(); setShowConfirm(false); }}
+          onNext={() => setShowConfirm(false)}
+        />
+      )}
     </div>
   );
 };
