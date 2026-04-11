@@ -1,9 +1,18 @@
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+import { useRef, useEffect } from "react";
 
 export const useSTT = (language: string = "ko-KR") => {
   const { transcript, listening, resetTranscript } = useSpeechRecognition();
+  const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearSilenceTimer = () => {
+    if (silenceTimer.current) {
+      clearTimeout(silenceTimer.current);
+      silenceTimer.current = null;
+    }
+  };
 
   const startListening = () => {
     SpeechRecognition.startListening({ continuous: true, language });
@@ -12,6 +21,17 @@ export const useSTT = (language: string = "ko-KR") => {
   const stopListening = () => {
     SpeechRecognition.stopListening();
   };
+
+  useEffect(() => {
+    if (listening && transcript) {
+      clearSilenceTimer();
+      silenceTimer.current = setTimeout(() => {
+        SpeechRecognition.stopListening();
+      }, 3000); // 3초 침묵 시 자동 중지
+    }
+
+    return () => clearSilenceTimer();
+  }, [transcript, listening]);
 
   return {
     transcript, // 음성인식 텍스트 결과
