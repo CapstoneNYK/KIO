@@ -1,6 +1,5 @@
 import { useSTT } from "../utils/sttUtil";
-import { Button } from "./Button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { questionApi } from "../api/questionApi";
 
 export const SpeechInput = () => {
@@ -14,6 +13,7 @@ export const SpeechInput = () => {
 
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const answerRef = useRef<HTMLDivElement>(null);
 
   const handleButtonClick = () => {
     if (listening) {
@@ -47,18 +47,84 @@ export const SpeechInput = () => {
     }
   }, [listening, transcript]);
 
+  useEffect(() => {
+    if (answer) {
+      answerRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [answer]);
+
   return (
     <div>
-      <Button
-        text={listening ? "음성 인식 중지" : "음성 인식 시작"}
-        aria-pressed={listening}
-        onClick={handleButtonClick}
-      />
-      <p>음성 인식 중 : {listening ? "예" : "아니요"}</p>
-      <p>인식된 텍스트 : {transcript}</p>
+      <div className="w-full max-w-md flex flex-col gap-12">
+        {/* 사용자 말풍선 */}
+        {transcript && (
+          <div className="flex justify-end">
+            <div className="relative bg-amber-400 text-amber-950 px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
+              <p className="text-sm leading-relaxed">{transcript}</p>
+              <div className="absolute bottom-0 right-0 translate-x-1 translate-y-1 w-3 h-3 bg-amber-400 clip-tail" />
+            </div>
+          </div>
+        )}
 
-      {loading && <p>답변 생성 중...</p>}
-      {answer && <p>답변 : {answer}</p>}
+        {/* AI 답변 말풍선 */}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-amber-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
+              <div className="flex gap-1 items-center h-5">
+                <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:300ms]" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {answer && !loading && (
+          <div className="flex justify-start" ref={answerRef}>
+            <div className="bg-white border border-amber-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
+              <p className="text-sm text-gray-800 leading-relaxed">{answer}</p>
+            </div>
+          </div>
+        )}
+
+        {/* 마이크 버튼 */}
+        <div className="flex flex-col items-center gap-3 mt-4">
+          <button
+            onClick={handleButtonClick}
+            className={`
+              w-20 h-20 rounded-full flex items-center justify-center shadow-md transition-all duration-200
+              ${
+                listening
+                  ? "bg-red-500 hover:bg-red-600 scale-110 ring-4 ring-red-300 animate-pulse"
+                  : "bg-amber-500 hover:bg-amber-600 hover:scale-105"
+              }
+            `}
+          >
+            {listening ? (
+              /* 중지 아이콘 */
+              <svg
+                className="w-8 h-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <rect x="6" y="6" width="12" height="12" rx="2" />
+              </svg>
+            ) : (
+              /* 마이크 아이콘 */
+              <svg
+                className="w-8 h-8 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93A8.001 8.001 0 0 1 4 11H6a6 6 0 0 0 12 0h2a8.001 8.001 0 0 1-7 7.93V22h2v2H9v-2h2v-2.07z" />
+              </svg>
+            )}
+          </button>
+          <p className="text-xs text-amber-700">
+            {listening ? "듣는 중... 탭하면 중지" : "탭하면 음성 인식 시작"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
