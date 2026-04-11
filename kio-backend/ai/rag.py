@@ -5,7 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda ,RunnablePassthrough
 from langchain_pinecone import PineconeVectorStore
-from dictionary import MENU_DICTIONARY
+from ai.dictionary import MENU_DICTIONARY
 
 load_dotenv()
 dictionary = MENU_DICTIONARY
@@ -78,8 +78,8 @@ qa_chain = (
 )
 
 # 실행
-if __name__ == "__main__":
-    query = "커피베이 아아 있어?"
-    answer = qa_chain.invoke(query)
-    print("질문:", query)
-    print("답변:", answer)
+# if __name__ == "__main__":
+#     query = "커피베이 아아 있어?"
+#     answer = qa_chain.invoke(query)
+#     print("질문:", query)
+#     print("답변:", answer)
