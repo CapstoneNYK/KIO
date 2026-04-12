@@ -10,7 +10,7 @@ interface MenuModalProps {
   onOrder: (item: MenuItem, quantity: number, temperature: Temperature, options: MenuOption[], isPackaging: boolean) => void;
 }
 
-const DEFAULT_OPTIONS: MenuOption[] = [
+const COFFEE_OPTIONS: MenuOption[] = [
   { name: "텀블러 할인", count: 0 },
   { name: "샷추가", count: 0 },
   { name: "연하게", count: 0 },
@@ -18,10 +18,21 @@ const DEFAULT_OPTIONS: MenuOption[] = [
   { name: "캐리어 / 봉투 필요", count: 0 },
 ];
 
+const NON_COFFEE_OPTIONS: MenuOption[] = [
+  { name: "텀블러 할인", count: 0 },
+  { name: "빨대 / 스틱 필요", count: 0 },
+  { name: "캐리어 / 봉투 필요", count: 0 },
+];
+
+const COFFEE_CATEGORIES = ["커피", "디카페인"];
+
 export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
+  const isCoffee = COFFEE_CATEGORIES.includes(item.category ?? "");
   const [quantity, setQuantity] = useState(1);
   const [temperature, setTemperature] = useState<Temperature>("HOT");
-  const [options, setOptions] = useState<MenuOption[]>(DEFAULT_OPTIONS.map((o) => ({ ...o })));
+  const [options, setOptions] = useState<MenuOption[]>(
+    (isCoffee ? COFFEE_OPTIONS : NON_COFFEE_OPTIONS).map((o) => ({ ...o }))
+  );
   const addItem = useCartStore((s) => s.addItem);
 
   const updateOption = (index: number, delta: number) => {
@@ -78,8 +89,8 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
             </p>
           </div>
 
-          {/* 온도 선택 */}
-          <div className="flex gap-4 mb-14">
+          {/* 온도 선택 (커피류만) */}
+          {isCoffee && <div className="flex gap-4 mb-14">
             <button
               onClick={() => setTemperature("HOT")}
               className={`flex-1 py-5 rounded-lg border-2 text-xl font-bold transition
@@ -100,7 +111,7 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
             >
               ICE
             </button>
-          </div>
+          </div>}
 
           {/* 선택옵션 */}
           <p className="font-bold text-gray-800 text-xl mb-4">선택옵션</p>

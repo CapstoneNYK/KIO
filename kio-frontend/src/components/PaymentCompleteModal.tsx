@@ -1,7 +1,6 @@
 import { LuX } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
-import { logo } from "../assets";
 
 interface PaymentCompleteModalProps {
   onClose: () => void;
@@ -17,12 +16,7 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center" style={{ backgroundColor: "#d4d4d4" }}>
-      {/* 우상단 KIO 로고 */}
-      <div className="absolute top-4 right-4">
-        <img src={logo} alt="KIO" className="w-12 h-12 rounded-full" />
-      </div>
-
+    <div className="fixed inset-0 z-70 flex items-center justify-center" style={{ backgroundColor: "#d4d4d4" }}>
       <div className="relative bg-white rounded-2xl w-[65%] flex flex-col overflow-hidden shadow-xl px-12 py-14">
         <button
           onClick={onClose}

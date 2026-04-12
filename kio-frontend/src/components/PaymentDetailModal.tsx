@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
-import { imgCardPayment, imgAppCard, imgBarcode } from "../assets";
+import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
 import { PaymentCompleteModal } from "./PaymentCompleteModal";
 
 interface PaymentDetailModalProps {
@@ -60,22 +60,22 @@ const CardPayment = ({
 
   return (
     <>
-      <div className="flex flex-col gap-3 mb-5">
-        <div className="flex justify-between items-center py-3 border-b border-gray-100">
+      <div className="flex flex-col mb-5 rounded-xl overflow-hidden border border-gray-100">
+        <div className="flex justify-between items-center py-3 px-4 bg-gray-50">
           <span className="text-gray-600">총 결제금액</span>
           <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
         </div>
-        <div className="flex justify-between items-center py-3 border-b border-gray-100">
+        <div className="flex justify-between items-center py-3 px-4 bg-white">
           <span className="text-gray-600">할부개월</span>
           <span className="text-gray-700">일시불</span>
         </div>
-        <div className="py-3 border-b border-gray-100">
+        <div className="py-3 px-4 bg-gray-50">
           <input
             type="text"
             value={cardNumber}
             onChange={(e) => setCardNumber(e.target.value)}
             placeholder="카드번호"
-            className="w-full text-gray-700 outline-none placeholder-gray-400 text-sm"
+            className="w-full text-gray-700 outline-none placeholder-gray-400 text-sm bg-transparent"
           />
         </div>
       </div>
@@ -192,27 +192,27 @@ const MembershipPayment = ({
     <>
       <div className="flex gap-4 mb-5">
         {/* 왼쪽 입력 */}
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="flex justify-between items-center py-3 border-b border-gray-100">
+        <div className="flex-1 flex flex-col rounded-xl overflow-hidden border border-gray-100">
+          <div className="flex justify-between items-center py-3 px-3 bg-gray-50">
             <span className="text-gray-600 text-sm">제휴명</span>
             <span className="font-semibold text-gray-700 text-sm">{affiliateName}</span>
           </div>
-          <div className="py-3 border-b border-gray-100">
+          <div className="py-3 px-3 bg-white">
             <input
               type="text"
               value={phoneNumber}
               readOnly
               placeholder="카드/휴대폰번호"
-              className="w-full text-gray-700 outline-none placeholder-gray-400 text-sm"
+              className="w-full text-gray-700 outline-none placeholder-gray-400 text-sm bg-transparent"
             />
           </div>
-          <div className="py-3 border-b border-gray-100">
+          <div className="py-3 px-3 bg-gray-50">
             <input
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="고객명"
-              className="w-full text-gray-700 outline-none placeholder-gray-400 text-sm"
+              className="w-full text-gray-700 outline-none placeholder-gray-400 text-sm bg-transparent"
             />
           </div>
         </div>
@@ -247,10 +247,64 @@ const MembershipPayment = ({
   );
 };
 
+// 카카오페이 / 네이버페이 공통 바코드 결제
+const AppBarcodePayment = ({
+  brand,
+  accentColor,
+  textColor,
+  logoIcon,
+  onApprove,
+}: {
+  brand: string;
+  accentColor: string;
+  textColor: string;
+  logoIcon: string;
+  onApprove: () => void;
+}) => {
+  const totalPrice = useCartStore((s) =>
+    s.items.reduce((sum, i) => sum + i.item.price * i.quantity, 0)
+  );
+  const [remaining, setRemaining] = useState(5);
+
+  useEffect(() => {
+    if (remaining <= 0) { onApprove(); return; }
+    const timer = setTimeout(() => setRemaining((r) => r - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [remaining]);
+
+  return (
+    <>
+      {/* 브랜드 헤더 */}
+      <div
+        className="flex items-center gap-3 mb-5 px-4 py-3 rounded-2xl"
+        style={{ backgroundColor: accentColor }}
+      >
+        <img src={logoIcon} alt={brand} className="w-8 h-8 object-contain rounded-lg" />
+        <span className="font-bold text-lg" style={{ color: textColor }}>{brand}</span>
+      </div>
+
+      {/* 결제 금액 */}
+      <div className="flex justify-between items-center py-3 border-b border-gray-100 mb-5">
+        <span className="text-gray-600">총 결제금액</span>
+        <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
+      </div>
+
+      <p className="text-center text-sm text-gray-500 mb-2 leading-relaxed">
+        {brand} 앱에서 바코드를 화면에 표시하고{"\n"}스캐너에 가까이 대주세요.
+      </p>
+      <p className="text-center text-xs text-gray-400 mb-4">{remaining}초 후 자동 처리됩니다</p>
+
+      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain" />
+    </>
+  );
+};
+
 // 제목 매핑
 const TITLES: Record<string, string> = {
   card: "카드결제",
   appcard: "앱카드결제",
+  kakao: "카카오페이",
+  naver: "네이버페이",
   voucher: "모바일 상품권",
   giftcard: "기프트카드",
   cjone: "제휴멤버십",
@@ -300,6 +354,28 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
         />
       );
     }
+    if (method === "kakao") {
+      return (
+        <AppBarcodePayment
+          brand="카카오페이"
+          accentColor="#FEE500"
+          textColor="#3A1D1D"
+          logoIcon={iconKakao}
+          onApprove={handleApprove}
+        />
+      );
+    }
+    if (method === "naver") {
+      return (
+        <AppBarcodePayment
+          brand="네이버페이"
+          accentColor="#03C75A"
+          textColor="#ffffff"
+          logoIcon={iconNaver}
+          onApprove={handleApprove}
+        />
+      );
+    }
     if (method === "voucher" || method === "giftcard") {
       return <VoucherPayment onCancel={onCancel} />;
     }
@@ -316,7 +392,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/40"
       onClick={onClose}
     >
       <div

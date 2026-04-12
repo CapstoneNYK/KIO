@@ -1,6 +1,5 @@
 import { GoHome } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
-import { logo } from "../assets";
 
 export const TopBar = () => {
   const navigate = useNavigate();
@@ -24,13 +23,7 @@ export const TopBar = () => {
           Menu
         </h1>
 
-        <div className="flex items-center">
-          <img
-            src={logo}
-            alt="KIO logo"
-            className="h-8 w-8 sm:h-10 sm:w-10 rounded-full"
-          />
-        </div>
+        <div className="w-10" />
       </div>
     </header>
   );
