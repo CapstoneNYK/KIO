@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.tsx";
 import { Home } from "./pages/Home.tsx";
 import { Splash } from "./pages/Splash.tsx";
+import { MenuDetail } from "./pages/MenuDetail.tsx";
 
 const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ const router = createBrowserRouter([
       {
         path: "home",
         element: <Home />,
+      },
+      {
+        path: "home/menu",
+        element: <MenuDetail />,
       },
     ],
   },
