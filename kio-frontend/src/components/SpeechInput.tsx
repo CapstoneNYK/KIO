@@ -1,6 +1,6 @@
 import { useSTT } from "../utils/sttUtil";
 import { useState, useEffect, useRef } from "react";
-import { questionApi } from "../api/questionApi";
+import { recommendApi } from "../api/recommendApi";
 
 export const SpeechInput = () => {
   const {
@@ -30,7 +30,7 @@ export const SpeechInput = () => {
 
     setLoading(true);
     try {
-      const answer = await questionApi(query);
+      const answer = await recommendApi(query);
       setAnswer(answer);
     } catch (error) {
       console.error(error);

@@ -1,5 +1,5 @@
-export const questionApi = async (query: string): Promise<string> => {
-  const response = await fetch("/api/question", {
+export const recommendApi = async (query: string): Promise<string> => {
+  const response = await fetch("/api/recommend", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query }),

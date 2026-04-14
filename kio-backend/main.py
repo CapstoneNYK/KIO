@@ -19,7 +19,7 @@ class QueryRequest(BaseModel):
 def root():
     return {"msg": "hello"}
 
-@app.post("/api/question")
+@app.post("/api/recommend")
 async def ask_menu(request: QueryRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
