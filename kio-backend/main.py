@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from ai.rag import qa_chain
+from ai.recommend import qa_chain
 
 app = FastAPI()
 
