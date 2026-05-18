@@ -1,0 +1,3591 @@
+﻿brand,name,temp,category,is_coffee
+공차,딸기 쥬얼리 밀크티,ICE,밀크티,False
+공차,미니펄 딸기 밀크티,ICE,밀크티,False
+공차,미니펄 망고 밀크,ICE,밀크티,False
+공차,브라운슈가 쥬얼리 밀크티,ICE,밀크티,False
+공차,브라운슈가 쥬얼리 밀크티,HOT,밀크티,False
+공차,블랙 밀크티,ICE,밀크티,False
+공차,블랙 밀크티,HOT,밀크티,False
+공차,솔티드 고구마 밀크티,ICE,밀크티,False
+공차,솔티드 고구마 밀크티,HOT,밀크티,False
+공차,얼그레이 밀크티,HOT,밀크티,False
+공차,얼그레이 밀크티,ICE,밀크티,False
+공차,우롱 밀크티,HOT,밀크티,False
+공차,우롱 밀크티,ICE,밀크티,False
+공차,자스민 밀크티,ICE,밀크티,False
+공차,자스민 밀크티,HOT,밀크티,False
+공차,제주 그린 밀크티,ICE,밀크티,False
+공차,제주 그린 밀크티,HOT,밀크티,False
+공차,초콜렛 밀크티,ICE,밀크티,False
+공차,초콜렛 밀크티,HOT,밀크티,False
+공차,타로 밀크티,ICE,밀크티,False
+공차,타로 밀크티,HOT,밀크티,False
+공차,피스타치오 밀크티,ICE,밀크티,False
+공차,피스타치오 밀크티,HOT,밀크티,False
+공차,딸기 쿠키 스무디 + 펄,ICE,베스트셀러,False
+공차,망고 요구르트 + 화이트펄,ICE,베스트셀러,False
+공차,미니펄 망고 밀크 + 리얼 망고,ICE,베스트셀러,False
+공차,블랙 밀크티 + 펄,ICE,베스트셀러,False
+공차,블랙 밀크티 + 펄,HOT,베스트셀러,False
+공차,블랙 밀크티 + 펄 1L,ICE,베스트셀러,False
+공차,아메리카노,ICE,베스트셀러,True
+공차,아메리카노,HOT,베스트셀러,True
+공차,우롱티 + 코코넛 + 밀크폼,ICE,베스트셀러,False
+공차,우롱티 + 코코넛 + 밀크폼,HOT,베스트셀러,False
+공차,제주 그린 밀크티 + 펄,HOT,베스트셀러,False
+공차,제주 그린 밀크티 + 펄,ICE,베스트셀러,False
+공차,초콜렛 밀크티 + 치즈폼,ICE,베스트셀러,False
+공차,초콜렛 밀크티 + 치즈폼,HOT,베스트셀러,False
+공차,타로 밀크티 + 펄,HOT,베스트셀러,False
+공차,타로 밀크티 + 펄,ICE,베스트셀러,False
+공차,허니 자몽 블랙티,ICE,베스트셀러,False
+공차,허니 자몽 블랙티,HOT,베스트셀러,False
+공차,딸기 쥬얼리 요구르트 크러쉬,ICE,스무디,False
+공차,딸기 쿠키 스무디,ICE,스무디,False
+공차,레몬 요구르트 스무디,ICE,스무디,False
+공차,망고 스무디,ICE,스무디,False
+공차,미니펄 딸기 크러쉬,ICE,스무디,False
+공차,미니펄 망고 크러쉬,ICE,스무디,False
+공차,밀크 쿠앤크 스무디,ICE,스무디,False
+공차,브라운슈가 쥬얼리 치즈폼 스무디,ICE,스무디,False
+공차,제주 그린 스무디,ICE,스무디,False
+공차,청포도 스무디,ICE,스무디,False
+공차,초코멜로 스무디,ICE,스무디,False
+공차,초코바른 제주 그린 스무디,ICE,스무디,False
+공차,초코바른 초코 스무디,ICE,스무디,False
+공차,초코바른 피스타치오 스무디,ICE,스무디,False
+공차,초콜렛 쿠키 & 크림 스무디,ICE,스무디,False
+공차,타로 스무디,ICE,스무디,False
+공차,블랙티,ICE,오리지널 티,False
+공차,블랙티,HOT,오리지널 티,False
+공차,얼그레이티,ICE,오리지널 티,False
+공차,얼그레이티,HOT,오리지널 티,False
+공차,우롱티,ICE,오리지널 티,False
+공차,우롱티,HOT,오리지널 티,False
+공차,자스민티,HOT,오리지널 티,False
+공차,자스민티,ICE,오리지널 티,False
+공차,공차슈페너,ICE,커피,True
+공차,바닐라 카페라떼,ICE,커피,True
+공차,바닐라 카페라떼,HOT,커피,True
+공차,아메리카노 1L,ICE,커피,True
+공차,얼그레이 아메리카노,ICE,커피,True
+공차,얼그레이 아메리카노,HOT,커피,True
+공차,카페 모카,ICE,커피,True
+공차,카페 모카,HOT,커피,True
+공차,카페 스무디 with 블랙티 (공차치노),ICE,커피,False
+공차,카페라떼,ICE,커피,True
+공차,카페라떼,HOT,커피,True
+달리는커피,구아바캐모마일 저당블렌딩티,BOTH,Ade & tea,False
+달리는커피,납작복숭아에이드,ICE,Ade & tea,False
+달리는커피,달리블 저당 구아바 비타티,BOTH,Ade & tea,False
+달리는커피,달리블 저당 믹스베리 비타티,BOTH,Ade & tea,False
+달리는커피,달리블 저당 애플비네거 비타티,BOTH,Ade & tea,False
+달리는커피,달리터 딸기복숭아 아이스티,ICE,Ade & tea,False
+달리는커피,달리터 딸기파인 에이드,ICE,Ade & tea,False
+달리는커피,달커 쌍화차,BOTH,Ade & tea,False
+달리는커피,달커 허니알로에차,BOTH,Ade & tea,False
+달리는커피,달커 허니유자차,BOTH,Ade & tea,False
+달리는커피,더블초코버블티,BOTH,Ade & tea,False
+달리는커피,딸기코코넛버블티,BOTH,Ade & tea,False
+달리는커피,라임얼그레이아이스티,ICE,Ade & tea,False
+달리는커피,라임에이드,ICE,Ade & tea,False
+달리는커피,라임캐모마일릴렉서,HOT,Ade & tea,False
+달리는커피,레몬에이드,ICE,Ade & tea,False
+달리는커피,레몬차,BOTH,Ade & tea,False
+달리는커피,베리얼그레이 저당블렌딩티,BOTH,Ade & tea,False
+달리는커피,복숭아아이스티,ICE,Ade & tea,False
+달리는커피,블랙버블티,BOTH,Ade & tea,False
+달리는커피,애플얼그레이 저당블렌딩티,BOTH,Ade & tea,False
+달리는커피,얼그레이,HOT,Ade & tea,False
+달리는커피,얼그레이,ICE,Ade & tea,False
+달리는커피,자몽에이드,ICE,Ade & tea,False
+달리는커피,자몽차,HOT,Ade & tea,False
+달리는커피,제주말차버블티,BOTH,Ade & tea,False
+달리는커피,청포도에이드,ICE,Ade & tea,False
+달리는커피,캐모마일,ICE,Ade & tea,False
+달리는커피,캐모마일,HOT,Ade & tea,False
+달리는커피,토마토아이스티,ICE,Ade & tea,False
+달리는커피,흑당버블티,BOTH,Ade & tea,False
+달리는커피,더치라떼,BOTH,Coffee,True
+달리는커피,더치아메리카노,BOTH,Coffee,True
+달리는커피,더치연유라떼,BOTH,Coffee,True
+달리는커피,바닐라라떼,HOT,Coffee,True
+달리는커피,바닐라라떼,ICE,Coffee,True
+달리는커피,시나몬모카,HOT,Coffee,True
+달리는커피,시나몬모카,ICE,Coffee,True
+달리는커피,아메리카노,HOT,Coffee,True
+달리는커피,아메리카노,ICE,Coffee,True
+달리는커피,에스프레소 연유라떼,ICE,Coffee,True
+달리는커피,에스프레소연유라떼,HOT,Coffee,True
+달리는커피,카라멜라떼,HOT,Coffee,True
+달리는커피,카라멜라떼,ICE,Coffee,True
+달리는커피,카페라떼,HOT,Coffee,True
+달리는커피,카페라떼,ICE,Coffee,True
+달리는커피,카페모카,HOT,Coffee,True
+달리는커피,카페모카,ICE,Coffee,True
+달리는커피,카푸치노,HOT,Coffee,True
+달리는커피,헤이즐넛라떼,HOT,Coffee,True
+달리는커피,헤이즐넛라떼,ICE,Coffee,True
+달리는커피,그린클렌즈주스,ICE,Juice,False
+달리는커피,딸기바나나주스,ICE,Juice,False
+달리는커피,딸기주스,ICE,Juice,False
+달리는커피,레드클렌즈주스,ICE,Juice,False
+달리는커피,바나나주스,ICE,Juice,False
+달리는커피,오렌지당근클렌즈주스,ICE,Juice,False
+달리는커피,토마토주스,ICE,Juice,False
+달리는커피,파인애플주스,ICE,Juice,False
+달리는커피,NWE)달리터 애플비네거 요거트라떼,BOTH,Non coffee,True
+달리는커피,그린티라떼,HOT,Non coffee,True
+달리는커피,그린티라떼,ICE,Non coffee,True
+달리는커피,달리터 구아바 요거트라떼,BOTH,Non coffee,True
+달리는커피,달리터 납작복숭아 요거트라떼,BOTH,Non coffee,True
+달리는커피,달리터 딸기 요거트라떼,BOTH,Non coffee,True
+달리는커피,달리터 믹스베리 요거트라떼,BOTH,Non coffee,True
+달리는커피,달커밀크티라떼,HOT,Non coffee,True
+달리는커피,달커밀크티라떼,ICE,Non coffee,True
+달리는커피,딸기라떼,BOTH,Non coffee,True
+달리는커피,오곡라떼,HOT,Non coffee,True
+달리는커피,오곡라떼,ICE,Non coffee,True
+달리는커피,초코라떼,HOT,Non coffee,True
+달리는커피,초코라떼,ICE,Non coffee,True
+달리는커피,토피넛라떼,HOT,Non coffee,True
+달리는커피,토피넛라떼,ICE,Non coffee,True
+달리는커피,그린티프라페,ICE,Smoothie & Frappe,False
+달리는커피,납작복숭아스무디,ICE,Smoothie & Frappe,False
+달리는커피,납작복숭아요거트스무디,ICE,Smoothie & Frappe,False
+달리는커피,딸기스무디,ICE,Smoothie & Frappe,False
+달리는커피,딸기요거트스무디,ICE,Smoothie & Frappe,False
+달리는커피,라임레몬스무디,ICE,Smoothie & Frappe,False
+달리는커피,에스프레소프라페,ICE,Smoothie & Frappe,False
+달리는커피,자몽스무디,ICE,Smoothie & Frappe,False
+달리는커피,청포도스무디,ICE,Smoothie & Frappe,False
+달리는커피,쿠키앤크림프라페,ICE,Smoothie & Frappe,False
+달리는커피,토마토스무디,ICE,Smoothie & Frappe,False
+달리는커피,토피넛프라페,ICE,Smoothie & Frappe,False
+달리는커피,플레인요거트스무디,ICE,Smoothie & Frappe,False
+더리터,17곡 라떼,BOTH,밀크베이스,True
+더리터,딸기 라떼,BOTH,밀크베이스,True
+더리터,말차라떼,BOTH,밀크베이스,True
+더리터,무안 군고구마 라떼,BOTH,밀크베이스,True
+더리터,민트초코 라떼,BOTH,밀크베이스,True
+더리터,얼그레이 밀크티,BOTH,밀크베이스,False
+더리터,우롱 밀크티,BOTH,밀크베이스,False
+더리터,자색고구마 라떼,BOTH,밀크베이스,True
+더리터,청송 사과 밀크티,BOTH,밀크베이스,False
+더리터,초코 라떼,BOTH,밀크베이스,True
+더리터,쿠앤크 라떼,BOTH,밀크베이스,True
+더리터,피스타치오 초코라떼,BOTH,밀크베이스,True
+더리터,흑임자 라떼,BOTH,밀크베이스,True
+더리터,감귤 주스,ICE,에이드&주스,False
+더리터,딸기 주스,ICE,에이드&주스,False
+더리터,레몬 에이드,ICE,에이드&주스,False
+더리터,블루베리 에이드,ICE,에이드&주스,False
+더리터,블루베리 주스,ICE,에이드&주스,False
+더리터,사과 주스,ICE,에이드&주스,False
+더리터,살구 에이드,ICE,에이드&주스,False
+더리터,살구 주스,ICE,에이드&주스,False
+더리터,애플망고 에이드,ICE,에이드&주스,False
+더리터,자몽 에이드,ICE,에이드&주스,False
+더리터,청포도 에이드,ICE,에이드&주스,False
+더리터,포도 주스,ICE,에이드&주스,False
+더리터,하이볼 에이드,ICE,에이드&주스,False
+더리터,딸기 요거스,BOTH,요거스&버블티,False
+더리터,말차 버블티,BOTH,요거스&버블티,False
+더리터,블루베리 요거스,BOTH,요거스&버블티,False
+더리터,살구 요거스,BOTH,요거스&버블티,False
+더리터,애플망고 요거스,BOTH,요거스&버블티,False
+더리터,얼그레이 버블티,BOTH,요거스&버블티,False
+더리터,우롱 버블티,BOTH,요거스&버블티,False
+더리터,자색고구마 버블티,BOTH,요거스&버블티,False
+더리터,플레인 요거스,BOTH,요거스&버블티,False
+더리터,피스타치오 버블티,BOTH,요거스&버블티,False
+더리터,흑당 버블티,BOTH,요거스&버블티,False
+더리터,돌체라떼,BOTH,커피,True
+더리터,돌체콜드브루,COLD_BREW,커피,True
+더리터,디카페인 돌체콜드브루,COLD_BREW,커피,True
+더리터,디카페인 콜드브루,COLD_BREW,커피,True
+더리터,디카페인 콜드브루라떼,COLD_BREW,커피,True
+더리터,디카페인 콜드브루아인슈페너,COLD_BREW,커피,True
+더리터,레트로커피,BOTH,커피,True
+더리터,바닐라라떼,BOTH,커피,True
+더리터,시그니처 바닐라빈라떼,BOTH,커피,True
+더리터,카페라떼,BOTH,커피,True
+더리터,카페모카,BOTH,커피,True
+더리터,카푸치노,BOTH,커피,True
+더리터,코코넛라떼,BOTH,커피,True
+더리터,콜드브루,COLD_BREW,커피,True
+더리터,콜드브루 아인슈페너,COLD_BREW,커피,True
+더리터,콜드브루라떼,COLD_BREW,커피,True
+더리터,헤이즐넛라떼,BOTH,커피,True
+더리터,대추차,BOTH,티,False
+더리터,레몬 진저티,BOTH,티,False
+더리터,매실차,BOTH,티,False
+더리터,복숭아 숭숭,BOTH,티,False
+더리터,스윗베리즈,BOTH,티,False
+더리터,식혜,BOTH,티,False
+더리터,얼그레이,BOTH,티,False
+더리터,오미자차,BOTH,티,False
+더리터,유자 민트티,BOTH,티,False
+더리터,유자차,BOTH,티,False
+더리터,자몽 허니 블랙티,BOTH,티,False
+더리터,청송 사과 얼그레이티,BOTH,티,False
+더리터,체리 히비스커스티,BOTH,티,False
+더리터,캐모마일,BOTH,티,False
+더리터,페퍼민트,BOTH,티,False
+더리터,히비스커스,BOTH,티,False
+더리터,더블자바칩 프라페,ICE,프라페,False
+더리터,레트로커피 프라페,ICE,프라페,False
+더리터,말차 프라페,ICE,프라페,False
+더리터,무안 군고구마 프라페,ICE,프라페,False
+더리터,민트초코 프라페,ICE,프라페,False
+더리터,밀크 프라페,ICE,프라페,False
+더리터,바닐라빈 프라페,ICE,프라페,False
+더리터,소다 프라페,ICE,프라페,False
+더리터,초코 프라페,ICE,프라페,False
+더리터,코코넛커피 프라페,ICE,프라페,False
+더리터,쿠앤크 프라페,ICE,프라페,False
+더리터,피스타치오 프라페,ICE,프라페,False
+더벤티,디카페인 바닐라 크림 콜드브루,ICE,디카페인,True
+더벤티,디카페인 바닐라딥라떼,BOTH,디카페인,True
+더벤티,디카페인 아이스 아메리카노,ICE,디카페인,True
+더벤티,디카페인 아이스크림라떼,ICE,디카페인,True
+더벤티,디카페인 아인슈페너,ICE,디카페인,True
+더벤티,디카페인 에스프레소 쉐이크,ICE,디카페인,True
+더벤티,디카페인 연유라떼,BOTH,디카페인,True
+더벤티,디카페인 오트카페라떼,BOTH,디카페인,True
+더벤티,디카페인 카라멜마끼야또,BOTH,디카페인,True
+더벤티,디카페인 카페라떼,BOTH,디카페인,True
+더벤티,디카페인 카페모카,BOTH,디카페인,True
+더벤티,디카페인 코코넛라떼,BOTH,디카페인,True
+더벤티,디카페인 코코넛커피프라페,ICE,디카페인,True
+더벤티,디카페인 콜드브루,ICE,디카페인,True
+더벤티,디카페인 콜드브루 라떼,ICE,디카페인,True
+더벤티,디카페인 핫 아메리카노,HOT,디카페인,True
+더벤티,디카페인 헤이즐넛 크림 콜드브루,ICE,디카페인,True
+더벤티,디카페인 헤이즐넛딥라떼,BOTH,디카페인,True
+더벤티,리치캐모마일,BOTH,버블티/티,False
+더벤티,복숭아아이스티,ICE,버블티/티,False
+더벤티,애플히비스커스,BOTH,버블티/티,False
+더벤티,유자애플티,BOTH,버블티/티,False
+더벤티,자몽허니블랙티,BOTH,버블티/티,False
+더벤티,청귤얼그레이,BOTH,버블티/티,False
+더벤티,타로버블티,ICE,버블티/티,False
+더벤티,트리플민트,BOTH,버블티/티,False
+더벤티,허니레몬티,BOTH,버블티/티,False
+더벤티,허니유자티,BOTH,버블티/티,False
+더벤티,허니자몽티,BOTH,버블티/티,False
+더벤티,흑설탕버블티,ICE,버블티/티,False
+더벤티,군고구마 라떼,BOTH,베버리지,True
+더벤티,딸기라떼,ICE,베버리지,True
+더벤티,딸기연유라떼,ICE,베버리지,True
+더벤티,로얄밀크티,BOTH,베버리지,False
+더벤티,말차라떼,BOTH,베버리지,True
+더벤티,말차아인슈페너,ICE,베버리지,False
+더벤티,멜팅초코,BOTH,베버리지,False
+더벤티,미숫가루,ICE,베버리지,False
+더벤티,율무 오트라떼,BOTH,베버리지,True
+더벤티,이천쌀 라떼,BOTH,베버리지,True
+더벤티,이천쌀 흑임자폼 라떼,BOTH,베버리지,True
+더벤티,초코라떼,BOTH,베버리지,True
+더벤티,토피넛 라떼,BOTH,베버리지,True
+더벤티,드래곤스무디 소다,ICE,아이스 블렌디드,False
+더벤티,드래곤스무디 요거트,ICE,아이스 블렌디드,False
+더벤티,딸기요거트스무디,ICE,아이스 블렌디드,False
+더벤티,말차프라페,ICE,아이스 블렌디드,False
+더벤티,망고요거트스무디,ICE,아이스 블렌디드,False
+더벤티,망고패션크러쉬,ICE,아이스 블렌디드,False
+더벤티,밀크쉐이크,ICE,아이스 블렌디드,False
+더벤티,블루베리요거트스무디,ICE,아이스 블렌디드,False
+더벤티,에스프레소쉐이크,ICE,아이스 블렌디드,True
+더벤티,율무프라페,ICE,아이스 블렌디드,False
+더벤티,자두피치크러쉬,ICE,아이스 블렌디드,False
+더벤티,자바칩프라페,ICE,아이스 블렌디드,False
+더벤티,초코쉐이크,ICE,아이스 블렌디드,False
+더벤티,코코넛커피프라페,ICE,아이스 블렌디드,False
+더벤티,코코밀크프라페,ICE,아이스 블렌디드,False
+더벤티,코코초코프라페,ICE,아이스 블렌디드,False
+더벤티,쿠키앤크림프라페,ICE,아이스 블렌디드,False
+더벤티,플레인요거트스무디,ICE,아이스 블렌디드,False
+더벤티,레몬에이드,ICE,주스/에이드,False
+더벤티,메론소다,ICE,주스/에이드,False
+더벤티,애플과채주스,ICE,주스/에이드,False
+더벤티,애플망고에이드,ICE,주스/에이드,False
+더벤티,오렌지과채주스,ICE,주스/에이드,False
+더벤티,자몽에이드,ICE,주스/에이드,False
+더벤티,체리콕,ICE,주스/에이드,False
+더벤티,크림소다,ICE,주스/에이드,False
+더벤티,믹스커피,BOTH,커피,True
+더벤티,바닐라딥라떼,BOTH,커피,True
+더벤티,바닐라크림콜드브루,ICE,커피,True
+더벤티,아이스 아메리카노,ICE,커피,True
+더벤티,아이스크림라떼,ICE,커피,True
+더벤티,아인슈페너,ICE,커피,True
+더벤티,연유라떼,BOTH,커피,True
+더벤티,오트카페라떼,BOTH,커피,True
+더벤티,카라멜마끼아또,BOTH,커피,True
+더벤티,카페라떼,BOTH,커피,True
+더벤티,카페모카,BOTH,커피,True
+더벤티,코코넛라떼,BOTH,커피,True
+더벤티,콜드브루,ICE,커피,True
+더벤티,콜드브루라떼,ICE,커피,True
+더벤티,토피넛라떼,BOTH,커피,True
+더벤티,핫 아메리카노,HOT,커피,True
+더벤티,헤이즐넛딥라떼,BOTH,커피,True
+더벤티,헤이즐넛크림콜드브루,ICE,커피,True
+디저트39,0칼로리 복숭아 아이스티,ICE,BEST,False
+디저트39,녹차라떼,BOTH,BEST,True
+디저트39,더 진한 타로라떼(프리미엄),ICE,BEST,True
+디저트39,돌체라떼,BOTH,BEST,True
+디저트39,딸기 스무디,ICE,BEST,False
+디저트39,딸기라떼,ICE,BEST,True
+디저트39,리얼 생초코 라떼,BOTH,BEST,True
+디저트39,망고 스무디,ICE,BEST,False
+디저트39,바나나우유 라떼,ICE,BEST,True
+디저트39,바닐라라떼,BOTH,BEST,True
+디저트39,버블 흑당 밀크티,ICE,BEST,False
+디저트39,복숭아 아이스티 코코넛젤리,ICE,BEST,False
+디저트39,시그니처 크림라떼,ICE,BEST,True
+디저트39,아메리카노,HOT,BEST,True
+디저트39,아메리카노 × 아포가토,ICE,BEST,True
+디저트39,아메리카노(4샷),ICE,BEST,True
+디저트39,자바칩 프라페,ICE,BEST,False
+디저트39,착한 바닐라라떼,BOTH,BEST,True
+디저트39,착한 콜드브루,ICE,BEST,True
+디저트39,초코 퐁 라떼,ICE,BEST,True
+디저트39,카페라떼,BOTH,BEST,True
+디저트39,당 걱정 없는 카라멜라떼,HOT,COFFEE,True
+디저트39,돌체 콜드브루,ICE,COFFEE,True
+디저트39,디카페인 원두,BOTH,COFFEE,True
+디저트39,바나나 콜드브루라떼,ICE,COFFEE,True
+디저트39,바닐라크림 콜드브루,ICE,COFFEE,True
+디저트39,아인슈페너,ICE,COFFEE,True
+디저트39,아인슈페너 라떼,ICE,COFFEE,True
+디저트39,저당 카라멜라떼,ICE,COFFEE,True
+디저트39,카푸치노,HOT,COFFEE,True
+디저트39,17곡 영양선식(프리미엄 미숫가루),ICE,NON-COFFEE,False
+디저트39,딸기 돌체라떼,ICE,NON-COFFEE,True
+디저트39,딸기 요거트 라떼,ICE,NON-COFFEE,True
+디저트39,로얄 밀크티,ICE,NON-COFFEE,False
+디저트39,로얄밀크티 with 버블,ICE,NON-COFFEE,False
+디저트39,말차크림 딸기라떼,ICE,NON-COFFEE,True
+디저트39,망고 코코넛 라떼,ICE,NON-COFFEE,True
+디저트39,망고라떼,ICE,NON-COFFEE,True
+디저트39,밀샷추,ICE,NON-COFFEE,False
+디저트39,밀크티 라떼,HOT,NON-COFFEE,True
+디저트39,블루베리라떼,ICE,NON-COFFEE,True
+디저트39,슈퍼 초코라떼,BOTH,NON-COFFEE,True
+디저트39,오트밀크,HOT,NON-COFFEE,False
+디저트39,우유,HOT,NON-COFFEE,False
+디저트39,저지방우유,HOT,NON-COFFEE,False
+디저트39,제주 말차크림 라떼,ICE,NON-COFFEE,True
+디저트39,제주 말차크림 버켓라떼,ICE,NON-COFFEE,True
+디저트39,제주 슈퍼말차 버켓라떼,ICE,NON-COFFEE,True
+디저트39,제주말차 아인슈페너,ICE,NON-COFFEE,False
+디저트39,제주말차라떼,BOTH,NON-COFFEE,True
+디저트39,제주말차카테킨라떼,BOTH,NON-COFFEE,True
+디저트39,제주슈퍼말차라떼,ICE,NON-COFFEE,True
+디저트39,치즈 프로마쥬 제주말차 라떼,ICE,NON-COFFEE,True
+디저트39,프리미엄 로얄 밀크티,ICE,NON-COFFEE,False
+디저트39,프리미엄 버블 로얄 밀크티,ICE,NON-COFFEE,False
+디저트39,흑당 로얄 밀크티,ICE,NON-COFFEE,False
+디저트39,흑당 밀크티,ICE,NON-COFFEE,False
+디저트39,흑당 퐁 라떼,ICE,NON-COFFEE,True
+디저트39,흑당밀크티 with 버블,ICE,NON-COFFEE,False
+디저트39,흑임자크림 라떼,ICE,NON-COFFEE,True
+디저트39,아메리카노,BOTH,REUSABLE CUP,True
+디저트39,카라멜 마끼아또,BOTH,REUSABLE CUP,True
+디저트39,카페모카,BOTH,REUSABLE CUP,False
+디저트39,카푸치노,ICE,REUSABLE CUP,True
+디저트39,3.9 치즈 프로마쥬 바나나라떼,ICE,SEASON&NEW,True
+디저트39,3.9 치즈 프로마쥬 착한 바닐라라떼,ICE,SEASON&NEW,True
+디저트39,공주꿀밤라떼,BOTH,SEASON&NEW,True
+디저트39,꿀고구마라떼,BOTH,SEASON&NEW,True
+디저트39,로투스 비스코프 라떼,HOT,SEASON&NEW,True
+디저트39,로투스 비스코프 프라페,ICE,SEASON&NEW,False
+디저트39,버켓 아메리카노,ICE,SEASON&NEW,True
+디저트39,벚꽃 블라썸 에이드 슈퍼size,ICE,SEASON&NEW,False
+디저트39,베이글 온 더 아메리카노(어니언바질),BOTH,SEASON&NEW,True
+디저트39,베이글 온 더 아메리카노(치즈),BOTH,SEASON&NEW,True
+디저트39,복숭아 스무디,ICE,SEASON&NEW,False
+디저트39,복숭아 히비스커스티 블랜딩,ICE,SEASON&NEW,False
+디저트39,생딸기 듬뿍 버켓라떼,ICE,SEASON&NEW,True
+디저트39,생딸기 듬뿍라떼,ICE,SEASON&NEW,True
+디저트39,생딸기 제주말차 버켓라떼,ICE,SEASON&NEW,True
+디저트39,슈의 변신마법 물약 세트,ICE,SEASON&NEW,False
+디저트39,슈의 키캡&키링,BOTH,SEASON&NEW,False
+디저트39,슈팅 딸기 팝,ICE,SEASON&NEW,False
+디저트39,슈팅 망고 팝,ICE,SEASON&NEW,False
+디저트39,슈팅 청포도 팝,ICE,SEASON&NEW,False
+디저트39,슈퍼 생딸기 듬뿍 버켓라떼,ICE,SEASON&NEW,True
+디저트39,슈퍼 생딸기 듬뿍라떼,ICE,SEASON&NEW,True
+디저트39,슈퍼 생딸기 제주말차 버켓라떼,ICE,SEASON&NEW,True
+디저트39,스타 슈 아크릴 스탠드,BOTH,SEASON&NEW,False
+디저트39,아바타스타슈 파우치,BOTH,SEASON&NEW,False
+디저트39,저당 바닐라라떼,HOT,SEASON&NEW,True
+디저트39,저칼로리 바닐라라떼,ICE,SEASON&NEW,True
+디저트39,치즈 프로마쥬 공주꿀밤 라떼,ICE,SEASON&NEW,True
+디저트39,치즈 프로마쥬 꿀고구마라떼,ICE,SEASON&NEW,True
+디저트39,치즈 프로마쥬 녹차라떼,ICE,SEASON&NEW,True
+디저트39,치즈 프로마쥬 초코라떼,ICE,SEASON&NEW,True
+디저트39,치즈 프로마쥬 흑당 버블라떼,ICE,SEASON&NEW,True
+디저트39,퐁절미 컵빙수,ICE,SEASON&NEW,False
+디저트39,꿀대추차,HOT,TEA BLENDED&ADE,False
+디저트39,꿀생강차,HOT,TEA BLENDED&ADE,False
+디저트39,복숭아망고 아이스티,ICE,TEA BLENDED&ADE,False
+디저트39,블랙퍼스트,BOTH,TEA BLENDED&ADE,False
+디저트39,쌍화차,HOT,TEA BLENDED&ADE,False
+디저트39,유자티,BOTH,TEA BLENDED&ADE,False
+디저트39,청포도 탄산수,ICE,TEA BLENDED&ADE,False
+디저트39,캐모마일티,BOTH,TEA BLENDED&ADE,False
+디저트39,히비스커스티,BOTH,TEA BLENDED&ADE,False
+디저트39,0칼로리 깔라만시 캐모마일티 블랜딩,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 깔라만시 탄산수,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 레몬 블랙티 블랜딩,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 레몬 탄산수,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 레몬티,BOTH,ZERO&LOW calorie,False
+디저트39,0칼로리 뱅쇼,HOT,ZERO&LOW calorie,False
+디저트39,0칼로리 샹그리아,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 청사과 복숭아 아이스티,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 청사과 캐모마일티 블랜딩,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 청사과 탄산수,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 청포도 캐모마일티 블랜딩,ICE,ZERO&LOW calorie,False
+디저트39,0칼로리 허니자몽 블랙티 블랜딩,ICE,ZERO&LOW calorie,False
+디저트39,애사비 0칼로리 복숭아아이스티 탄산수,ICE,ZERO&LOW calorie,False
+디저트39,애사비 0칼로리 청사과 탄산수,ICE,ZERO&LOW calorie,False
+디저트39,저당 리얼 생초코라떼,ICE,ZERO&LOW calorie,True
+디저트39,저당 망고라떼,ICE,ZERO&LOW calorie,True
+디저트39,저당 망고요거트 스무디,ICE,ZERO&LOW calorie,False
+디저트39,저당 타로라떼,ICE,ZERO&LOW calorie,True
+디저트39,저당 플레인요거트 스무디,ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 딸기 라떼(노슈거),ICE,ZERO&LOW calorie,True
+디저트39,저칼로리 딸기 요거트 라떼(노슈거),ICE,ZERO&LOW calorie,True
+디저트39,저칼로리 딸기 요거트 스무디(노슈거),ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 망고 스무디(제로슈거),ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 망고 캐모마일티 블랜딩,ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 청사과 스무디(제로슈거),ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 청포도 스무디(제로슈거),ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 청포도 탄산수(제로슈거),ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 허니자몽 탄산수,ICE,ZERO&LOW calorie,False
+디저트39,저칼로리 허니자몽티,HOT,ZERO&LOW calorie,False
+디저트39,카테킨 아메리카노,BOTH,ZERO&LOW calorie,True
+매머드커피,디카페인 매머드 커피,ICE,32oz,True
+매머드커피,디카페인 스노우 매머드 커피,ICE,32oz,True
+매머드커피,디카페인 아샷추 아이스티,ICE,32oz,True
+매머드커피,매머드 커피,ICE,32oz,True
+매머드커피,스노우 매머드 커피,ICE,32oz,True
+매머드커피,아이스티,ICE,32oz,False
+매머드커피,패션 오렌지 아이스티,ICE,32oz,False
+매머드커피,허니베리 홍초 에이드,ICE,32oz,False
+매머드커피,고구마 라떼,BOTH,논커피,False
+매머드커피,그린티 라떼,BOTH,논커피,False
+매머드커피,딸기 크림 라떼,ICE,논커피,False
+매머드커피,메론바나 라떼,BOTH,논커피,False
+매머드커피,옥수수 라떼,BOTH,논커피,False
+매머드커피,차이티 라떼,BOTH,논커피,False
+매머드커피,초코 라떼,BOTH,논커피,False
+매머드커피,콩가루 라떼,BOTH,논커피,False
+매머드커피,꿀 라떼,BOTH,커피,True
+매머드커피,꿀 커피,BOTH,커피,True
+매머드커피,꿀바나 라떼,BOTH,커피,True
+매머드커피,달고나 카페라떼,BOTH,커피,True
+매머드커피,돌체 라떼,BOTH,커피,True
+매머드커피,디카페인 꿀 라떼,BOTH,커피,True
+매머드커피,디카페인 꿀 커피,BOTH,커피,True
+매머드커피,디카페인 꿀바나 라떼,BOTH,커피,True
+매머드커피,디카페인 달고나 카페라떼,BOTH,커피,True
+매머드커피,디카페인 돌체 라떼,BOTH,커피,True
+매머드커피,디카페인 바닐라 라떼,BOTH,커피,True
+매머드커피,디카페인 아메리카노,BOTH,커피,True
+매머드커피,디카페인 아몬드 라떼,BOTH,커피,True
+매머드커피,디카페인 아몬드 아메리카노,BOTH,커피,True
+매머드커피,디카페인 카라멜 마키아토,BOTH,커피,True
+매머드커피,디카페인 카페 라떼,BOTH,커피,True
+매머드커피,디카페인 카페 모카,BOTH,커피,True
+매머드커피,디카페인 카푸치노,BOTH,커피,True
+매머드커피,디카페인 코코넛 사이공 라떼,BOTH,커피,True
+매머드커피,디카페인 티라미수 라떼,BOTH,커피,True
+매머드커피,디카페인 헤이즐넛 모카,BOTH,커피,True
+매머드커피,디카페인 헤이즐넛 커피,BOTH,커피,True
+매머드커피,믹스 커피,BOTH,커피,True
+매머드커피,바닐라 라떼,BOTH,커피,True
+매머드커피,아메리카노,BOTH,커피,True
+매머드커피,아몬드 라떼,BOTH,커피,True
+매머드커피,아몬드 아메리카노,BOTH,커피,True
+매머드커피,아샷추 아이스티,ICE,커피,False
+매머드커피,카라멜 마키아토,BOTH,커피,True
+매머드커피,카페 라떼,BOTH,커피,True
+매머드커피,카페 모카,BOTH,커피,True
+매머드커피,카푸치노,BOTH,커피,True
+매머드커피,코코넛 사이공 라떼,BOTH,커피,True
+매머드커피,티라미수 라떼,BOTH,커피,True
+매머드커피,헤이즐넛 모카,BOTH,커피,True
+매머드커피,헤이즐넛 커피,BOTH,커피,True
+매머드커피,돌체 콜드브루 라떼,ICE,콜드브루,True
+매머드커피,디카페인 돌체 콜드브루 라떼,ICE,콜드브루,True
+매머드커피,디카페인 레몬토닉 콜드브루,ICE,콜드브루,True
+매머드커피,디카페인 아몬드 크림 콜드브루,ICE,콜드브루,True
+매머드커피,디카페인 코코넛 크림 콜드브루 라떼,ICE,콜드브루,True
+매머드커피,디카페인 콜드브루,BOTH,콜드브루,True
+매머드커피,디카페인 콜드브루 라떼,ICE,콜드브루,True
+매머드커피,레몬토닉 콜드브루,ICE,콜드브루,True
+매머드커피,매머드 콜드브루 디카페인 원액,COLD_BREW,콜드브루,True
+매머드커피,매머드 콜드브루 원액,COLD_BREW,콜드브루,True
+매머드커피,아몬드 크림 콜드브루,ICE,콜드브루,True
+매머드커피,코코넛 크림 콜드브루 라떼,ICE,콜드브루,True
+매머드커피,콜드브루,BOTH,콜드브루,True
+매머드커피,콜드브루 라떼,ICE,콜드브루,True
+매머드커피,달고나 밀크티,BOTH,티·에이드,False
+매머드커피,라임 레몬 깔라만시 티 / 에이드,BOTH,티·에이드,False
+매머드커피,라임 착즙주스,ICE,티·에이드,False
+매머드커피,라임 티 / 에이드,BOTH,티·에이드,False
+매머드커피,레몬 착즙주스,ICE,티·에이드,False
+매머드커피,레몬&오렌지티,BOTH,티·에이드,False
+매머드커피,리얼 레몬티,BOTH,티·에이드,False
+매머드커피,매머드 파워드링크,ICE,티·에이드,False
+매머드커피,밀크티,HOT,티·에이드,False
+매머드커피,복숭아 아이스티,ICE,티·에이드,False
+매머드커피,블루레몬 티 / 에이드,BOTH,티·에이드,False
+매머드커피,수박 주스,ICE,티·에이드,False
+매머드커피,얼그레이티,BOTH,티·에이드,False
+매머드커피,오렌지 아일랜드티,BOTH,티·에이드,False
+매머드커피,오렌지 착즙주스,ICE,티·에이드,False
+매머드커피,오렌지 티 / 에이드,BOTH,티·에이드,False
+매머드커피,오미자 크랜베리 티 / 에이드,BOTH,티·에이드,False
+매머드커피,우롱 밀크티,BOTH,티·에이드,False
+매머드커피,유자 티 / 에이드,BOTH,티·에이드,False
+매머드커피,인크레드불,ICE,티·에이드,False
+매머드커피,자몽 착즙주스,ICE,티·에이드,False
+매머드커피,자몽 티 / 에이드,BOTH,티·에이드,False
+매머드커피,제로 복숭아 아이스티,ICE,티·에이드,False
+매머드커피,제로 체리콕 에이드,ICE,티·에이드,False
+매머드커피,제주 청귤 티 / 에이드,BOTH,티·에이드,False
+매머드커피,제주 한라봉 티 / 에이드,BOTH,티·에이드,False
+매머드커피,지리산 청매실티,BOTH,티·에이드,False
+매머드커피,청포도 에이드,ICE,티·에이드,False
+매머드커피,캐모마일티,BOTH,티·에이드,False
+매머드커피,파인애플 주스,ICE,티·에이드,False
+매머드커피,페퍼민트 라임티,BOTH,티·에이드,False
+매머드커피,페퍼민트티,BOTH,티·에이드,False
+매머드커피,그린티 프라페,ICE,프라페·블렌디드,False
+매머드커피,달고나 밀크 스무디,ICE,프라페·블렌디드,False
+매머드커피,디카페인 코코넛 커피 스무디,ICE,프라페·블렌디드,True
+매머드커피,딸기 스무디,ICE,프라페·블렌디드,False
+매머드커피,딸기 요거트 스무디,ICE,프라페·블렌디드,False
+매머드커피,복숭아 스무디,ICE,프라페·블렌디드,False
+매머드커피,복숭아 요거트 스무디,ICE,프라페·블렌디드,False
+매머드커피,블루베리 요거트 스무디,ICE,프라페·블렌디드,False
+매머드커피,솜사탕 쉐이크,ICE,프라페·블렌디드,False
+매머드커피,스트로베리 바닐라 프라페,ICE,프라페·블렌디드,False
+매머드커피,자바칩 프라페,ICE,프라페·블렌디드,False
+매머드커피,코코넛 커피 스무디,ICE,프라페·블렌디드,False
+매머드커피,쿠앤크 프라페,ICE,프라페·블렌디드,False
+매머드커피,플레인 요거트 스무디,ICE,프라페·블렌디드,False
+매머드커피,피스타치오 프라페,ICE,프라페·블렌디드,False
+메가커피,디카페인 꿀아메리카노,ICE,디카페인,True
+메가커피,디카페인 꿀아메리카노,HOT,디카페인,True
+메가커피,디카페인 라이트 바닐라 아몬드라떼,BOTH,디카페인,True
+메가커피,디카페인 메가리카노,ICE,디카페인,True
+메가커피,디카페인 바닐라 아메리카노,ICE,디카페인,True
+메가커피,디카페인 바닐라라떼,ICE,디카페인,True
+메가커피,디카페인 바닐라라떼,HOT,디카페인,True
+메가커피,디카페인 아메리카노,ICE,디카페인,True
+메가커피,디카페인 아메리카노,HOT,디카페인,True
+메가커피,디카페인 에스프레소,HOT,디카페인,True
+메가커피,디카페인 연유라떼,ICE,디카페인,True
+메가커피,디카페인 연유라떼,HOT,디카페인,True
+메가커피,디카페인 왕메가카페라떼,ICE,디카페인,True
+메가커피,디카페인 왕메가헛개리카노,ICE,디카페인,True
+메가커피,디카페인 카라멜마끼아또,ICE,디카페인,True
+메가커피,디카페인 카라멜마끼아또,HOT,디카페인,True
+메가커피,디카페인 카페라떼,ICE,디카페인,True
+메가커피,디카페인 카페라떼,HOT,디카페인,True
+메가커피,디카페인 카페모카,ICE,디카페인,True
+메가커피,디카페인 카페모카,HOT,디카페인,True
+메가커피,디카페인 카푸치노,ICE,디카페인,True
+메가커피,디카페인 카푸치노,HOT,디카페인,True
+메가커피,디카페인 헛개리카노,HOT,디카페인,True
+메가커피,디카페인 헛개리카노,ICE,디카페인,True
+메가커피,디카페인 헤이즐넛 라떼,ICE,디카페인,True
+메가커피,디카페인 헤이즐넛 라떼,HOT,디카페인,True
+메가커피,디카페인 헤이즐넛 아메리카노,ICE,디카페인,True
+메가커피,콜드브루디카페인,ICE,디카페인,True
+메가커피,콜드브루디카페인,HOT,디카페인,True
+메가커피,콜드브루디카페인라떼,ICE,디카페인,True
+메가커피,콜드브루디카페인라떼,HOT,디카페인,True
+메가커피,골드망고스무디,ICE,스무디&프라페,False
+메가커피,귤 톡톡 젤리스무디,ICE,스무디&프라페,False
+메가커피,그린키위 콕콕 딸키스무디,ICE,스무디&프라페,False
+메가커피,녹차프라페,ICE,스무디&프라페,False
+메가커피,딸기요거트스무디,ICE,스무디&프라페,False
+메가커피,딸기쿠키프라페,ICE,스무디&프라페,False
+메가커피,딸기퐁크러쉬,ICE,스무디&프라페,False
+메가커피,리얼초코프라페,ICE,스무디&프라페,False
+메가커피,망고요거트스무디,ICE,스무디&프라페,False
+메가커피,민트프라페,ICE,스무디&프라페,False
+메가커피,밀크쉐이크,ICE,스무디&프라페,False
+메가커피,바나나퐁크러쉬,ICE,스무디&프라페,False
+메가커피,블루베리요거트스무디,ICE,스무디&프라페,False
+메가커피,초코허니퐁크러쉬,ICE,스무디&프라페,False
+메가커피,커피프라페,ICE,스무디&프라페,False
+메가커피,코코넛 커피 스무디,ICE,스무디&프라페,False
+메가커피,쿠키프라페,ICE,스무디&프라페,False
+메가커피,크런치 피스타쵸 프라페,ICE,스무디&프라페,False
+메가커피,플레인요거트스무디,ICE,스무디&프라페,False
+메가커피,플레인퐁크러쉬,ICE,스무디&프라페,False
+메가커피,골드키위주스,ICE,에이드&주스,False
+메가커피,딸기바나나주스,ICE,에이드&주스,False
+메가커피,딸기주스,ICE,에이드&주스,False
+메가커피,라임모히또,ICE,에이드&주스,False
+메가커피,레몬에이드,ICE,에이드&주스,False
+메가커피,메가에이드,ICE,에이드&주스,False
+메가커피,블루레몬에이드,ICE,에이드&주스,False
+메가커피,블루베리플럼주스,ICE,에이드&주스,False
+메가커피,자몽에이드,ICE,에이드&주스,False
+메가커피,제로 부스트 에이드,ICE,에이드&주스,False
+메가커피,청포도에이드,ICE,에이드&주스,False
+메가커피,체리콜라,ICE,에이드&주스,False
+메가커피,고구마라떼,HOT,음료,True
+메가커피,고구마라떼,ICE,음료,True
+메가커피,곡물라떼,HOT,음료,True
+메가커피,곡물라떼,ICE,음료,True
+메가커피,녹차라떼,ICE,음료,True
+메가커피,녹차라떼,HOT,음료,True
+메가커피,딸기라떼,ICE,음료,True
+메가커피,로얄밀크티라떼,HOT,음료,True
+메가커피,로얄밀크티라떼,ICE,음료,True
+메가커피,아이스초코,ICE,음료,False
+메가커피,오레오초코라떼,ICE,음료,True
+메가커피,왕메가초코,ICE,음료,False
+메가커피,토피넛라떼,HOT,음료,True
+메가커피,토피넛라떼,ICE,음료,True
+메가커피,핫초코,HOT,음료,False
+메가커피,흑당라떼,ICE,음료,True
+메가커피,흑당밀크티라떼,ICE,음료,True
+메가커피,흑당버블라떼,ICE,음료,True
+메가커피,흑당버블밀크티라떼,ICE,음료,True
+메가커피,꿀아메리카노,ICE,커피,True
+메가커피,꿀아메리카노,HOT,커피,True
+메가커피,디카페인 바닐라 아메리카노,HOT,커피,True
+메가커피,디카페인 헤이즐넛 아메리카노,HOT,커피,True
+메가커피,라이트 바닐라 아몬드라떼,ICE,커피,True
+메가커피,메가리카노,ICE,커피,True
+메가커피,바닐라라떼,ICE,커피,True
+메가커피,바닐라라떼,HOT,커피,True
+메가커피,바닐라아메리카노,ICE,커피,True
+메가커피,바닐라아메리카노,HOT,커피,True
+메가커피,아메리카노,HOT,커피,True
+메가커피,아메리카노,ICE,커피,True
+메가커피,에스프레소,HOT,커피,True
+메가커피,에스프레소 도피오,HOT,커피,True
+메가커피,연유라떼,HOT,커피,True
+메가커피,연유라떼,ICE,커피,True
+메가커피,왕메가카페라떼,ICE,커피,True
+메가커피,왕메가헛개리카노,ICE,커피,True
+메가커피,왕할메가커피,ICE,커피,True
+메가커피,초코젤라또 말차라떼,ICE,커피,True
+메가커피,카라멜마끼아또,ICE,커피,True
+메가커피,카라멜마끼아또,HOT,커피,True
+메가커피,카페라떼,ICE,커피,True
+메가커피,카페라떼,HOT,커피,True
+메가커피,카페모카,ICE,커피,True
+메가커피,카페모카,HOT,커피,True
+메가커피,카푸치노,ICE,커피,True
+메가커피,카푸치노,HOT,커피,True
+메가커피,콜드브루라떼,ICE,커피,True
+메가커피,콜드브루라떼,HOT,커피,True
+메가커피,콜드브루오리지널,ICE,커피,True
+메가커피,콜드브루오리지널,HOT,커피,True
+메가커피,큐브라떼,ICE,커피,True
+메가커피,할메가미숫커피,ICE,커피,True
+메가커피,할메가커피,ICE,커피,True
+메가커피,헛개리카노,HOT,커피,True
+메가커피,헛개리카노,ICE,커피,True
+메가커피,헤이즐넛라떼,HOT,커피,True
+메가커피,헤이즐넛라떼,ICE,커피,True
+메가커피,헤이즐넛아메리카노,HOT,커피,True
+메가커피,헤이즐넛아메리카노,ICE,커피,True
+메가커피,녹차,HOT,티,False
+메가커피,녹차,ICE,티,False
+메가커피,레몬차,ICE,티,False
+메가커피,레몬차,HOT,티,False
+메가커피,복숭아아이스티,ICE,티,False
+메가커피,사과유자차,ICE,티,False
+메가커피,사과유자차,HOT,티,False
+메가커피,상큼 리치티,HOT,티,False
+메가커피,상큼 리치티,ICE,티,False
+메가커피,얼그레이,ICE,티,False
+메가커피,얼그레이,HOT,티,False
+메가커피,왕메가사과유자,ICE,티,False
+메가커피,왕메가아이스티,ICE,티,False
+메가커피,유자생강차,HOT,티,False
+메가커피,유자차,ICE,티,False
+메가커피,유자차,HOT,티,False
+메가커피,자몽차,ICE,티,False
+메가커피,자몽차,HOT,티,False
+메가커피,제로 복숭아 아이스티,ICE,티,False
+메가커피,캐모마일,ICE,티,False
+메가커피,캐모마일,HOT,티,False
+메가커피,페퍼민트,ICE,티,False
+메가커피,페퍼민트,HOT,티,False
+메가커피,허니자몽블랙티,HOT,티,False
+메가커피,허니자몽블랙티,ICE,티,False
+바나프레소,녹차라떼,BOTH,논커피라떼,False
+바나프레소,단짠치즈티라떼,BOTH,논커피라떼,False
+바나프레소,두바이초코라떼,ICE,논커피라떼,False
+바나프레소,딸기라떼,ICE,논커피라떼,False
+바나프레소,딸기크리미라떼,ICE,논커피라떼,False
+바나프레소,딸기크림밀크티,ICE,논커피라떼,False
+바나프레소,리얼초코,BOTH,논커피라떼,False
+바나프레소,멜론라떼,ICE,논커피라떼,False
+바나프레소,블랙빈라떼,BOTH,논커피라떼,False
+바나프레소,생딸기라떼,ICE,논커피라떼,False
+바나프레소,얼그레이밀크티,BOTH,논커피라떼,False
+바나프레소,얼그레이버블티,ICE,논커피라떼,False
+바나프레소,영암고구마라떼,BOTH,논커피라떼,False
+바나프레소,오곡미숫가루라떼,BOTH,논커피라떼,False
+바나프레소,제주말차딸기라떼,ICE,논커피라떼,False
+바나프레소,제주말차라떼,BOTH,논커피라떼,False
+바나프레소,제주말차크리미라떼,ICE,논커피라떼,False
+바나프레소,토피넛라떼,BOTH,논커피라떼,False
+바나프레소,통팥라떼,BOTH,논커피라떼,False
+바나프레소,통팥밀크티,BOTH,논커피라떼,False
+바나프레소,프로틴미숫가루라떼,ICE,논커피라떼,False
+바나프레소,피스타치오라떼,BOTH,논커피라떼,False
+바나프레소,헛개버블티,ICE,논커피라떼,False
+바나프레소,홍시라떼,ICE,논커피라떼,False
+바나프레소,흑당밀크티,ICE,논커피라떼,False
+바나프레소,흑당버블티,ICE,논커피라떼,False
+바나프레소,디카페인 밀크카라멜마키아또,BOTH,디카페인커피,True
+바나프레소,디카페인 바나리카노,ICE,디카페인커피,True
+바나프레소,디카페인 바닐라라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 스위티소금라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 시나몬라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 아메리카노,BOTH,디카페인커피,True
+바나프레소,디카페인 아샷추,ICE,디카페인커피,True
+바나프레소,디카페인 에스프레소,HOT,디카페인커피,True
+바나프레소,디카페인 연유라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 유자셔벗아메리카노,ICE,디카페인커피,True
+바나프레소,디카페인 카페라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 카페모카,BOTH,디카페인커피,True
+바나프레소,디카페인 카푸치노,HOT,디카페인커피,True
+바나프레소,디카페인 크리미라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 토피넛호핑슈페너,ICE,디카페인커피,True
+바나프레소,디카페인 피스타치오카페라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 핑크아메리카노,BOTH,디카페인커피,True
+바나프레소,디카페인 핑크카페라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 허니아메리카노,BOTH,디카페인커피,True
+바나프레소,디카페인 허니카페라떼,BOTH,디카페인커피,True
+바나프레소,디카페인 헛개리카노,BOTH,디카페인커피,True
+바나프레소,디카페인 헛개크리미라떼,ICE,디카페인커피,True
+바나프레소,디카페인 화이트아메리카노,BOTH,디카페인커피,True
+바나프레소,꿀배스무디,ICE,바나치노&스무디,False
+바나프레소,꿀자몽스무디,ICE,바나치노&스무디,False
+바나프레소,녹차바나치노,ICE,바나치노&스무디,False
+바나프레소,딸기복숭아스무디,ICE,바나치노&스무디,False
+바나프레소,딸기스무디,ICE,바나치노&스무디,False
+바나프레소,딸기요거트스무디,ICE,바나치노&스무디,False
+바나프레소,레몬요거트스무디,ICE,바나치노&스무디,False
+바나프레소,망고스무디,ICE,바나치노&스무디,False
+바나프레소,망고요거트스무디,ICE,바나치노&스무디,False
+바나프레소,망고치즈바나치노,ICE,바나치노&스무디,False
+바나프레소,밀크소다바나치노,ICE,바나치노&스무디,False
+바나프레소,바닐라쉐이크,ICE,바나치노&스무디,False
+바나프레소,비타500자몽스무디,ICE,바나치노&스무디,False
+바나프레소,자바칩바나치노,ICE,바나치노&스무디,False
+바나프레소,제주말차바나치노,ICE,바나치노&스무디,False
+바나프레소,제주말차한라봉스무디,ICE,바나치노&스무디,False
+바나프레소,제주청귤레몬스무디,ICE,바나치노&스무디,False
+바나프레소,초코쉐이크,ICE,바나치노&스무디,False
+바나프레소,초콜릿칩쉐이크,ICE,바나치노&스무디,False
+바나프레소,커피칩쉐이크,ICE,바나치노&스무디,False
+바나프레소,콜드브루바나치노,ICE,바나치노&스무디,False
+바나프레소,쿠앤크바나치노,ICE,바나치노&스무디,False
+바나프레소,탐라는감귤스무디,ICE,바나치노&스무디,False
+바나프레소,토마토요구르트스무디,ICE,바나치노&스무디,False
+바나프레소,플레인요거트스무디,ICE,바나치노&스무디,False
+바나프레소,빅바나 디카페인 바닐라라떼,ICE,빅바나,True
+바나프레소,빅바나 디카페인 아샷추,ICE,빅바나,True
+바나프레소,빅바나 디카페인 저당 바닐라라떼,ICE,빅바나,True
+바나프레소,빅바나 디카페인 저당 크리미라떼,ICE,빅바나,True
+바나프레소,빅바나 디카페인 제로슈가 아샷추,ICE,빅바나,True
+바나프레소,빅바나 디카페인 카페라떼,ICE,빅바나,True
+바나프레소,빅바나 디카페인 크리미라떼,ICE,빅바나,True
+바나프레소,빅바나 디카페인 헛개리카노,ICE,빅바나,True
+바나프레소,빅바나 리얼초코,ICE,빅바나,True
+바나프레소,빅바나 바닐라라떼,ICE,빅바나,True
+바나프레소,빅바나 복숭아아이스티,ICE,빅바나,False
+바나프레소,빅바나 아샷추,ICE,빅바나,True
+바나프레소,빅바나 얼음동동식혜,ICE,빅바나,True
+바나프레소,빅바나 오곡미숫가루라떼,ICE,빅바나,True
+바나프레소,빅바나 저당 바닐라라떼,ICE,빅바나,True
+바나프레소,빅바나 저당 크리미라떼,ICE,빅바나,True
+바나프레소,빅바나 제로슈가 레몬아이스티,ICE,빅바나,False
+바나프레소,빅바나 제로슈가 복숭아아이스티,ICE,빅바나,False
+바나프레소,빅바나 제로슈가 아샷추,ICE,빅바나,True
+바나프레소,빅바나 카페라떼,ICE,빅바나,True
+바나프레소,빅바나 콜드브루,ICE,빅바나,True
+바나프레소,빅바나 크리미라떼,ICE,빅바나,True
+바나프레소,빅바나 클래식밀크커피,ICE,빅바나,True
+바나프레소,빅바나 프로틴미숫가루라떼,ICE,빅바나,True
+바나프레소,빅바나 헛개리카노,ICE,빅바나,True
+바나프레소,빅바나 헛개차,ICE,빅바나,True
+바나프레소,디카페인 저당 바닐라라떼,BOTH,저당&제로슈가,True
+바나프레소,디카페인 저당 크리미라떼,BOTH,저당&제로슈가,True
+바나프레소,디카페인 제로슈가 스위트아메리카노,BOTH,저당&제로슈가,True
+바나프레소,디카페인 제로슈가 아샷추,ICE,저당&제로슈가,True
+바나프레소,저당 바닐라 콜드브루,ICE,저당&제로슈가,True
+바나프레소,저당 바닐라라떼,BOTH,저당&제로슈가,True
+바나프레소,저당 얼그레이밀크티,BOTH,저당&제로슈가,False
+바나프레소,저당 얼그레이버블티,ICE,저당&제로슈가,False
+바나프레소,저당 크리미라떼,BOTH,저당&제로슈가,True
+바나프레소,제로슈가 레몬아이스티,ICE,저당&제로슈가,False
+바나프레소,제로슈가 복숭아아이스티,ICE,저당&제로슈가,False
+바나프레소,제로슈가 스위트아메리카노,BOTH,저당&제로슈가,True
+바나프레소,제로슈가 아샷추,ICE,저당&제로슈가,True
+바나프레소,딸기요거트드링크,ICE,주스&드링크,False
+바나프레소,딸기쥬스,ICE,주스&드링크,False
+바나프레소,망고쥬스,ICE,주스&드링크,False
+바나프레소,복숭아요거트드링크,ICE,주스&드링크,False
+바나프레소,생딸기쥬스,ICE,주스&드링크,False
+바나프레소,탐라는감귤생과일쥬스,ICE,주스&드링크,False
+바나프레소,탐라는감귤요거트드링크,ICE,주스&드링크,False
+바나프레소,토마토생과일쥬스,ICE,주스&드링크,False
+바나프레소,플레인요거트드링크,ICE,주스&드링크,False
+바나프레소,홍시쥬스,ICE,주스&드링크,False
+바나프레소,돌체 콜드브루,ICE,커피,True
+바나프레소,밀크카라멜마키아또,BOTH,커피,True
+바나프레소,바나리카노,ICE,커피,True
+바나프레소,바닐라 콜드브루,ICE,커피,True
+바나프레소,바닐라라떼,BOTH,커피,True
+바나프레소,스위티소금라떼,BOTH,커피,True
+바나프레소,시그니처아메리카노,BOTH,커피,True
+바나프레소,시나몬라떼,BOTH,커피,True
+바나프레소,아메리카노,BOTH,커피,True
+바나프레소,아샷추,ICE,커피,True
+바나프레소,에스프레소,HOT,커피,True
+바나프레소,연유라떼,BOTH,커피,True
+바나프레소,유자셔벗아메리카노,ICE,커피,True
+바나프레소,제주말차 콜드브루,ICE,커피,True
+바나프레소,카페라떼,BOTH,커피,True
+바나프레소,카페모카,BOTH,커피,True
+바나프레소,카푸치노,HOT,커피,True
+바나프레소,콜드브루,ICE,커피,True
+바나프레소,콜드브루 라떼,ICE,커피,True
+바나프레소,크리미라떼,BOTH,커피,True
+바나프레소,클래식밀크커피,BOTH,커피,True
+바나프레소,토피넛호핑슈페너,ICE,커피,True
+바나프레소,피스타치오카페라떼,BOTH,커피,True
+바나프레소,핑크아메리카노,BOTH,커피,True
+바나프레소,핑크카페라떼,BOTH,커피,True
+바나프레소,허니아메리카노,BOTH,커피,True
+바나프레소,허니카페라떼,BOTH,커피,True
+바나프레소,헛개리카노,BOTH,커피,True
+바나프레소,헛개크리미라떼,ICE,커피,True
+바나프레소,화이트아메리카노,BOTH,커피,True
+바나프레소,대추쌍화차,BOTH,티&에이드,False
+바나프레소,딸기코코레모네이드,ICE,티&에이드,False
+바나프레소,라임민트스파클러,ICE,티&에이드,False
+바나프레소,레드뱅쇼,BOTH,티&에이드,False
+바나프레소,레몬에이드,ICE,티&에이드,False
+바나프레소,레몬티,BOTH,티&에이드,False
+바나프레소,루이보스오렌지,BOTH,티&에이드,False
+바나프레소,망고홍차아이스티,ICE,티&에이드,False
+바나프레소,머스캣블랙티,BOTH,티&에이드,False
+바나프레소,문경오미자티,BOTH,티&에이드,False
+바나프레소,복숭아아이스티,ICE,티&에이드,False
+바나프레소,복숭아에이드,ICE,티&에이드,False
+바나프레소,비타500라임아이스티,ICE,티&에이드,False
+바나프레소,아삭복숭아아이스티,ICE,티&에이드,False
+바나프레소,애플캐모마일스위티,BOTH,티&에이드,False
+바나프레소,얼그레이,BOTH,티&에이드,False
+바나프레소,얼음동동식혜,ICE,티&에이드,False
+바나프레소,요구르트레몬에이드,ICE,티&에이드,False
+바나프레소,유자민트티,BOTH,티&에이드,False
+바나프레소,자몽에이드,ICE,티&에이드,False
+바나프레소,자몽티,BOTH,티&에이드,False
+바나프레소,자몽허니블랙티,BOTH,티&에이드,False
+바나프레소,제주말차유자티,BOTH,티&에이드,False
+바나프레소,제주청귤에이드,ICE,티&에이드,False
+바나프레소,제주청귤티,BOTH,티&에이드,False
+바나프레소,청포도에이드,ICE,티&에이드,False
+바나프레소,체리콕,ICE,티&에이드,False
+바나프레소,캐모마일,BOTH,티&에이드,False
+바나프레소,탐라는감귤티,BOTH,티&에이드,False
+바나프레소,페퍼민트,BOTH,티&에이드,False
+바나프레소,플러스 망고홍차아이스티,ICE,티&에이드,False
+바나프레소,허니유자티,BOTH,티&에이드,False
+바나프레소,헛개차,BOTH,티&에이드,False
+바나프레소,히비스커스,BOTH,티&에이드,False
+백억커피,고구마 라떼,BOTH,라떼,True
+백억커피,딥 초코 바나나 라떼,BOTH,라떼,True
+백억커피,말차 라떼,BOTH,라떼,True
+백억커피,말차 리치 라떼,BOTH,라떼,True
+백억커피,말차 리치 샷 라떼,BOTH,라떼,True
+백억커피,메론 라떼,BOTH,라떼,True
+백억커피,미숫가루 라떼,BOTH,라떼,True
+백억커피,민트 초코 라떼,BOTH,라떼,True
+백억커피,보성 홍차 밀크티,BOTH,라떼,False
+백억커피,초코 라떼,BOTH,라떼,True
+백억커피,토피넛 라떼,BOTH,라떼,True
+백억커피,꿀 말차 버블티,BOTH,버블티,False
+백억커피,딸기 홍차 버블티,BOTH,버블티,False
+백억커피,흑당 버블티,BOTH,버블티,False
+백억커피,딸기 망고 스무디,ICE,스무디,False
+백억커피,말차 스무디,ICE,스무디,False
+백억커피,메론 코코 스무디,ICE,스무디,False
+백억커피,미숫가루 스무디,ICE,스무디,False
+백억커피,민트 초코 스무디,ICE,스무디,False
+백억커피,배 스무디,ICE,스무디,False
+백억커피,백억커피 스무디,ICE,스무디,False
+백억커피,자두 스무디,ICE,스무디,False
+백억커피,초코 스무디,ICE,스무디,False
+백억커피,백억 리치 라떼,BOTH,시그니처,True
+백억커피,백억 슈퍼 드링크,BOTH,시그니처,False
+백억커피,백억카노(1L),BOTH,시그니처,False
+백억커피,백억커피,BOTH,시그니처,False
+백억커피,더블베리 에이드,ICE,에이드,False
+백억커피,레몬 에이드,ICE,에이드,False
+백억커피,레몬콕,ICE,에이드,False
+백억커피,자두 에이드,ICE,에이드,False
+백억커피,자몽 에이드,ICE,에이드,False
+백억커피,청포도 에이드,ICE,에이드,False
+백억커피,체리 에이드,ICE,에이드,False
+백억커피,체리콕,ICE,에이드,False
+백억커피,딸기 요거트 스무디,ICE,요거트스무디,False
+백억커피,망고 요거트 스무디,ICE,요거트스무디,False
+백억커피,블루베리 요거트 스무디,ICE,요거트스무디,False
+백억커피,플레인 요거트 스무디,ICE,요거트스무디,False
+백억커피,딸기 주스,ICE,주스,False
+백억커피,망고 주스,ICE,주스,False
+백억커피,수박 주스(착즙),ICE,주스,False
+백억커피,파인 사과 주스(착즙),ICE,주스,False
+백억커피,찐 딸기 우유,BOTH,찐우유,False
+백억커피,찐 망고 우유,BOTH,찐우유,False
+백억커피,찐 바나나 딸기 우유,BOTH,찐우유,False
+백억커피,찐 블루베리 우유,BOTH,찐우유,False
+백억커피,찐 체리 우유,BOTH,찐우유,False
+백억커피,꿀 아메리카노,BOTH,커피,True
+백억커피,꿀 카페라떼,BOTH,커피,True
+백억커피,바닐라 아메리카노,BOTH,커피,True
+백억커피,바닐라라떼,BOTH,커피,True
+백억커피,아메리카노,BOTH,커피,True
+백억커피,연유라떼,BOTH,커피,True
+백억커피,저당 바닐라라떼,BOTH,커피,True
+백억커피,카라멜마끼아또,BOTH,커피,True
+백억커피,카페라떼,BOTH,커피,True
+백억커피,카페모카,BOTH,커피,True
+백억커피,헤이즐넛 아메리카노,BOTH,커피,True
+백억커피,콜드브루,COLD_BREW,콜드브루,True
+백억커피,콜드브루 라떼,COLD_BREW,콜드브루,True
+백억커피,콜드브루 연유라떼,COLD_BREW,콜드브루,True
+백억커피,레몬차,BOTH,티,False
+백억커피,매실차,BOTH,티,False
+백억커피,복숭아 아이스티,ICE,티,False
+백억커피,아망추,BOTH,티,False
+백억커피,아샷추,BOTH,티,False
+백억커피,얼그레이,BOTH,티,False
+백억커피,오미자차,BOTH,티,False
+백억커피,유자차,BOTH,티,False
+백억커피,자몽 허니 블랙티,BOTH,티,False
+백억커피,자몽차,BOTH,티,False
+백억커피,전통 식혜,BOTH,티,False
+백억커피,캐모마일,BOTH,티,False
+백억커피,페퍼민트,BOTH,티,False
+블루샥,골든유자 뷰티 엘릭서,BOTH,Beverage,False
+블루샥,꿀 자몽 티,BOTH,Beverage,False
+블루샥,더블 초코 버블티,ICE,Beverage,False
+블루샥,더블 초코라떼,BOTH,Beverage,True
+블루샥,딸기 아이스 티,ICE,Beverage,False
+블루샥,레몬 얼그레이 티,BOTH,Beverage,False
+블루샥,레몬 유자 티,BOTH,Beverage,False
+블루샥,레몬에이드,ICE,Beverage,False
+블루샥,로얄 밀크 티,BOTH,Beverage,False
+블루샥,말차 라떼,BOTH,Beverage,True
+블루샥,말차 버블티,ICE,Beverage,False
+블루샥,망고 라떼,ICE,Beverage,True
+블루샥,바나나 버블티,ICE,Beverage,False
+블루샥,발로나 초콜릿,BOTH,Beverage,False
+블루샥,베리 히비스커스,BOTH,Beverage,False
+블루샥,보리 미숫가루,BOTH,Beverage,False
+블루샥,설향 딸기 라떼,ICE,Beverage,True
+블루샥,순수 우유,BOTH,Beverage,False
+블루샥,애플망고 아이스티,ICE,Beverage,False
+블루샥,얼그레이 바닐라 티 라떼,BOTH,Beverage,True
+블루샥,영암 고구마 라떼,BOTH,Beverage,True
+블루샥,자몽에이드,ICE,Beverage,False
+블루샥,제로 복숭아 아이스티,ICE,Beverage,False
+블루샥,진저 배 티,BOTH,Beverage,False
+블루샥,청포도 에이드,ICE,Beverage,False
+블루샥,토피넛 라떼,BOTH,Beverage,True
+블루샥,허니 캐모마일,BOTH,Beverage,False
+블루샥,홍사과 유자티,BOTH,Beverage,False
+블루샥,흑당 버블티,ICE,Beverage,False
+블루샥,꿀배 스무디,ICE,Blended,False
+블루샥,딸기 바나나 주스,ICE,Blended,False
+블루샥,딸기 쉐이크,ICE,Blended,False
+블루샥,딸기 요거트 스무디,ICE,Blended,False
+블루샥,딸기 유자 스무디,ICE,Blended,False
+블루샥,라이스 쉐이크,ICE,Blended,False
+블루샥,레드자몽 스무디,ICE,Blended,False
+블루샥,리얼 딸기 주스,ICE,Blended,False
+블루샥,리얼 수박 주스,ICE,Blended,False
+블루샥,말차 프라페,ICE,Blended,False
+블루샥,망고 바나나 스무디,ICE,Blended,False
+블루샥,망고 요거트 스무디,ICE,Blended,False
+블루샥,민트 초코 프라페,ICE,Blended,False
+블루샥,밀크 쉐이크,ICE,Blended,False
+블루샥,블루베리 요거트스무디,ICE,Blended,False
+블루샥,사과스무디,ICE,Blended,False
+블루샥,제주 레몬 스무디,ICE,Blended,False
+블루샥,청포도 스무디,ICE,Blended,False
+블루샥,초코 바나나 스무디,ICE,Blended,False
+블루샥,초코 쉐이크,ICE,Blended,False
+블루샥,커피 쉐이크,ICE,Blended,False
+블루샥,컵빙수,ICE,Blended,False
+블루샥,플레인 요거트 스무디,ICE,Blended,False
+블루샥,하동 매실 스무디,ICE,Blended,False
+블루샥,홍사과 티 스무디,ICE,Blended,False
+블루샥,1리터보틀 꿀자몽티,BOTH,Bottle,False
+블루샥,1리터보틀 더블초코라떼,BOTH,Bottle,True
+블루샥,1리터보틀 돌체라떼,BOTH,Bottle,True
+블루샥,1리터보틀 돌체콜드브루라떼,COLD_BREW,Bottle,True
+블루샥,1리터보틀 딸기아이스티,ICE,Bottle,False
+블루샥,1리터보틀 레몬얼그레이티,BOTH,Bottle,False
+블루샥,1리터보틀 레몬에이드,ICE,Bottle,False
+블루샥,1리터보틀 레몬유자티,BOTH,Bottle,False
+블루샥,1리터보틀 로얄밀크티,BOTH,Bottle,False
+블루샥,1리터보틀 말차라떼,BOTH,Bottle,True
+블루샥,1리터보틀 말차카페라떼,BOTH,Bottle,True
+블루샥,1리터보틀 망고라떼,BOTH,Bottle,True
+블루샥,1리터보틀 바나나콜드브루오트라떼,COLD_BREW,Bottle,True
+블루샥,1리터보틀 바닐라빈라떼,BOTH,Bottle,True
+블루샥,1리터보틀 발로나 초콜릿,BOTH,Bottle,False
+블루샥,1리터보틀 베리히비스커스,BOTH,Bottle,False
+블루샥,1리터보틀 보리미숫가루,BOTH,Bottle,False
+블루샥,1리터보틀 설향딸기라떼,BOTH,Bottle,True
+블루샥,1리터보틀 순수우유,BOTH,Bottle,False
+블루샥,1리터보틀 시나몬카페라떼,BOTH,Bottle,True
+블루샥,1리터보틀 아메리카노,BOTH,Bottle,True
+블루샥,1리터보틀 아샷추,BOTH,Bottle,False
+블루샥,1리터보틀 애플망고아이스티,ICE,Bottle,False
+블루샥,1리터보틀 얼그레이 바닐라 티 라떼,BOTH,Bottle,True
+블루샥,1리터보틀 영암고구마라떼,BOTH,Bottle,True
+블루샥,1리터보틀 자몽에이드,ICE,Bottle,False
+블루샥,1리터보틀 제주 호지차,BOTH,Bottle,False
+블루샥,1리터보틀 진저배티,BOTH,Bottle,False
+블루샥,1리터보틀 청포도에이드,ICE,Bottle,False
+블루샥,1리터보틀 카라멜마끼아또,BOTH,Bottle,True
+블루샥,1리터보틀 카페라떼,BOTH,Bottle,True
+블루샥,1리터보틀 카페모카,BOTH,Bottle,False
+블루샥,1리터보틀 콜드브루,COLD_BREW,Bottle,True
+블루샥,1리터보틀 콜드브루라떼,COLD_BREW,Bottle,True
+블루샥,1리터보틀 토피넛라떼,BOTH,Bottle,True
+블루샥,1리터보틀 페퍼민트,BOTH,Bottle,False
+블루샥,1리터보틀 허니캐모마일,BOTH,Bottle,False
+블루샥,1리터보틀 화이트아메리카노,BOTH,Bottle,True
+블루샥,나이트 아메리카노,BOTH,Coffee,True
+블루샥,돌체 라떼,BOTH,Coffee,True
+블루샥,돌체 콜드 브루 라떼,ICE,Coffee,True
+블루샥,디카페인 아메리카노,BOTH,Coffee,True
+블루샥,말차 카페 라떼,BOTH,Coffee,True
+블루샥,바나나 콜드브루 오트라떼,ICE,Coffee,True
+블루샥,바닐라 빈 라떼,BOTH,Coffee,True
+블루샥,샥 라떼,ICE,Coffee,True
+블루샥,선셋 아메리카노,BOTH,Coffee,True
+블루샥,시나몬 카페 라떼,BOTH,Coffee,True
+블루샥,아샷추,ICE,Coffee,True
+블루샥,에스프레소,BOTH,Coffee,True
+블루샥,제로 바닐라 라떼,BOTH,Coffee,True
+블루샥,카라멜 마끼야또,BOTH,Coffee,True
+블루샥,카페 라떼,BOTH,Coffee,True
+블루샥,카페 모카,BOTH,Coffee,True
+블루샥,카페 시트러스,BOTH,Coffee,True
+블루샥,카페 피에노,BOTH,Coffee,True
+블루샥,콜드 브루 라떼,ICE,Coffee,True
+블루샥,콜드 브루 아메리카노,ICE,Coffee,True
+블루샥,피넛 라떼,ICE,Coffee,True
+블루샥,헤이즐넛 오트라떼,BOTH,Coffee,True
+블루샥,화이트 아메리카노,BOTH,Coffee,True
+빽다방,딸기 빽스치노,BOTH,빽스치노,False
+빽다방,딸기바나나빽스치노,BOTH,빽스치노,False
+빽다방,말차빽스치노,BOTH,빽스치노,False
+빽다방,민트초코빽스치노,BOTH,빽스치노,False
+빽다방,원조빽스치노,BOTH,빽스치노,True
+빽다방,초코바나나빽스치노,BOTH,빽스치노,False
+빽다방,초코빽스치노,BOTH,빽스치노,False
+빽다방,쿠키크런치빽스치노,BOTH,빽스치노,False
+빽다방,피스타치오빽스치노,BOTH,빽스치노,False
+빽다방,고구마라떼,HOT,음료,True
+빽다방,고구마라떼,ICE,음료,True
+빽다방,고구마스무디,ICE,음료,False
+빽다방,골든자바칩 스무디,ICE,음료,False
+빽다방,깔라만시에이드,ICE,음료,False
+빽다방,깔라만시티,HOT,음료,False
+빽다방,깔라만시티,ICE,음료,False
+빽다방,깨먹는 크런키 초코라떼,HOT,음료,True
+빽다방,깨먹는 크런키 초코라떼,ICE,음료,True
+빽다방,깨먹는 크런키 초코스무디,ICE,음료,False
+빽다방,꿀밤라떼,HOT,음료,True
+빽다방,꿀밤라떼,ICE,음료,True
+빽다방,꿀밤스무디,ICE,음료,False
+빽다방,대추라떼,ICE,음료,True
+빽다방,대추라떼,HOT,음료,True
+빽다방,대추차,HOT,음료,False
+빽다방,대추차,ICE,음료,False
+빽다방,딸기라떼,ICE,음료,True
+빽다방,딸기복숭아 루이보스티,BOTH,음료,False
+빽다방,딸기앤쿠키 쉐이크,BOTH,음료,False
+빽다방,딸기에이드,ICE,음료,False
+빽다방,딸기요거트스무디,ICE,음료,False
+빽다방,딸기젤라또 레몬스무디,ICE,음료,False
+빽다방,딸기젤라또 파르페,BOTH,음료,False
+빽다방,레드불 에이드,ICE,음료,False
+빽다방,레모네이드,ICE,음료,False
+빽다방,레몬얼그레이티,HOT,음료,False
+빽다방,레몬얼그레이티,ICE,음료,False
+빽다방,레몬티,HOT,음료,False
+빽다방,레몬티,ICE,음료,False
+빽다방,말차라떼,HOT,음료,True
+빽다방,말차라떼,ICE,음료,True
+빽다방,말차크림라떼,ICE,음료,True
+빽다방,말차크림망고스무디,ICE,음료,False
+빽다방,망고스무디,ICE,음료,False
+빽다방,망고패션스무디,ICE,음료,False
+빽다방,매실에이드,ICE,음료,False
+빽다방,매실티,HOT,음료,False
+빽다방,매실티,ICE,음료,False
+빽다방,메리 더블넛츠 초코라떼,HOT,음료,True
+빽다방,메리 더블넛츠 초코라떼,ICE,음료,True
+빽다방,멜론소다,ICE,음료,False
+빽다방,문경오미자 레몬에이드,ICE,음료,False
+빽다방,문경오미자티,HOT,음료,False
+빽다방,문경오미자티,ICE,음료,False
+빽다방,미숫가루,BOTH,음료,False
+빽다방,미초(석류)에이드,ICE,음료,False
+빽다방,민트초코라떼,HOT,음료,True
+빽다방,민트초코라떼,ICE,음료,True
+빽다방,밀크쉐이크,ICE,음료,False
+빽다방,밀크티,HOT,음료,False
+빽다방,밀크티,ICE,음료,False
+빽다방,바나나 라떼,HOT,음료,True
+빽다방,바나나 라떼,ICE,음료,True
+빽다방,바나나 밀크쉐이크,BOTH,음료,False
+빽다방,뱅쇼,HOT,음료,False
+빽다방,뱅쇼,ICE,음료,False
+빽다방,별빛 망고피치 라떼,BOTH,음료,True
+빽다방,별빛 망고피치 스무디,ICE,음료,False
+빽다방,별빛 망고피치 에이드,ICE,음료,False
+빽다방,복숭아아이스티,ICE,음료,False
+빽다방,복숭아에이드,ICE,음료,False
+빽다방,블루레몬에이드,ICE,음료,False
+빽다방,블루베리요거트스무디,ICE,음료,False
+빽다방,빽사이즈 달콤아이스티,ICE,음료,False
+빽다방,빽사이즈 딸기라떼,ICE,음료,True
+빽다방,빽사이즈 미숫가루,ICE,음료,False
+빽다방,빽사이즈 식혜,ICE,음료,False
+빽다방,빽사이즈 아망추,BOTH,음료,False
+빽다방,빽사이즈 초코라떼,ICE,음료,True
+빽다방,사과 품은 유자티,HOT,음료,False
+빽다방,사과 품은 유자티,ICE,음료,False
+빽다방,사과당근주스,ICE,음료,False
+빽다방,생강차,HOT,음료,False
+빽다방,생강차,ICE,음료,False
+빽다방,수정과,HOT,음료,False
+빽다방,수정과,ICE,음료,False
+빽다방,식혜,ICE,음료,False
+빽다방,쌍화라떼,HOT,음료,True
+빽다방,쌍화라떼,ICE,음료,True
+빽다방,쌍화차,HOT,음료,False
+빽다방,쌍화차,ICE,음료,False
+빽다방,아망추 (아이스티 + 망고추가),ICE,음료,False
+빽다방,아이스미초,ICE,음료,False
+빽다방,아이스크러시 멜론,ICE,음료,False
+빽다방,아임파인민트티,HOT,음료,False
+빽다방,아임파인민트티,ICE,음료,False
+빽다방,애사비,ICE,음료,False
+빽다방,오렌지자몽블랙티,HOT,음료,False
+빽다방,오렌지자몽블랙티,ICE,음료,False
+빽다방,오자몽주스,ICE,음료,False
+빽다방,완전딸기주스,ICE,음료,False
+빽다방,완전망고주스,ICE,음료,False
+빽다방,완전블루베리주스,ICE,음료,False
+빽다방,완전토마토주스,ICE,음료,False
+빽다방,완전파인애플주스,ICE,음료,False
+빽다방,우롱티,HOT,음료,False
+빽다방,우롱티,ICE,음료,False
+빽다방,우리사과주스,ICE,음료,False
+빽다방,유자에이드,ICE,음료,False
+빽다방,유자티,HOT,음료,False
+빽다방,유자티,ICE,음료,False
+빽다방,율무라떼,HOT,음료,True
+빽다방,율무라떼,ICE,음료,True
+빽다방,율무아몬드라떼,HOT,음료,True
+빽다방,율무아몬드라떼,ICE,음료,True
+빽다방,자몽 망고 코코넛 스무디,ICE,음료,False
+빽다방,자몽에이드,ICE,음료,False
+빽다방,자몽캐모마일티,ICE,음료,False
+빽다방,자몽캐모마일티,HOT,음료,False
+빽다방,자몽티,HOT,음료,False
+빽다방,자몽티,ICE,음료,False
+빽다방,제주감귤주스,ICE,음료,False
+빽다방,청포도에이드,ICE,음료,False
+빽다방,청포도플라워,ICE,음료,False
+빽다방,체리주스,ICE,음료,False
+빽다방,체리콕콕,ICE,음료,False
+빽다방,초코라떼,HOT,음료,True
+빽다방,초코라떼,ICE,음료,True
+빽다방,콤부차 샤인머스캣,ICE,음료,False
+빽다방,콤부차 자두,ICE,음료,False
+빽다방,쿨라임스무디,ICE,음료,False
+빽다방,쿨라임에이드,ICE,음료,False
+빽다방,토피넛라떼,HOT,음료,True
+빽다방,토피넛라떼,ICE,음료,True
+빽다방,파인애플스무디,ICE,음료,False
+빽다방,패션후르츠스무디,ICE,음료,False
+빽다방,페퍼민트티,HOT,음료,False
+빽다방,페퍼민트티,ICE,음료,False
+빽다방,포도 열린 민트트리티,HOT,음료,False
+빽다방,포도 열린 민트트리티,ICE,음료,False
+빽다방,퐁당치노(미숫가루),BOTH,음료,False
+빽다방,퐁당치노(바닐라),BOTH,음료,False
+빽다방,퐁당치노(원조커피),BOTH,음료,True
+빽다방,프로틴쉐이크 바나나,BOTH,음료,False
+빽다방,프로틴쉐이크 초코,BOTH,음료,False
+빽다방,플레인요거트스무디,ICE,음료,False
+빽다방,피치우롱스위티,HOT,음료,False
+빽다방,피치우롱스위티,ICE,음료,False
+빽다방,황금캐모마일티,HOT,음료,False
+빽다방,황금캐모마일티,ICE,음료,False
+빽다방,흑당버블 라떼,ICE,음료,True
+빽다방,흑당버블 밀크티,ICE,음료,False
+빽다방,꿀아메리카노,HOT,커피,True
+빽다방,꿀아메리카노,ICE,커피,True
+빽다방,달달연유라떼,HOT,커피,True
+빽다방,달달연유라떼,ICE,커피,True
+빽다방,더블에스프레소,BOTH,커피,True
+빽다방,디카페인 꿀 아메리카노,ICE,커피,True
+빽다방,디카페인 꿀 아메리카노,HOT,커피,True
+빽다방,디카페인 달달연유라떼,HOT,커피,True
+빽다방,디카페인 달달연유라떼,ICE,커피,True
+빽다방,디카페인 더블에스프레소,BOTH,커피,True
+빽다방,디카페인 바나나카페라떼,HOT,커피,True
+빽다방,디카페인 바나나카페라떼,ICE,커피,True
+빽다방,디카페인 바나나커피쉐이크,BOTH,커피,True
+빽다방,디카페인 바닐라라떼,HOT,커피,True
+빽다방,디카페인 바닐라라떼,ICE,커피,True
+빽다방,디카페인 빽사이즈 바닐라라떼,ICE,커피,True
+빽다방,디카페인 빽사이즈 아메리카노,ICE,커피,True
+빽다방,디카페인 빽사이즈 아이스티샷 망고추가,ICE,커피,True
+빽다방,디카페인 빽사이즈 아이스티샷추가,ICE,커피,True
+빽다방,디카페인 빽사이즈 카페라떼,ICE,커피,True
+빽다방,디카페인 아메리카노,HOT,커피,True
+빽다방,디카페인 아메리카노,ICE,커피,True
+빽다방,디카페인 아이스크림바닐라라떼,ICE,커피,True
+빽다방,디카페인 아이스크림카페라떼,ICE,커피,True
+빽다방,디카페인 아이스크림카페모카,ICE,커피,True
+빽다방,디카페인 아이스티샷 망고추가(아샷망추),ICE,커피,True
+빽다방,디카페인 아이스티샷추가(아샷추),ICE,커피,True
+빽다방,디카페인 카라멜마끼아또,HOT,커피,True
+빽다방,디카페인 카라멜마끼아또,ICE,커피,True
+빽다방,디카페인 카페라떼,ICE,커피,True
+빽다방,디카페인 카페라떼,HOT,커피,True
+빽다방,디카페인 카페모카,HOT,커피,True
+빽다방,디카페인 카페모카,ICE,커피,True
+빽다방,디카페인 코코넛카페라떼,HOT,커피,True
+빽다방,디카페인 코코넛카페라떼,ICE,커피,True
+빽다방,디카페인 코코넛커피스무디,ICE,커피,True
+빽다방,디카페인 코코넛콜드브루라떼,HOT,커피,True
+빽다방,디카페인 코코넛콜드브루라떼,ICE,커피,True
+빽다방,디카페인 코코넛콜드브루스무디,ICE,커피,True
+빽다방,디카페인 콜드브루,ICE,커피,True
+빽다방,디카페인 콜드브루,HOT,커피,True
+빽다방,디카페인 콜드브루 연유라떼,ICE,커피,True
+빽다방,디카페인 콜드브루 연유라떼,HOT,커피,True
+빽다방,디카페인 콜드브루 흑당라떼,ICE,커피,True
+빽다방,디카페인 콜드브루 흑당라떼,HOT,커피,True
+빽다방,디카페인 콜드브루라떼,ICE,커피,True
+빽다방,디카페인 콜드브루라떼,HOT,커피,True
+빽다방,디카페인 크리미 콜드브루 바닐라,COLD_BREW,커피,True
+빽다방,디카페인 크리미 콜드브루 카라멜,COLD_BREW,커피,True
+빽다방,디카페인 헤이즐넛 아메리카노,HOT,커피,True
+빽다방,디카페인 헤이즐넛 아메리카노,ICE,커피,True
+빽다방,디카페인 헤이즐넛라떼,ICE,커피,True
+빽다방,디카페인 헤이즐넛라떼,HOT,커피,True
+빽다방,디카페인 흑당버블카페라떼,BOTH,커피,True
+빽다방,레드불 꿀샷추,ICE,커피,True
+빽다방,바나나 카페라떼,ICE,커피,True
+빽다방,바나나 카페라떼,HOT,커피,True
+빽다방,바나나 커피쉐이크,BOTH,커피,False
+빽다방,바닐라라떼,HOT,커피,True
+빽다방,바닐라라떼,ICE,커피,True
+빽다방,빽사이즈 바닐라라떼,ICE,커피,True
+빽다방,빽사이즈 아메리카노,ICE,커피,True
+빽다방,빽사이즈 아이스티샷 망고추가,ICE,커피,False
+빽다방,빽사이즈 아이스티샷추가,ICE,커피,False
+빽다방,빽사이즈 원조커피,ICE,커피,True
+빽다방,빽사이즈 원조커피 제로슈거,ICE,커피,True
+빽다방,빽사이즈 카페라떼,ICE,커피,True
+빽다방,아메리카노,HOT,커피,True
+빽다방,아메리카노,ICE,커피,True
+빽다방,아이스크림바닐라라떼,ICE,커피,True
+빽다방,아이스크림카페라떼,ICE,커피,True
+빽다방,아이스크림카페모카,ICE,커피,False
+빽다방,아이스티샷 망고추가(아샷망추),ICE,커피,False
+빽다방,아이스티샷추가(아샷추),ICE,커피,False
+빽다방,에어폼 아메리카노,ICE,커피,True
+빽다방,원조커피,HOT,커피,True
+빽다방,원조커피,ICE,커피,True
+빽다방,원조커피 제로슈거,HOT,커피,True
+빽다방,원조커피 제로슈거,ICE,커피,True
+빽다방,카라멜마키아또,HOT,커피,True
+빽다방,카라멜마키아또,ICE,커피,True
+빽다방,카페라떼,HOT,커피,True
+빽다방,카페라떼,ICE,커피,True
+빽다방,카페모카,HOT,커피,True
+빽다방,카페모카,ICE,커피,True
+빽다방,코코넛카페라떼,HOT,커피,True
+빽다방,코코넛카페라떼,ICE,커피,True
+빽다방,코코넛커피스무디,ICE,커피,False
+빽다방,코코넛콜드브루라떼,HOT,커피,True
+빽다방,코코넛콜드브루라떼,ICE,커피,True
+빽다방,코코넛콜드브루스무디,ICE,커피,True
+빽다방,콜드브루,ICE,커피,True
+빽다방,콜드브루,HOT,커피,True
+빽다방,콜드브루 디카페인 커피원액,COLD_BREW,커피,True
+빽다방,콜드브루 연유라떼,ICE,커피,True
+빽다방,콜드브루 연유라떼,HOT,커피,True
+빽다방,콜드브루 오리지널 커피원액,COLD_BREW,커피,True
+빽다방,콜드브루 흑당라떼,ICE,커피,True
+빽다방,콜드브루 흑당라떼,HOT,커피,True
+빽다방,콜드브루라떼,ICE,커피,True
+빽다방,콜드브루라떼,HOT,커피,True
+빽다방,크리미 콜드브루 바닐라,COLD_BREW,커피,True
+빽다방,크리미 콜드브루 카라멜,COLD_BREW,커피,True
+빽다방,헤이즐넛라떼,HOT,커피,True
+빽다방,헤이즐넛라떼,ICE,커피,True
+빽다방,헤이즐넛아메리카노,HOT,커피,True
+빽다방,헤이즐넛아메리카노,ICE,커피,True
+빽다방,흑당버블 카페라떼,ICE,커피,True
+아마스빈,딸기 버블티,ICE,과일주스/생과일,False
+아마스빈,바나나 버블티,ICE,과일주스/생과일,False
+아마스빈,사하라,ICE,과일주스/생과일,False
+아마스빈,아마존,ICE,과일주스/생과일,False
+아마스빈,오렌지 버블티,ICE,과일주스/생과일,False
+아마스빈,오아시스,ICE,과일주스/생과일,False
+아마스빈,오키베리,ICE,과일주스/생과일,False
+아마스빈,청사과 버블티,ICE,과일주스/생과일,False
+아마스빈,키위 버블티,ICE,과일주스/생과일,False
+아마스빈,파인애플 버블티,ICE,과일주스/생과일,False
+아마스빈,59% 리얼초코 버블티,BOTH,밀크티/라떼,False
+아마스빈,딸기라떼,BOTH,밀크티/라떼,False
+아마스빈,딸기코코넛 버블티,BOTH,밀크티/라떼,False
+아마스빈,루이보스 밀크티,BOTH,밀크티/라떼,False
+아마스빈,민트 밀크티,BOTH,밀크티/라떼,False
+아마스빈,민트초코 버블티,BOTH,밀크티/라떼,False
+아마스빈,아쌈 밀크티,BOTH,밀크티/라떼,False
+아마스빈,얼그레이 밀크티,BOTH,밀크티/라떼,False
+아마스빈,초코 버블티,BOTH,밀크티/라떼,False
+아마스빈,초콜렛 밀크티,BOTH,밀크티/라떼,False
+아마스빈,카라멜 버블티,BOTH,밀크티/라떼,False
+아마스빈,코코넛 밀크티,BOTH,밀크티/라떼,False
+아마스빈,타로 밀크티,BOTH,밀크티/라떼,False
+아마스빈,티라미수 버블티,BOTH,밀크티/라떼,False
+아마스빈,화이트 초코 버블티,BOTH,밀크티/라떼,False
+아마스빈,그린애플 스무디,ICE,쉐이크/스무디,False
+아마스빈,리얼초코 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,민트 오레오 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,밀크티 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,블루베리 스무디,ICE,쉐이크/스무디,False
+아마스빈,순수우유 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,스트로베리 스무디,ICE,쉐이크/스무디,False
+아마스빈,애플망고 스무디,ICE,쉐이크/스무디,False
+아마스빈,요거스트로베리 스무디,ICE,쉐이크/스무디,False
+아마스빈,자몽 스무디,ICE,쉐이크/스무디,False
+아마스빈,초코 오레오 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,카페 오레오 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,코코넛 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,타로 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,화이트 오레오 쉐이크,ICE,쉐이크/스무디,False
+아마스빈,라즈베리 소다,ICE,에이드/소다/스페셜,False
+아마스빈,레자몽 버블에이드,ICE,에이드/소다/스페셜,False
+아마스빈,리얼레몬 버블에이드,ICE,에이드/소다/스페셜,False
+아마스빈,블루베리 소다,ICE,에이드/소다/스페셜,False
+아마스빈,스윗 머스캣 그린티,ICE,에이드/소다/스페셜,False
+아마스빈,얼그레이 프렌치 블루,ICE,에이드/소다/스페셜,False
+아마스빈,자몽 블랙티,ICE,에이드/소다/스페셜,False
+아마스빈,자몽 소다,ICE,에이드/소다/스페셜,False
+아마스빈,파인애플 소다,ICE,에이드/소다/스페셜,False
+아마스빈,페퍼민트,ICE,에이드/소다/스페셜,False
+아마스빈,피치 블랙티,ICE,에이드/소다/스페셜,False
+아마스빈,딸기 요거트,ICE,요거트/하동녹차/흑당,False
+아마스빈,복숭아 요거트,ICE,요거트/하동녹차/흑당,False
+아마스빈,블루베리 요거트,ICE,요거트/하동녹차/흑당,False
+아마스빈,청사과 요거트,ICE,요거트/하동녹차/흑당,False
+아마스빈,플레인 요거트,ICE,요거트/하동녹차/흑당,False
+아마스빈,하동녹차 버블티,ICE,요거트/하동녹차/흑당,False
+아마스빈,하동녹차 쉐이크,ICE,요거트/하동녹차/흑당,False
+아마스빈,하동녹차 오레오,ICE,요거트/하동녹차/흑당,False
+아마스빈,흑당 버블티,ICE,요거트/하동녹차/흑당,False
+아마스빈,흑당 카페라떼,ICE,요거트/하동녹차/흑당,False
+아마스빈,흑당 티라미수,ICE,요거트/하동녹차/흑당,False
+아마스빈,바닐라 라떼,BOTH,커피,True
+아마스빈,바닐라 아메리카노,BOTH,커피,True
+아마스빈,아메리카노,BOTH,커피,True
+아마스빈,연유 라떼,BOTH,커피,True
+아마스빈,카라멜 마끼아또,BOTH,커피,True
+아마스빈,카페 모카,BOTH,커피,True
+아마스빈,카페라떼,BOTH,커피,True
+아마스빈,헤이즐넛 라떼,BOTH,커피,True
+아마스빈,헤이즐넛 아메리카노,BOTH,커피,True
+요거프레소,구슬 민트초코 스무디,ICE,THE OTHER,False
+요거프레소,그린티 밀크쉐이크,BOTH,THE OTHER,False
+요거프레소,다크초코칩 크로플,BOTH,THE OTHER,False
+요거프레소,딸기 마카롱,BOTH,THE OTHER,False
+요거프레소,딸기 크로플,BOTH,THE OTHER,False
+요거프레소,딸기 포레누아 사각케이크,BOTH,THE OTHER,False
+요거프레소,딸기쿠키 요프치노,BOTH,THE OTHER,False
+요거프레소,리얼 초코 밀크쉐이크,BOTH,THE OTHER,False
+요거프레소,리얼 초코 쉐이크,BOTH,THE OTHER,False
+요거프레소,리얼 초코 프라페,ICE,THE OTHER,False
+요거프레소,리얼 초코쿠키 쉐이크,BOTH,THE OTHER,False
+요거프레소,마이모토 크리스피 웨이퍼(코코아),BOTH,THE OTHER,False
+요거프레소,마이모토 크리스피 웨이퍼(티라미수),BOTH,THE OTHER,False
+요거프레소,말차 밀크 프라페,ICE,THE OTHER,False
+요거프레소,망고 크로플,BOTH,THE OTHER,False
+요거프레소,민트초코칩 요프치노,BOTH,THE OTHER,False
+요거프레소,밀크 아이스크림,ICE,THE OTHER,False
+요거프레소,밀크 아포가토,BOTH,THE OTHER,False
+요거프레소,밀크쉐이크 딸기,BOTH,THE OTHER,False
+요거프레소,밀크쉐이크 망고,BOTH,THE OTHER,False
+요거프레소,밀크쉐이크 바나나,BOTH,THE OTHER,False
+요거프레소,밀크쉐이크 초코바나나,BOTH,THE OTHER,False
+요거프레소,바닐라 마카롱,BOTH,THE OTHER,False
+요거프레소,바닐라카페 구슬스무디,ICE,THE OTHER,False
+요거프레소,블루베리 치즈프라페,ICE,THE OTHER,False
+요거프레소,블루베리 크로플,BOTH,THE OTHER,False
+요거프레소,쇼콜라 케이크,BOTH,THE OTHER,False
+요거프레소,순수 치즈프라페,ICE,THE OTHER,False
+요거프레소,스트로베리 치즈프라페,ICE,THE OTHER,False
+요거프레소,아몬드초코카라멜 크로플,BOTH,THE OTHER,False
+요거프레소,에스프레소 밀크 프라페,ICE,THE OTHER,True
+요거프레소,오곡 밀크 프라페,ICE,THE OTHER,False
+요거프레소,오레오 사각케이크,BOTH,THE OTHER,False
+요거프레소,요거트 요프치노,BOTH,THE OTHER,False
+요거프레소,우유치즈 케이크,BOTH,THE OTHER,False
+요거프레소,쫀득베이글 블루베리,BOTH,THE OTHER,False
+요거프레소,쫀득베이글 어니언,BOTH,THE OTHER,False
+요거프레소,쫀득베이글 플레인,BOTH,THE OTHER,False
+요거프레소,초코 마카롱,BOTH,THE OTHER,False
+요거프레소,초코 바닐라 구슬스무디,ICE,THE OTHER,False
+요거프레소,초코 스틱케이크,BOTH,THE OTHER,False
+요거프레소,초콜릿 밀크쉐이크,BOTH,THE OTHER,False
+요거프레소,치즈 스틱케이크,BOTH,THE OTHER,False
+요거프레소,치즈 케이크,BOTH,THE OTHER,False
+요거프레소,칠리앤치즈 핫도그,BOTH,THE OTHER,False
+요거프레소,카라멜 크로플,BOTH,THE OTHER,False
+요거프레소,커피 밀크쉐이크,BOTH,THE OTHER,False
+요거프레소,코코넛 카페 요프치노,BOTH,THE OTHER,False
+요거프레소,콘어니언 핫도그,BOTH,THE OTHER,False
+요거프레소,쿠앤크 요프치노,BOTH,THE OTHER,False
+요거프레소,쿠키 밀크쉐이크,BOTH,THE OTHER,False
+요거프레소,크로크무슈,BOTH,THE OTHER,False
+요거프레소,크로플,BOTH,THE OTHER,False
+요거프레소,티라미수 밀크 아이스크림,ICE,THE OTHER,False
+요거프레소,티라미수 스틱케이크,BOTH,THE OTHER,False
+요거프레소,티라미수 케이크,BOTH,THE OTHER,False
+요거프레소,팥 밀크쉐이크,BOTH,THE OTHER,False
+요거프레소,플레인 밀크쉐이크,BOTH,THE OTHER,False
+요거프레소,플레인 츄러스,BOTH,THE OTHER,False
+요거프레소,피스타치오 구슬스무디,ICE,THE OTHER,False
+요거프레소,피스타치오 롤케익,BOTH,THE OTHER,False
+요거프레소,허니브래드,BOTH,THE OTHER,False
+요거프레소,녹차 한 컵 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,딸기 한 컵 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,딸기&망고 요거트 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,딸기&치즈 스노우 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,망고 한 컵 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,망고&치즈 스노우 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,메리더블 초코쉘,ICE,메리시리즈 & 빙수,False
+요거프레소,메리딸기,ICE,메리시리즈 & 빙수,False
+요거프레소,메리딸기 초코 브라우니,ICE,메리시리즈 & 빙수,False
+요거프레소,메리딸기 초코쉘,ICE,메리시리즈 & 빙수,False
+요거프레소,메리딸기 치즈큐브,ICE,메리시리즈 & 빙수,False
+요거프레소,메리망고,ICE,메리시리즈 & 빙수,False
+요거프레소,메리베리,ICE,메리시리즈 & 빙수,False
+요거프레소,메리초코,ICE,메리시리즈 & 빙수,False
+요거프레소,메리치즈,ICE,메리시리즈 & 빙수,False
+요거프레소,메리치즈 초코쉘,ICE,메리시리즈 & 빙수,False
+요거프레소,메리피치,ICE,메리시리즈 & 빙수,False
+요거프레소,베리&베리 요거트 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,블루베리 한 컵 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,초코 밀크컵빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,치즈 요거트 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,커피 밀크컵빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,콩고물 스노우 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,콩고물팥 밀크컵빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,트리플 초코 스노우 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,피치&망고 요거트 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,흑임자 한 컵 빙수,ICE,메리시리즈 & 빙수,False
+요거프레소,레몬 스파클링 에이드,ICE,에이드&티,False
+요거프레소,레몬 후르츠 에이드,ICE,에이드&티,False
+요거프레소,레몬티,ICE,에이드&티,False
+요거프레소,루이보스 레몬,ICE,에이드&티,False
+요거프레소,망고 스파클링 에이드,ICE,에이드&티,False
+요거프레소,상그리아 레몬티,ICE,에이드&티,False
+요거프레소,상그리아 유자티,ICE,에이드&티,False
+요거프레소,상그리아 자몽티,ICE,에이드&티,False
+요거프레소,상그리아티,ICE,에이드&티,False
+요거프레소,생과일주스 딸기,ICE,에이드&티,False
+요거프레소,수박식혜,ICE,에이드&티,False
+요거프레소,수박주스,ICE,에이드&티,False
+요거프레소,식혜,ICE,에이드&티,False
+요거프레소,아이스티(레몬),ICE,에이드&티,False
+요거프레소,아이스티(복숭아),ICE,에이드&티,False
+요거프레소,얼그레이티,ICE,에이드&티,False
+요거프레소,오렌지 스파클링 에이드,ICE,에이드&티,False
+요거프레소,오렌지 후르츠 에이드,ICE,에이드&티,False
+요거프레소,유자티,ICE,에이드&티,False
+요거프레소,자몽 스파클링 에이드,ICE,에이드&티,False
+요거프레소,자몽 후르츠 에이드,ICE,에이드&티,False
+요거프레소,자몽티,ICE,에이드&티,False
+요거프레소,제주 한라봉 에이드,ICE,에이드&티,False
+요거프레소,제주 한라봉허니티,ICE,에이드&티,False
+요거프레소,청포도 스파클링 에이드,ICE,에이드&티,False
+요거프레소,청포도 후르츠 에이드,ICE,에이드&티,False
+요거프레소,체리 후르츠 에이드,ICE,에이드&티,False
+요거프레소,캐모마일,ICE,에이드&티,False
+요거프레소,페퍼민트,ICE,에이드&티,False
+요거프레소,허니자몽블랙티,ICE,에이드&티,False
+요거프레소,딸기 요거트라떼,ICE,요거트 라떼,False
+요거프레소,딸기요거트 듬뿍라떼,ICE,요거트 라떼,False
+요거프레소,망고 요거트라떼,ICE,요거트 라떼,False
+요거프레소,망고요거트 듬뿍라떼,ICE,요거트 라떼,False
+요거프레소,복숭아 요거트라떼,ICE,요거트 라떼,False
+요거프레소,블루베리 요거트라떼,ICE,요거트 라떼,False
+요거프레소,블루베리요거트 듬뿍라떼,ICE,요거트 라떼,False
+요거프레소,자몽 요거트라떼,ICE,요거트 라떼,False
+요거프레소,청사과 요거트라떼,ICE,요거트 라떼,False
+요거프레소,피치요거트 듬뿍라떼,ICE,요거트 라떼,False
+요거프레소,더블베리 요거트쉐이크,ICE,요거트 쉐이크,False
+요거프레소,딸기 요거트 쉐이크,ICE,요거트 쉐이크,False
+요거프레소,망고 요거트 쉐이크,ICE,요거트 쉐이크,False
+요거프레소,블루베리 요거트 쉐이크,ICE,요거트 쉐이크,False
+요거프레소,애플베리 요거트쉐이크,ICE,요거트 쉐이크,False
+요거프레소,유자베리 요거트쉐이크,ICE,요거트 쉐이크,False
+요거프레소,유자자몽 요거트쉐이크,ICE,요거트 쉐이크,False
+요거프레소,플레인 요거트 쉐이크,ICE,요거트 쉐이크,False
+요거프레소,피치자몽 요거트쉐이크,ICE,요거트 쉐이크,False
+요거프레소,한라망고 요거트쉐이크,ICE,요거트 쉐이크,False
+요거프레소,딸기 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,망고 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,복숭아 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,블루베리 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,유자 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,자몽 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,제주 한라망고 요거트 I.C 스무디,ICE,요거트 스무디,False
+요거프레소,청사과 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,한라봉 요거트 스무디,ICE,요거트 스무디,False
+요거프레소,고구마 라떼,BOTH,커피&논커피,False
+요거프레소,그린티 라떼,BOTH,커피&논커피,False
+요거프레소,녹차 버블티,BOTH,커피&논커피,False
+요거프레소,달고나 라떼,BOTH,커피&논커피,False
+요거프레소,달고나 버블티,BOTH,커피&논커피,False
+요거프레소,달고나 카페 버블라떼,BOTH,커피&논커피,False
+요거프레소,리얼딸기우유,BOTH,커피&논커피,False
+요거프레소,밀크티 라떼,BOTH,커피&논커피,False
+요거프레소,바닐라 카페라떼,BOTH,커피&논커피,False
+요거프레소,순수우유(딸기),BOTH,커피&논커피,False
+요거프레소,순수우유(딸기바나나),BOTH,커피&논커피,False
+요거프레소,아메리카노,BOTH,커피&논커피,False
+요거프레소,연유 카페라떼,BOTH,커피&논커피,False
+요거프레소,오곡라떼,BOTH,커피&논커피,False
+요거프레소,초코라떼,BOTH,커피&논커피,False
+요거프레소,카라멜 마끼아또,BOTH,커피&논커피,False
+요거프레소,카페라떼,BOTH,커피&논커피,False
+요거프레소,카페모카,BOTH,커피&논커피,False
+요거프레소,카푸치노,BOTH,커피&논커피,False
+요거프레소,콜드브루,COLD_BREW,커피&논커피,False
+요거프레소,콜드브루 라떼,COLD_BREW,커피&논커피,False
+요거프레소,크림 라떼,BOTH,커피&논커피,False
+요거프레소,토피넛 라떼,BOTH,커피&논커피,False
+요거프레소,토피넛 크림 라떼,BOTH,커피&논커피,False
+요거프레소,헤이즐넛 카페라떼,BOTH,커피&논커피,False
+요거프레소,홍차 버블티,BOTH,커피&논커피,False
+요거프레소,흑당 녹차 버블티,BOTH,커피&논커피,False
+요거프레소,흑당 라떼,BOTH,커피&논커피,False
+요거프레소,흑당 버블티,BOTH,커피&논커피,False
+요거프레소,흑당 쇼콜라 버블티,BOTH,커피&논커피,False
+요거프레소,흑당 카페 버블티,BOTH,커피&논커피,False
+요거프레소,흑당 홍차 버블티,BOTH,커피&논커피,False
+요거프레소,흑임자 크림 라떼,BOTH,커피&논커피,False
+요거프레소,흑임자라떼,BOTH,커피&논커피,False
+요거프레소,건조마시멜로우,ICE,토핑요거트,False
+요거프레소,그래놀라,ICE,토핑요거트,False
+요거프레소,꿀시럽,ICE,토핑요거트,False
+요거프레소,나타데코코,ICE,토핑요거트,False
+요거프레소,다크초코칩,ICE,토핑요거트,False
+요거프레소,달고나 크럼블,ICE,토핑요거트,False
+요거프레소,두바이 토핑요거트,ICE,토핑요거트,False
+요거프레소,딸기,ICE,토핑요거트,False
+요거프레소,딸기쉘,ICE,토핑요거트,False
+요거프레소,딸기초코 토핑요거트,ICE,토핑요거트,False
+요거프레소,망고,ICE,토핑요거트,False
+요거프레소,망고쉘,ICE,토핑요거트,False
+요거프레소,벌집꿀,ICE,토핑요거트,False
+요거프레소,베리꿀치즈 토핑요거트,ICE,토핑요거트,False
+요거프레소,복숭아,ICE,토핑요거트,False
+요거프레소,블루베리,ICE,토핑요거트,False
+요거프레소,비스코프Ⓡ쿠키,ICE,토핑요거트,False
+요거프레소,샌드크럼,ICE,토핑요거트,False
+요거프레소,생딸기,ICE,토핑요거트,False
+요거프레소,쉘위초코 토핑요거트,ICE,토핑요거트,False
+요거프레소,아몬드 슬라이스,ICE,토핑요거트,False
+요거프레소,연유,ICE,토핑요거트,False
+요거프레소,오레오,ICE,토핑요거트,False
+요거프레소,초코 카다이프,ICE,토핑요거트,False
+요거프레소,초코그래놀라,ICE,토핑요거트,False
+요거프레소,초코링,ICE,토핑요거트,False
+요거프레소,초코볼쿠키,ICE,토핑요거트,False
+요거프레소,초코브라우니,ICE,토핑요거트,False
+요거프레소,초코소스,ICE,토핑요거트,False
+요거프레소,초코쉘,ICE,토핑요거트,False
+요거프레소,치즈큐브,ICE,토핑요거트,False
+요거프레소,카라멜소스,ICE,토핑요거트,False
+요거프레소,코코볼,ICE,토핑요거트,False
+요거프레소,콘푸라이트,ICE,토핑요거트,False
+요거프레소,타피오카펄,ICE,토핑요거트,False
+요거프레소,토핑요거트 딸기,ICE,토핑요거트,False
+요거프레소,토핑요거트 망고,ICE,토핑요거트,False
+요거프레소,토핑요거트 복숭아,ICE,토핑요거트,False
+요거프레소,토핑요거트 블루베리,ICE,토핑요거트,False
+요거프레소,토핑요거트 초코브라우니,ICE,토핑요거트,False
+요거프레소,토핑요거트 치즈,ICE,토핑요거트,False
+요거프레소,토핑요거트 플레인,ICE,토핑요거트,False
+요거프레소,팝핑캔디 레드,ICE,토핑요거트,False
+요거프레소,피넛카라멜 토핑요거트,ICE,토핑요거트,False
+요거프레소,피스타치오 카다이프,ICE,토핑요거트,False
+요거프레소,그린티 티라미스크림,ICE,한입요거트,False
+요거프레소,딸기 티라미스크림,ICE,한입요거트,False
+요거프레소,초코 티라미스크림,ICE,한입요거트,False
+요거프레소,치즈큐브(블루베리),ICE,한입요거트,False
+요거프레소,치즈큐브(스트로베리),ICE,한입요거트,False
+요거프레소,프루티(망고),ICE,한입요거트,False
+요거프레소,프루티(블루베리),ICE,한입요거트,False
+요거프레소,프루티(스트로베리),ICE,한입요거트,False
+요거프레소,플레인 요거트 아이스크림,ICE,한입요거트,False
+요거프레소,플레인 요거트 아이스크림 (3인),ICE,한입요거트,False
+요거프레소,플레인 요거트 아이스크림(2인),ICE,한입요거트,False
+요거프레소,한입 요거트 딸기,ICE,한입요거트,False
+요거프레소,한입 요거트 딸기쉘,ICE,한입요거트,False
+요거프레소,한입 요거트 마시멜로우,ICE,한입요거트,False
+요거프레소,한입 요거트 망고,ICE,한입요거트,False
+요거프레소,한입 요거트 망고쉘,ICE,한입요거트,False
+요거프레소,한입 요거트 복숭아,ICE,한입요거트,False
+요거프레소,한입 요거트 블루베리,ICE,한입요거트,False
+요거프레소,한입 요거트 초코,ICE,한입요거트,False
+요거프레소,한입 요거트 초코쉘,ICE,한입요거트,False
+요거프레소,한입 요거트 치즈,ICE,한입요거트,False
+요거프레소,한입 요거트 코코딸기,ICE,한입요거트,False
+요거프레소,한입 요거트 코코망고,ICE,한입요거트,False
+요거프레소,한입 요거트 코코베리,ICE,한입요거트,False
+요거프레소,한입 요거트 코코복숭아,ICE,한입요거트,False
+요거프레소,한입 요거트 코코자몽,ICE,한입요거트,False
+요거프레소,한입 요거트 코코젤리,ICE,한입요거트,False
+요거프레소,한입 요거트 코코청사과,ICE,한입요거트,False
+요거프레소,한입 요거트 타피오카펄,ICE,한입요거트,False
+요거프레소,한입 요거트 플레인,ICE,한입요거트,False
+요거프레소,한입 요거트 허니,ICE,한입요거트,False
+우지커피,구슬톡톡 라임펀치,BOTH,ADE & MOJITO,False
+우지커피,구슬톡톡 자몽펀치,BOTH,ADE & MOJITO,False
+우지커피,딸기오렌망에이드,ICE,ADE & MOJITO,False
+우지커피,딸기크림소다,ICE,ADE & MOJITO,False
+우지커피,라임 모히또 에이드,ICE,ADE & MOJITO,False
+우지커피,레몬에이드,ICE,ADE & MOJITO,False
+우지커피,봄딸기라임에이드,ICE,ADE & MOJITO,False
+우지커피,얼그레이하이볼,BOTH,ADE & MOJITO,False
+우지커피,자몽 에이드,ICE,ADE & MOJITO,False
+우지커피,청포도 에이드,ICE,ADE & MOJITO,False
+우지커피,체리콕,BOTH,ADE & MOJITO,False
+우지커피,코크펍위스키 (논알콜),BOTH,ADE & MOJITO,False
+우지커피,하망추,BOTH,ADE & MOJITO,False
+우지커피,고구마 라떼,BOTH,BEVERAGE,True
+우지커피,곡물 라떼,BOTH,BEVERAGE,True
+우지커피,녹차 라떼,BOTH,BEVERAGE,True
+우지커피,딥 말차베리 라떼,BOTH,BEVERAGE,True
+우지커피,딥 초코베리 라떼,BOTH,BEVERAGE,True
+우지커피,리얼딸기 라떼,BOTH,BEVERAGE,True
+우지커피,리얼블루베리 라떼,BOTH,BEVERAGE,True
+우지커피,리얼초코 라떼,BOTH,BEVERAGE,True
+우지커피,마시멜로우초코 라떼,BOTH,BEVERAGE,True
+우지커피,민트초코 라떼,BOTH,BEVERAGE,True
+우지커피,밀크티,BOTH,BEVERAGE,False
+우지커피,봄딸기쇼콜라떼,BOTH,BEVERAGE,True
+우지커피,브라운슈가 라떼,BOTH,BEVERAGE,True
+우지커피,브라운슈가 밀크티라떼,BOTH,BEVERAGE,True
+우지커피,스윗오렌지초코라떼,BOTH,BEVERAGE,True
+우지커피,얼그레이초코 라떼,BOTH,BEVERAGE,True
+우지커피,오곡 프로틴 드링크,BOTH,BEVERAGE,False
+우지커피,우지 딥 말차 젤라떼,BOTH,BEVERAGE,True
+우지커피,우지 딥 말차라떼,BOTH,BEVERAGE,True
+우지커피,율무차,BOTH,BEVERAGE,False
+우지커피,초코 라떼,BOTH,BEVERAGE,True
+우지커피,크리미땅콩초코라떼,BOTH,BEVERAGE,True
+우지커피,토피넛라떼,BOTH,BEVERAGE,True
+우지커피,피넛 프로틴 드링크,BOTH,BEVERAGE,False
+우지커피,할미숫가루,BOTH,BEVERAGE,False
+우지커피,호지넛크림라떼,BOTH,BEVERAGE,True
+우지커피,호지밀크티 라떼,BOTH,BEVERAGE,True
+우지커피,홍시카푸치노,BOTH,BEVERAGE,True
+우지커피,고구마 카페라떼,BOTH,COFFEE,True
+우지커피,깻페라떼 (10oz),BOTH,COFFEE,True
+우지커피,깻페라떼 (20oz),BOTH,COFFEE,True
+우지커피,꿀 아메리카노,BOTH,COFFEE,True
+우지커피,꿀 카페라떼,BOTH,COFFEE,True
+우지커피,나는 오렌망이야,BOTH,COFFEE,True
+우지커피,딥 바닐라 더블샷,BOTH,COFFEE,True
+우지커피,딥 헤이즐넛 더블샷,BOTH,COFFEE,True
+우지커피,딥카페라떼,BOTH,COFFEE,True
+우지커피,라이트 바닐라라떼,BOTH,COFFEE,True
+우지커피,레모니카노,BOTH,COFFEE,True
+우지커피,민트 카페모카,BOTH,COFFEE,True
+우지커피,바닐라 라떼,BOTH,COFFEE,True
+우지커피,서울플로트,BOTH,COFFEE,True
+우지커피,송파라떼,BOTH,COFFEE,True
+우지커피,시나몬슈가 카푸치노,BOTH,COFFEE,True
+우지커피,아메리카노,BOTH,COFFEE,True
+우지커피,아메리터 (1L),BOTH,COFFEE,True
+우지커피,아이스크림라떼,ICE,COFFEE,True
+우지커피,아포카토,BOTH,COFFEE,True
+우지커피,에스프레소,BOTH,COFFEE,True
+우지커피,연유 라떼,BOTH,COFFEE,True
+우지커피,오모테산도 커피,BOTH,COFFEE,True
+우지커피,우지믹스커피,BOTH,COFFEE,True
+우지커피,제로 헤이즐넛 샤케리카노,BOTH,COFFEE,True
+우지커피,제로 헤이즐넛 아메리카노,BOTH,COFFEE,True
+우지커피,참깨그라니따,BOTH,COFFEE,True
+우지커피,카라멜마끼아또,BOTH,COFFEE,True
+우지커피,카페라떼,BOTH,COFFEE,True
+우지커피,카페모카,BOTH,COFFEE,True
+우지커피,카푸치노,BOTH,COFFEE,True
+우지커피,커피 오렌망,BOTH,COFFEE,True
+우지커피,큐브연유라떼,BOTH,COFFEE,True
+우지커피,피넛크림라떼,BOTH,COFFEE,True
+우지커피,피칸 아메리카노,BOTH,COFFEE,True
+우지커피,피칸라떼,BOTH,COFFEE,True
+우지커피,헤이즐넛 라떼,BOTH,COFFEE,True
+우지커피,헤이즐넛 아메리카노,BOTH,COFFEE,True
+우지커피,헤이즐넛 카페모카,BOTH,COFFEE,True
+우지커피,화이트초코 카페모카,BOTH,COFFEE,True
+우지커피,디카페인 콜드브루 커피,COLD_BREW,COLD BREW,True
+우지커피,딸기크림 카페오레,BOTH,COLD BREW,False
+우지커피,라이트 바닐라크림콜드브루,COLD_BREW,COLD BREW,True
+우지커피,말차 콜드브루 라떼,COLD_BREW,COLD BREW,True
+우지커피,밀크샤케라또 위스키 (논알콜),BOTH,COLD BREW,True
+우지커피,바닐라크림 콜드브루 라떼,COLD_BREW,COLD BREW,True
+우지커피,블랙샤케라또 (논알콜),BOTH,COLD BREW,True
+우지커피,아이리쉬커피 (논알콜),BOTH,COLD BREW,True
+우지커피,연유크리미슈페너,BOTH,COLD BREW,True
+우지커피,오렌지크리미슈페너,BOTH,COLD BREW,True
+우지커피,유자 크러쉬 콜드브루,COLD_BREW,COLD BREW,True
+우지커피,율무크림콜드브루,COLD_BREW,COLD BREW,True
+우지커피,콜드브루 라떼,COLD_BREW,COLD BREW,True
+우지커피,콜드브루 커피,COLD_BREW,COLD BREW,True
+우지커피,구슬톡톡파인슬러시,BOTH,FRAPPE,False
+우지커피,깻잎스무디,ICE,FRAPPE,False
+우지커피,꿀배청귤슬러시,BOTH,FRAPPE,False
+우지커피,나는 요거트오렌망이야,BOTH,FRAPPE,False
+우지커피,녹차 프라페,ICE,FRAPPE,False
+우지커피,더블베리 밀크쉐이크,BOTH,FRAPPE,False
+우지커피,더블베리 쉐이크,BOTH,FRAPPE,False
+우지커피,더블커피칩 프라페,ICE,FRAPPE,False
+우지커피,딥 망고 컵빙수,BOTH,FRAPPE,False
+우지커피,딥 밀크 쉐이크,BOTH,FRAPPE,False
+우지커피,딥 컵빙수,BOTH,FRAPPE,False
+우지커피,딸기 쇼콜라 프라페,ICE,FRAPPE,False
+우지커피,딸기 요거트스무디,ICE,FRAPPE,False
+우지커피,딸기 프라페,ICE,FRAPPE,False
+우지커피,딸기빙수프라페,ICE,FRAPPE,False
+우지커피,딸기스무디볼,ICE,FRAPPE,False
+우지커피,딸기오레오 프라페,ICE,FRAPPE,False
+우지커피,딸기죠리퐁 프라페,ICE,FRAPPE,False
+우지커피,로열밀크티 쉐이크,BOTH,FRAPPE,False
+우지커피,리얼초코 밀크쉐이크,BOTH,FRAPPE,False
+우지커피,망고 요거트스무디,ICE,FRAPPE,False
+우지커피,메리크리마스구마,BOTH,FRAPPE,False
+우지커피,미숫가루 쉐이크,BOTH,FRAPPE,False
+우지커피,민트초코 프라페,ICE,FRAPPE,False
+우지커피,복숭아 스무디,ICE,FRAPPE,False
+우지커피,봄딸기밀크쉐이크,BOTH,FRAPPE,False
+우지커피,봄딸기샤베트,BOTH,FRAPPE,False
+우지커피,블루베리요거트 스무디,ICE,FRAPPE,False
+우지커피,솔티카라멜 쉐이크,BOTH,FRAPPE,False
+우지커피,수박화채스무디,ICE,FRAPPE,False
+우지커피,스크류딸기 스무디,ICE,FRAPPE,False
+우지커피,오레오 프라페,ICE,FRAPPE,False
+우지커피,오렌망화채스무디,ICE,FRAPPE,False
+우지커피,우지컵빙수,BOTH,FRAPPE,False
+우지커피,웰니스 딸기 스무디,ICE,FRAPPE,False
+우지커피,웰니스 블루베리 스무디 볼,ICE,FRAPPE,False
+우지커피,율무크림프라페,ICE,FRAPPE,False
+우지커피,자바칩 프라페,ICE,FRAPPE,False
+우지커피,죠리퐁 프라페,ICE,FRAPPE,False
+우지커피,쫀득아이스홍시,ICE,FRAPPE,False
+우지커피,초코빙수프라페,ICE,FRAPPE,False
+우지커피,초코죠리퐁 프라페,ICE,FRAPPE,False
+우지커피,카라멜 프라페,ICE,FRAPPE,False
+우지커피,캔디소다화채스무디,ICE,FRAPPE,False
+우지커피,플레인 요거트스무디,ICE,FRAPPE,False
+우지커피,호지밀크티프라페,ICE,FRAPPE,False
+우지커피,홍시 스무디,ICE,FRAPPE,False
+우지커피,화이트초코 프라페,ICE,FRAPPE,False
+우지커피,후르츠컵빙수,BOTH,FRAPPE,False
+우지커피,꿀배 비타민,BOTH,TEA & JUICE,False
+우지커피,달달고구마식혜,BOTH,TEA & JUICE,False
+우지커피,레몬 생강차,BOTH,TEA & JUICE,False
+우지커피,레몬차,BOTH,TEA & JUICE,False
+우지커피,리얼수박주스,ICE,TEA & JUICE,False
+우지커피,리얼홍시주스,ICE,TEA & JUICE,False
+우지커피,망고오렌망,BOTH,TEA & JUICE,False
+우지커피,모히또 레몬홍차,BOTH,TEA & JUICE,False
+우지커피,복숭아 아이스티,ICE,TEA & JUICE,False
+우지커피,생강차,BOTH,TEA & JUICE,False
+우지커피,석류 아이스티,ICE,TEA & JUICE,False
+우지커피,선셋위스키 (논알콜),BOTH,TEA & JUICE,False
+우지커피,아망수추,BOTH,TEA & JUICE,False
+우지커피,아망추,BOTH,TEA & JUICE,False
+우지커피,아수추,BOTH,TEA & JUICE,False
+우지커피,애플 히비스커스,BOTH,TEA & JUICE,False
+우지커피,얼그레이 레몬차,BOTH,TEA & JUICE,False
+우지커피,얼그레이 티,BOTH,TEA & JUICE,False
+우지커피,우지 말차 유자티,BOTH,TEA & JUICE,False
+우지커피,유자차,BOTH,TEA & JUICE,False
+우지커피,자몽 허니 블랙티,BOTH,TEA & JUICE,False
+우지커피,자몽차,BOTH,TEA & JUICE,False
+우지커피,제로 복숭아 아이스티,ICE,TEA & JUICE,False
+우지커피,청귤차,BOTH,TEA & JUICE,False
+우지커피,캐모마일 티,BOTH,TEA & JUICE,False
+우지커피,파인민트 아이스티,ICE,TEA & JUICE,False
+우지커피,페퍼민트 티,BOTH,TEA & JUICE,False
+우지커피,홍시듬뿍식혜,BOTH,TEA & JUICE,False
+우지커피,히비스커스 티,BOTH,TEA & JUICE,False
+이디야,HOT 거문도쑥 라떼,HOT,BEVERAGE,True
+이디야,HOT 고구마 라떼,HOT,BEVERAGE,True
+이디야,HOT 말차라떼,HOT,BEVERAGE,True
+이디야,HOT 미숫가루 라떼,HOT,BEVERAGE,True
+이디야,HOT 민트 초콜릿,HOT,BEVERAGE,False
+이디야,HOT 초콜릿,HOT,BEVERAGE,False
+이디야,HOT 토피넛 라떼,HOT,BEVERAGE,True
+이디야,HOT 화이트 초콜릿,HOT,BEVERAGE,False
+이디야,ICED 거문도쑥 라떼,ICE,BEVERAGE,True
+이디야,ICED 고구마 라떼,ICE,BEVERAGE,True
+이디야,ICED 달고나 라떼,ICE,BEVERAGE,True
+이디야,ICED 딸기 초코 라떼,ICE,BEVERAGE,True
+이디야,ICED 말차라떼,ICE,BEVERAGE,True
+이디야,ICED 말차초코라떼,ICE,BEVERAGE,True
+이디야,ICED 미숫가루 라떼,ICE,BEVERAGE,True
+이디야,ICED 민트 초콜릿,ICE,BEVERAGE,False
+이디야,ICED 버블 흑당 라떼,ICE,BEVERAGE,True
+이디야,ICED 초콜릿,ICE,BEVERAGE,False
+이디야,ICED 토피넛 라떼,ICE,BEVERAGE,True
+이디야,ICED 화이트 초콜릿,ICE,BEVERAGE,False
+이디야,ICED 흑당 라떼,ICE,BEVERAGE,True
+이디야,딸기 듬뿍 라떼,BOTH,BEVERAGE,True
+이디야,딸기바나나주스,ICE,BEVERAGE,False
+이디야,딸기자두 요구르트,ICE,BEVERAGE,False
+이디야,딸기주스,ICE,BEVERAGE,False
+이디야,망고바나나주스,ICE,BEVERAGE,False
+이디야,망고주스,ICE,BEVERAGE,False
+이디야,블루베리바나나주스,ICE,BEVERAGE,False
+이디야,블루베리주스,ICE,BEVERAGE,False
+이디야,사과당근클렌즈주스,ICE,BEVERAGE,False
+이디야,생과일 제주감귤주스,ICE,BEVERAGE,False
+이디야,치즈폼 딸기라떼,ICE,BEVERAGE,True
+이디야,키위케일샐러리클렌즈주스,ICE,BEVERAGE,False
+이디야,HOT 딸기감귤티,HOT,BLENDING TEA,False
+이디야,HOT 레몬차,HOT,BLENDING TEA,False
+이디야,HOT 로열 밀크티,HOT,BLENDING TEA,False
+이디야,HOT 루이보스,HOT,BLENDING TEA,False
+이디야,HOT 배모과차,HOT,BLENDING TEA,False
+이디야,HOT 복분자 뱅쇼,HOT,BLENDING TEA,False
+이디야,HOT 생강차,HOT,BLENDING TEA,False
+이디야,HOT 쌍화차,HOT,BLENDING TEA,False
+이디야,HOT 얼그레이,HOT,BLENDING TEA,False
+이디야,HOT 유자차,HOT,BLENDING TEA,False
+이디야,HOT 자몽차,HOT,BLENDING TEA,False
+이디야,HOT 저당 하동매실 그린티,HOT,BLENDING TEA,False
+이디야,HOT 캐모마일,HOT,BLENDING TEA,False
+이디야,HOT 페퍼민트,HOT,BLENDING TEA,False
+이디야,HOT 히비스커스,HOT,BLENDING TEA,False
+이디야,ICED 딸기감귤티,ICE,BLENDING TEA,False
+이디야,ICED 레몬차,ICE,BLENDING TEA,False
+이디야,ICED 로열 밀크티,ICE,BLENDING TEA,False
+이디야,ICED 루이보스,ICE,BLENDING TEA,False
+이디야,ICED 배모과차,ICE,BLENDING TEA,False
+이디야,ICED 복분자 뱅쇼,ICE,BLENDING TEA,False
+이디야,ICED 살얼음 식혜,ICE,BLENDING TEA,False
+이디야,ICED 생강차,ICE,BLENDING TEA,False
+이디야,ICED 쌍화차,ICE,BLENDING TEA,False
+이디야,ICED 얼그레이,ICE,BLENDING TEA,False
+이디야,ICED 유자차,ICE,BLENDING TEA,False
+이디야,ICED 자몽차,ICE,BLENDING TEA,False
+이디야,ICED 저당 하동매실 그린티,ICE,BLENDING TEA,False
+이디야,ICED 제로슈가 아샷추 복숭아,ICE,BLENDING TEA,False
+이디야,ICED 제로슈가 아이스티 복숭아,ICE,BLENDING TEA,False
+이디야,ICED 캐모마일,ICE,BLENDING TEA,False
+이디야,ICED 페퍼민트,ICE,BLENDING TEA,False
+이디야,ICED 히비스커스,ICE,BLENDING TEA,False
+이디야,레몬 아이스티,ICE,BLENDING TEA,False
+이디야,복숭아 아이스티,ICE,BLENDING TEA,False
+이디야,아망추 복숭아,BOTH,BLENDING TEA,False
+이디야,아샷추 복숭아,BOTH,BLENDING TEA,False
+이디야,HOT 달달커피,HOT,COFFEE,True
+이디야,HOT 민트 모카,HOT,COFFEE,True
+이디야,HOT 바닐라 라떼,HOT,COFFEE,True
+이디야,HOT 시그니처 라떼,HOT,COFFEE,True
+이디야,HOT 에스프레소,HOT,COFFEE,True
+이디야,HOT 연유 카페 라떼,HOT,COFFEE,True
+이디야,HOT 제로슈가 달달커피,HOT,COFFEE,True
+이디야,HOT 카라멜 마끼아또,HOT,COFFEE,True
+이디야,HOT 카페 라떼,HOT,COFFEE,True
+이디야,HOT 카페 모카,HOT,COFFEE,True
+이디야,HOT 카페 아메리카노,HOT,COFFEE,True
+이디야,HOT 카푸치노,HOT,COFFEE,True
+이디야,HOT 헤이즐넛 아메리카노,HOT,COFFEE,True
+이디야,HOT 화이트 초콜릿 모카,HOT,COFFEE,True
+이디야,ICED 꿀화이트 아메리카노,ICE,COFFEE,True
+이디야,ICED 넛츠 크림 라떼,ICE,COFFEE,True
+이디야,ICED 달달커피,ICE,COFFEE,True
+이디야,ICED 민트 모카,ICE,COFFEE,True
+이디야,ICED 바닐라 라떼,ICE,COFFEE,True
+이디야,ICED 시그니처 라떼,ICE,COFFEE,True
+이디야,ICED 연유 카페 라떼,ICE,COFFEE,True
+이디야,ICED 제로슈가 달달커피,ICE,COFFEE,True
+이디야,ICED 카라멜 마끼아또,ICE,COFFEE,True
+이디야,ICED 카페 라떼,ICE,COFFEE,True
+이디야,ICED 카페 모카,ICE,COFFEE,True
+이디야,ICED 카페 아메리카노,ICE,COFFEE,True
+이디야,ICED 카푸치노,ICE,COFFEE,True
+이디야,ICED 헤이즐넛 아메리카노,ICE,COFFEE,True
+이디야,ICED 화이트 초콜릿 모카,ICE,COFFEE,True
+이디야,아포가토 오리지널,BOTH,COFFEE,True
+이디야,연유 콜드브루,COLD_BREW,COFFEE,True
+이디야,콜드브루,COLD_BREW,COFFEE,True
+이디야,콜드브루 라떼,COLD_BREW,COFFEE,True
+이디야,흑당 콜드브루,COLD_BREW,COFFEE,True
+이디야,아이스크림 카페라떼,ICE,DECAF,True
+이디야,에스프레소 쉐이크,BOTH,DECAF,True
+이디야,꿀복숭아 요거트 플랫치노,BOTH,FLATCCINO,False
+이디야,꿀복숭아 플랫치노,BOTH,FLATCCINO,False
+이디야,딸기 요거트 플랫치노,BOTH,FLATCCINO,False
+이디야,망고 플랫치노,BOTH,FLATCCINO,False
+이디야,민트 초콜릿칩 플랫치노,BOTH,FLATCCINO,False
+이디야,블루베리 요거트 플랫치노,BOTH,FLATCCINO,False
+이디야,유자몽 플랫치노,BOTH,FLATCCINO,False
+이디야,초콜릿 칩 플랫치노,BOTH,FLATCCINO,False
+이디야,토피넛 플랫치노,BOTH,FLATCCINO,False
+이디야,플레인 요거트 플랫치노,BOTH,FLATCCINO,False
+이디야,(리락쿠마) 생딸기 초코 파르페,BOTH,SHAKE & ADE,False
+이디야,(코리락쿠마) 생딸기 밀크 파르페,BOTH,SHAKE & ADE,False
+이디야,ICED 저당 문경오미자 에이드,ICE,SHAKE & ADE,False
+이디야,감귤 레몬 에이드,ICE,SHAKE & ADE,False
+이디야,꿀복숭아 에이드,ICE,SHAKE & ADE,False
+이디야,딸기 쉐이크,BOTH,SHAKE & ADE,False
+이디야,말차 초코 쉐이크,BOTH,SHAKE & ADE,False
+이디야,머스캣 모히또 에이드,ICE,SHAKE & ADE,False
+이디야,밀크 쉐이크,BOTH,SHAKE & ADE,False
+이디야,샹그리아 에이드,ICE,SHAKE & ADE,False
+이디야,자몽 포멜로 에이드,ICE,SHAKE & ADE,False
+이디야,초코쿠키 쉐이크,BOTH,SHAKE & ADE,False
+카페베네,고구마 라떼,ICE,음료,True
+카페베네,고구마 라떼,HOT,음료,True
+카페베네,고흥유자 차(HOT/ICED),ICE,음료,False
+카페베네,고흥유자 히비스커스 티,ICE,음료,False
+카페베네,고흥유자 히비스커스 티,HOT,음료,False
+카페베네,그래요딸기,BOTH,음료,False
+카페베네,딸기 요거트 프라페노,ICE,음료,False
+카페베네,딸기 젤라또 프라페노,ICE,음료,False
+카페베네,딸기 초코칩 프라페노,ICE,음료,False
+카페베네,딸기 쿠키앤크림 프라페노,ICE,음료,False
+카페베네,문경오미자 뱅쇼,HOT,음료,False
+카페베네,복숭아 아이스 티,ICE,음료,False
+카페베네,블루베리 요거트 프라페노,ICE,음료,False
+카페베네,생딸기 라떼,BOTH,음료,True
+카페베네,생딸기 주스,ICE,음료,False
+카페베네,애플 시나몬 티,HOT,음료,False
+카페베네,애플 시나몬 티,ICE,음료,False
+카페베네,애플 캐모마일 티,HOT,음료,False
+카페베네,애플 캐모마일 티,ICE,음료,False
+카페베네,애플망고 주스,ICE,음료,False
+카페베네,얼그레이 밀크티 라떼,HOT,음료,True
+카페베네,얼그레이 밀크티 라떼,ICE,음료,True
+카페베네,얼그레이 티(HOT/ICED),ICE,음료,False
+카페베네,우리오곡 라떼,HOT,음료,True
+카페베네,우리오곡 라떼,ICE,음료,True
+카페베네,우리흑임자 라떼,HOT,음료,True
+카페베네,우리흑임자 라떼,ICE,음료,True
+카페베네,자몽 얼그레이 티,HOT,음료,False
+카페베네,자몽 얼그레이 티,ICE,음료,False
+카페베네,자몽 에이드,ICE,음료,False
+카페베네,자몽 차(HOT/ICED),ICE,음료,False
+카페베네,제주녹차 라떼,HOT,음료,True
+카페베네,제주녹차 라떼,ICE,음료,True
+카페베네,제주레몬 에이드,ICE,음료,False
+카페베네,제주청귤 에이드,ICE,음료,False
+카페베네,제주한라봉 요거트 프라페노,ICE,음료,False
+카페베네,제주한라봉 젤라또 에이드,ICE,음료,False
+카페베네,청포도 에이드,ICE,음료,False
+카페베네,초콜릿 라떼,HOT,음료,True
+카페베네,초콜릿 라떼,ICE,음료,True
+카페베네,초콜릿쿠키 젤라또 프라페노,ICE,음료,False
+카페베네,캐모마일 티(HOT/ICED),ICE,음료,False
+카페베네,콜드브루 모카칩 프라페노,ICE,음료,True
+카페베네,콜드브루 프라페노,ICE,음료,True
+카페베네,키위 주스,ICE,음료,False
+카페베네,티라미수 젤라또 프라페노,ICE,음료,False
+카페베네,페퍼민트 티(HOT/ICED),ICE,음료,False
+카페베네,플레인 요거트 프라페노,ICE,음료,False
+카페베네,히비스커스 블렌드 티(HOT/ICED),ICE,음료,False
+카페베네,디카페인 콜드브루,COLD_BREW,커피,True
+카페베네,디카페인 콜드브루 라떼,COLD_BREW,커피,True
+카페베네,바닐라빈 라떼,HOT,커피,True
+카페베네,바닐라빈 라떼,ICE,커피,True
+카페베네,베네 젤라또 라떼,BOTH,커피,True
+카페베네,베네 크림 라떼,BOTH,커피,True
+카페베네,스페니쉬 연유 라떼,HOT,커피,True
+카페베네,스페니쉬 연유 라떼,ICE,커피,True
+카페베네,아메리카노,HOT,커피,True
+카페베네,아메리카노,ICE,커피,True
+카페베네,에스프레소,BOTH,커피,True
+카페베네,카라멜 땅콩 크림 라떼,HOT,커피,True
+카페베네,카라멜 땅콩 크림 라떼,ICE,커피,True
+카페베네,카라멜 마끼아또,HOT,커피,True
+카페베네,카라멜 마끼아또,ICE,커피,True
+카페베네,카페 라떼,HOT,커피,True
+카페베네,카페 라떼,ICE,커피,True
+카페베네,카페 모카,HOT,커피,True
+카페베네,카페 모카,ICE,커피,True
+카페베네,카푸치노,BOTH,커피,True
+카페베네,콜드브루,COLD_BREW,커피,True
+카페베네,콜드브루 라떼,COLD_BREW,커피,True
+카페베네,콜드브루 바닐라빈 라떼,COLD_BREW,커피,True
+카페베네,헤이즐넛 라떼,HOT,커피,True
+카페베네,헤이즐넛 라떼,ICE,커피,True
+카페봄봄,고구마라떼,BOTH,라떼,True
+카페봄봄,녹차라떼,BOTH,라떼,True
+카페봄봄,달고나라떼,BOTH,라떼,True
+카페봄봄,대추생강라떼,HOT,라떼,True
+카페봄봄,딸기라떼,BOTH,라떼,True
+카페봄봄,민트크림초코,BOTH,라떼,False
+카페봄봄,밀크티,BOTH,라떼,False
+카페봄봄,블루베리라떼,BOTH,라떼,True
+카페봄봄,소다요거트라떼,ICE,라떼,True
+카페봄봄,오곡라떼,BOTH,라떼,True
+카페봄봄,초코라떼,BOTH,라떼,True
+카페봄봄,토피넛라떼,BOTH,라떼,True
+카페봄봄,폭탄초코,BOTH,라떼,False
+카페봄봄,핫마라떼,HOT,라떼,True
+카페봄봄,블랙슈가버블티,ICE,버블티,False
+카페봄봄,얼그레이버블티,ICE,버블티,False
+카페봄봄,초코버블티,ICE,버블티,False
+카페봄봄,타로버블티,ICE,버블티,False
+카페봄봄,노을빛제주감귤스무디,ICE,스무디,False
+카페봄봄,녹차프라페,ICE,스무디,False
+카페봄봄,달고나컵빙수,ICE,스무디,False
+카페봄봄,딸기스노우크림프라페,ICE,스무디,False
+카페봄봄,딸기스무디,ICE,스무디,False
+카페봄봄,딸기요거트,ICE,스무디,False
+카페봄봄,딸기컵빙수,ICE,스무디,False
+카페봄봄,딸기쿠키프라페,ICE,스무디,False
+카페봄봄,망고스무디,ICE,스무디,False
+카페봄봄,망고요거트,ICE,스무디,False
+카페봄봄,모카프라페,ICE,스무디,False
+카페봄봄,민트프라페,ICE,스무디,False
+카페봄봄,밀크쉐이크,ICE,스무디,False
+카페봄봄,배스무디,ICE,스무디,False
+카페봄봄,블루베리요거트,ICE,스무디,False
+카페봄봄,소다요거트스무디,ICE,스무디,False
+카페봄봄,어른커피쉐이크,ICE,스무디,False
+카페봄봄,얼음수박,ICE,스무디,False
+카페봄봄,옛날컵빙수,ICE,스무디,False
+카페봄봄,오렌지망고슬러시,ICE,스무디,False
+카페봄봄,자몽스무디,ICE,스무디,False
+카페봄봄,청포도슬러시,ICE,스무디,False
+카페봄봄,쿠키프라페,ICE,스무디,False
+카페봄봄,패션후르츠슬러시,ICE,스무디,False
+카페봄봄,폭탄프라페,ICE,스무디,False
+카페봄봄,플레인요거트,ICE,스무디,False
+카페봄봄,감귤유자차,HOT,신제품,False
+카페봄봄,딸기두부도너츠,BOTH,신제품,False
+카페봄봄,딸기말차라떼,ICE,신제품,True
+카페봄봄,딸기요컵파르페,ICE,신제품,False
+카페봄봄,딸기초코스무디,ICE,신제품,False
+카페봄봄,리얼딸기크림라떼,ICE,신제품,True
+카페봄봄,배생강차,BOTH,신제품,False
+카페봄봄,슈가두부도너츠,BOTH,신제품,False
+카페봄봄,슈크림 붕어빵,BOTH,신제품,False
+카페봄봄,시즈오카말차라떼,BOTH,신제품,True
+카페봄봄,율무차,BOTH,신제품,False
+카페봄봄,팥붕어빵,BOTH,신제품,False
+카페봄봄,딸기레몬에이드,ICE,에이드,False
+카페봄봄,레몬에이드,ICE,에이드,False
+카페봄봄,매실에이드,ICE,에이드,False
+카페봄봄,블루레몬에이드,ICE,에이드,False
+카페봄봄,블루베리에이드,ICE,에이드,False
+카페봄봄,자몽에이드,ICE,에이드,False
+카페봄봄,청포도에이드,ICE,에이드,False
+카페봄봄,체리콕,ICE,에이드,False
+카페봄봄,패션후르츠에이드,ICE,에이드,False
+카페봄봄,디카페인제로어른커피,BOTH,저당/디카페인,True
+카페봄봄,라이트딸기요거라씨 (저당),ICE,저당/디카페인,False
+카페봄봄,라이트망고요거라씨 (저당),ICE,저당/디카페인,False
+카페봄봄,라이트요거라씨 (저당),ICE,저당/디카페인,False
+카페봄봄,저당레몬에이드,ICE,저당/디카페인,False
+카페봄봄,저당매실에이드,ICE,저당/디카페인,False
+카페봄봄,저당자몽에이드,ICE,저당/디카페인,False
+카페봄봄,저당체리에이드,ICE,저당/디카페인,False
+카페봄봄,제로복숭아아이스티,ICE,저당/디카페인,False
+카페봄봄,제로아이스티에이드,ICE,저당/디카페인,False
+카페봄봄,단호박식혜,ICE,주스,False
+카페봄봄,단호박얼음식혜,ICE,주스,False
+카페봄봄,딸기바나나,ICE,주스,False
+카페봄봄,딸기주스,ICE,주스,False
+카페봄봄,마나나,ICE,주스,False
+카페봄봄,마몬드,ICE,주스,False
+카페봄봄,망고바나나,ICE,주스,False
+카페봄봄,망고주스,ICE,주스,False
+카페봄봄,바나나주스,ICE,주스,False
+카페봄봄,제주감귤주스,ICE,주스,False
+카페봄봄,초코바나나,ICE,주스,False
+카페봄봄,달고나카페라떼,BOTH,커피,True
+카페봄봄,돌체라떼,BOTH,커피,True
+카페봄봄,돌체콜드브루,BOTH,커피,True
+카페봄봄,바닐라라떼,BOTH,커피,True
+카페봄봄,봄블랑,BOTH,커피,True
+카페봄봄,아메리카노,BOTH,커피,True
+카페봄봄,아인슈페너,BOTH,커피,True
+카페봄봄,어른커피,BOTH,커피,True
+카페봄봄,오더블랑,BOTH,커피,True
+카페봄봄,오렌지비앙코,BOTH,커피,True
+카페봄봄,오블랑,BOTH,커피,True
+카페봄봄,카라멜마끼아또,BOTH,커피,True
+카페봄봄,카페라떼,BOTH,커피,True
+카페봄봄,카페모카,BOTH,커피,True
+카페봄봄,카푸치노,BOTH,커피,True
+카페봄봄,콜드브루,BOTH,커피,True
+카페봄봄,콜드브루라떼,BOTH,커피,True
+카페봄봄,헤이즐넛라떼,BOTH,커피,True
+카페봄봄,헤이즐넛아메리카노,BOTH,커피,True
+카페봄봄,꿀자몽티,BOTH,티,False
+카페봄봄,레몬생강차,BOTH,티,False
+카페봄봄,레몬얼그레이,BOTH,티,False
+카페봄봄,레몬티,BOTH,티,False
+카페봄봄,매실차,BOTH,티,False
+카페봄봄,복숭아아이스티,ICE,티,False
+카페봄봄,생강차,HOT,티,False
+카페봄봄,스위트마테,BOTH,티,False
+카페봄봄,얼그레이티,BOTH,티,False
+카페봄봄,오가닉제주녹차,BOTH,티,False
+카페봄봄,유자차,BOTH,티,False
+카페봄봄,제주감귤녹차,BOTH,티,False
+카페봄봄,캐모마일,BOTH,티,False
+카페봄봄,페퍼민트,BOTH,티,False
+카페봄봄,하동매실체리티,BOTH,티,False
+카페봄봄,허니자몽블랙티,BOTH,티,False
+카페봄봄,히비스커스,BOTH,티,False
+카페인중독,레드자몽 에이드,ICE,ADE,False
+카페인중독,레몬 에이드,ICE,ADE,False
+카페인중독,레몬콕,BOTH,ADE,False
+카페인중독,매실 에이드,ICE,ADE,False
+카페인중독,복숭아자두 에이드,ICE,ADE,False
+카페인중독,제주 천혜향 에이드,ICE,ADE,False
+카페인중독,체리콕,BOTH,ADE,False
+카페인중독,꿀 고구마 크림 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,꿀 아메리카노,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,더블초코 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,디카페인 바닐라빈 크림 콜드브루 라떼,COLD_BREW,COFFEE & NON-COFFEE,True
+카페인중독,디카페인 콜드브루,COLD_BREW,COFFEE & NON-COFFEE,True
+카페인중독,디카페인 콜드브루 라떼,COLD_BREW,COFFEE & NON-COFFEE,True
+카페인중독,딸기우유 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,밀크티 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,바닐라빈 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,사이공 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,숙성 生초콜릿 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,숙성 꿀 고구마 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,숙성 메이플 시나몬 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,숙성 카페라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,숙성 흑당밀크티,BOTH,COFFEE & NON-COFFEE,False
+카페인중독,아메리카노,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,아빠커피,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,자색고구마 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,제주 말차 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,찜질방 미숫가루,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,카페라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,카페모카,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,햅쌀 크림 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,헤이즐넛 라떼,BOTH,COFFEE & NON-COFFEE,True
+카페인중독,더블 초코 나무숲,BOTH,SIGNATURE,False
+카페인중독,生 꿀 토마토 주스,ICE,SMOOTHIE,False
+카페인중독,갈배 스무디,ICE,SMOOTHIE,False
+카페인중독,딸기 요거트 스무디,ICE,SMOOTHIE,False
+카페인중독,딸기우유 스무디,ICE,SMOOTHIE,False
+카페인중독,메론나 스무디,ICE,SMOOTHIE,False
+카페인중독,블루베리 스무디,ICE,SMOOTHIE,False
+카페인중독,블루베리 요거트 스무디,ICE,SMOOTHIE,False
+카페인중독,제주 말차 스무디,ICE,SMOOTHIE,False
+카페인중독,제주 천혜향 스무디,ICE,SMOOTHIE,False
+카페인중독,코코넛 스무디,ICE,SMOOTHIE,False
+카페인중독,코코넛 커피 스무디,ICE,SMOOTHIE,False
+카페인중독,쿠앤크 스무디,ICE,SMOOTHIE,False
+카페인중독,플레인 요거트 스무디,ICE,SMOOTHIE,False
+카페인중독,꿀 수박주스,ICE,TEA,False
+카페인중독,꿀녹차,BOTH,TEA,False
+카페인중독,레몬티,BOTH,TEA,False
+카페인중독,루이보스 슈가플럼,BOTH,TEA,False
+카페인중독,매실차,BOTH,TEA,False
+카페인중독,아이스티,ICE,TEA,False
+카페인중독,얼그레이,BOTH,TEA,False
+카페인중독,유자차,BOTH,TEA,False
+카페인중독,캐모마일,BOTH,TEA,False
+카페인중독,페퍼민트,BOTH,TEA,False
+카페인중독,호박팥차,BOTH,TEA,False
+카페인중독,밀크카우 스무디,ICE,제주 한정,False
+카페인중독,제주 사려니 숲길 라떼,BOTH,제주 한정,True
+카페인중독,천혜향 카노,BOTH,제주 한정,False
+카페인중독,코코 천혜향 스무디,ICE,제주 한정,False
+커피베이,고구마 라떼,HOT,베이직라떼,True
+커피베이,그린티 라떼,HOT,베이직라떼,True
+커피베이,단호박크림치즈라떼,HOT,베이직라떼,True
+커피베이,딸기 듬뿍 라떼,HOT,베이직라떼,True
+커피베이,밀크티,HOT,베이직라떼,False
+커피베이,버블 밀크티,HOT,베이직라떼,False
+커피베이,브라운슈가 버블티,HOT,베이직라떼,False
+커피베이,아이스 고구마 라떼,ICE,베이직라떼,True
+커피베이,아이스 그린티 라떼,ICE,베이직라떼,True
+커피베이,아이스 단호박크림치즈라떼,ICE,베이직라떼,True
+커피베이,아이스 밀크티,ICE,베이직라떼,False
+커피베이,아이스 버블밀크티,ICE,베이직라떼,False
+커피베이,아이스 우리12곡라떼,ICE,베이직라떼,True
+커피베이,아이스 초코밀크 버블라떼,ICE,베이직라떼,True
+커피베이,아이스 초콜릿 밀크,ICE,베이직라떼,True
+커피베이,아이스 타로버블티,ICE,베이직라떼,False
+커피베이,아이스 토피넛 라떼,ICE,베이직라떼,True
+커피베이,우리12곡라떼,HOT,베이직라떼,True
+커피베이,초코 버블 라떼,HOT,베이직라떼,True
+커피베이,초콜릿 밀크,HOT,베이직라떼,True
+커피베이,타로 버블티,HOT,베이직라떼,False
+커피베이,토피넛 라떼,HOT,베이직라떼,True
+커피베이,경산모과 레드뱅쇼 에이드,HOT,에이드,False
+커피베이,라임에이드,HOT,에이드,False
+커피베이,레몬 에이드,HOT,에이드,False
+커피베이,자몽 에이드,HOT,에이드,False
+커피베이,청포도 에이드,HOT,에이드,False
+커피베이,경산모과 레드뱅쇼,HOT,주스&티,False
+커피베이,그린 클렌즈,HOT,주스&티,False
+커피베이,녹차,HOT,주스&티,False
+커피베이,딸기 주스,HOT,주스&티,False
+커피베이,딸기바나나주스,HOT,주스&티,False
+커피베이,라임티,ICE,주스&티,False
+커피베이,레드클렌즈,HOT,주스&티,False
+커피베이,레몬 티,ICE,주스&티,False
+커피베이,루트클렌즈,HOT,주스&티,False
+커피베이,머스캣,HOT,주스&티,False
+커피베이,생강차,HOT,주스&티,False
+커피베이,시나몬 진저 티,HOT,주스&티,False
+커피베이,쌍화차,HOT,주스&티,False
+커피베이,아보카도바나나주스,HOT,주스&티,False
+커피베이,아보카도주스,HOT,주스&티,False
+커피베이,아쌈오렌지,HOT,주스&티,False
+커피베이,아이스 경산모과 레드뱅쇼,ICE,주스&티,False
+커피베이,아이스 생강차,ICE,주스&티,False
+커피베이,아이스 쌍화차,ICE,주스&티,False
+커피베이,아이스 오미자차,ICE,주스&티,False
+커피베이,아이스티,ICE,주스&티,False
+커피베이,얼그레이,HOT,주스&티,False
+커피베이,옐로우 클렌즈,HOT,주스&티,False
+커피베이,오미자차,HOT,주스&티,False
+커피베이,유러피안 후르츠,HOT,주스&티,False
+커피베이,유자차,HOT,주스&티,False
+커피베이,자몽 티,ICE,주스&티,False
+커피베이,캐모마일,HOT,주스&티,False
+커피베이,키위 주스,HOT,주스&티,False
+커피베이,토마토 주스,HOT,주스&티,False
+커피베이,페퍼민트,HOT,주스&티,False
+커피베이,허니 자몽 블랙티,HOT,주스&티,False
+커피베이,돌체 라떼,HOT,커피,True
+커피베이,바닐라 라떼,HOT,커피,True
+커피베이,아메리카노,HOT,커피,True
+커피베이,아이스 돌체 라떼,ICE,커피,True
+커피베이,아이스 바닐라 라떼,ICE,커피,True
+커피베이,아이스 아메리카노,ICE,커피,True
+커피베이,아이스 카라멜 마끼아또,ICE,커피,True
+커피베이,아이스 카페 라떼,ICE,커피,True
+커피베이,아이스 카페모카,ICE,커피,True
+커피베이,아이스 카푸치노,ICE,커피,True
+커피베이,아이스 헤이즐넛 라떼,ICE,커피,True
+커피베이,아인슈페너,HOT,커피,True
+커피베이,아포가토,HOT,커피,True
+커피베이,에스프레소,HOT,커피,True
+커피베이,옛날 커피,HOT,커피,True
+커피베이,카라멜 마끼아또,HOT,커피,True
+커피베이,카페 라떼,HOT,커피,True
+커피베이,카페모카,HOT,커피,True
+커피베이,카푸치노,HOT,커피,True
+커피베이,콘슈페너,HOT,커피,True
+커피베이,콜드브루 라떼,HOT,커피,True
+커피베이,콜드브루 바닐라 라떼,HOT,커피,True
+커피베이,콜드브루 아메리카노,HOT,커피,True
+커피베이,콜드브루 아이스크림 라떼,HOT,커피,True
+커피베이,헤이즐넛 라떼,HOT,커피,True
+커피베이,그린티 프라노베,HOT,프라노베&스무벨라,False
+커피베이,딸기 스무벨라,HOT,프라노베&스무벨라,False
+커피베이,딸기 요거 프라노베,HOT,프라노베&스무벨라,False
+커피베이,망고 스무벨라,HOT,프라노베&스무벨라,False
+커피베이,모카 프라노베,HOT,프라노베&스무벨라,False
+커피베이,베리베리 스무벨라,HOT,프라노베&스무벨라,False
+커피베이,블루베리 요거 프라노베,HOT,프라노베&스무벨라,False
+커피베이,에스프레소 프라노베,HOT,프라노베&스무벨라,True
+커피베이,자바칩 프라노베,HOT,프라노베&스무벨라,False
+커피베이,초코 프라노베,HOT,프라노베&스무벨라,False
+커피베이,카라멜 프라노베,HOT,프라노베&스무벨라,False
+커피베이,쿠키앤크림 프라노베,HOT,프라노베&스무벨라,False
+커피베이,키위 스무벨라,HOT,프라노베&스무벨라,False
+커피베이,토피넛 프라노베,HOT,프라노베&스무벨라,False
+커피베이,플레인 요거 프라노베,HOT,프라노베&스무벨라,False
+커피에반하다,검은콩라떼,BOTH,밀크베이스,True
+커피에반하다,고구마라떼,BOTH,밀크베이스,True
+커피에반하다,곤약 이천 쌀라떼,BOTH,밀크베이스,True
+커피에반하다,그린티라떼,BOTH,밀크베이스,True
+커피에반하다,냉 미숫가루,BOTH,밀크베이스,False
+커피에반하다,단호박 라떼,BOTH,밀크베이스,True
+커피에반하다,달고나 크림 밀크,BOTH,밀크베이스,False
+커피에반하다,딸기 두유 슈페너,BOTH,밀크베이스,False
+커피에반하다,딸기 라떼,BOTH,밀크베이스,True
+커피에반하다,딸기 망고 라떼,BOTH,밀크베이스,True
+커피에반하다,딸기 블랙 밀크티,BOTH,밀크베이스,False
+커피에반하다,딸기 슈크림 라떼,BOTH,밀크베이스,True
+커피에반하다,딸기 슈페너,BOTH,밀크베이스,False
+커피에반하다,망고젤리 바닐라 아이스크림,BOTH,밀크베이스,False
+커피에반하다,민트초코라떼,BOTH,밀크베이스,True
+커피에반하다,밀크티 라떼,BOTH,밀크베이스,True
+커피에반하다,바닐라볼 밀크티 라떼,BOTH,밀크베이스,True
+커피에반하다,밤라떼,BOTH,밀크베이스,True
+커피에반하다,블랙버블 밀크티,BOTH,밀크베이스,False
+커피에반하다,슈크림 라떼,BOTH,밀크베이스,True
+커피에반하다,스트로베리 그린티 치즈크림,BOTH,밀크베이스,False
+커피에반하다,스트로베리 라떼,BOTH,밀크베이스,True
+커피에반하다,스트로베리 바나나크림,BOTH,밀크베이스,False
+커피에반하다,아몬드코코넛라떼,BOTH,밀크베이스,True
+커피에반하다,이천 쌀라떼,BOTH,밀크베이스,True
+커피에반하다,자몽라떼,BOTH,밀크베이스,True
+커피에반하다,초당 옥수수 라떼,BOTH,밀크베이스,True
+커피에반하다,초코 라떼,BOTH,밀크베이스,True
+커피에반하다,초코 바나나 라떼,BOTH,밀크베이스,True
+커피에반하다,초코 베리 라떼,BOTH,밀크베이스,True
+커피에반하다,초코슈크림라떼,BOTH,밀크베이스,True
+커피에반하다,카라멜쿠키라떼,BOTH,밀크베이스,True
+커피에반하다,커반 밀크티,BOTH,밀크베이스,False
+커피에반하다,커피젤리 바닐라 아이스크림,BOTH,밀크베이스,False
+커피에반하다,코코 망고젤리 워터,BOTH,밀크베이스,False
+커피에반하다,코코 커피젤리 워터,BOTH,밀크베이스,False
+커피에반하다,크림에 바나나,BOTH,밀크베이스,False
+커피에반하다,타로버블 밀크티,BOTH,밀크베이스,False
+커피에반하다,헤이즐넛자바칩라떼,BOTH,밀크베이스,True
+커피에반하다,흑당 버블 라떼,BOTH,밀크베이스,True
+커피에반하다,흑임자 크림 밀크,BOTH,밀크베이스,False
+커피에반하다,곤약 이천 쌀 스무디,BOTH,스무디&프라페,False
+커피에반하다,구구쉑,BOTH,스무디&프라페,False
+커피에반하다,구구쉑 플러스,BOTH,스무디&프라페,False
+커피에반하다,그린티 프라페,BOTH,스무디&프라페,False
+커피에반하다,그샷추 프라페,BOTH,스무디&프라페,False
+커피에반하다,딸기 돼지쉑,BOTH,스무디&프라페,False
+커피에반하다,딸기 망고 스무디,BOTH,스무디&프라페,False
+커피에반하다,딸기 요거트 스무디,BOTH,스무디&프라페,False
+커피에반하다,딸기 프라페,BOTH,스무디&프라페,False
+커피에반하다,라이트 바닐라 쉐이크,BOTH,스무디&프라페,False
+커피에반하다,라이트 초코쉐이크,BOTH,스무디&프라페,False
+커피에반하다,레몬 요거트 스무디,BOTH,스무디&프라페,False
+커피에반하다,리얼 딸바 스무디,BOTH,스무디&프라페,False
+커피에반하다,리얼 망고스무디,BOTH,스무디&프라페,False
+커피에반하다,리얼 복숭아 스무디,BOTH,스무디&프라페,False
+커피에반하다,망고젤리 밀크쉐이크,BOTH,스무디&프라페,False
+커피에반하다,모카 프라페,BOTH,스무디&프라페,False
+커피에반하다,민트 초코 프라페,BOTH,스무디&프라페,False
+커피에반하다,블루베리 요거트 스무디,BOTH,스무디&프라페,False
+커피에반하다,비빙스무디,BOTH,스무디&프라페,False
+커피에반하다,살구자두 크러쉬,BOTH,스무디&프라페,False
+커피에반하다,슈크림 프레소 프라페,BOTH,스무디&프라페,False
+커피에반하다,스트로베리 크림스무디,BOTH,스무디&프라페,False
+커피에반하다,연유딸기쉑,BOTH,스무디&프라페,False
+커피에반하다,연유망고쉑,BOTH,스무디&프라페,False
+커피에반하다,요거트 스무디,BOTH,스무디&프라페,False
+커피에반하다,이천 쌀 블랙티 스무디,BOTH,스무디&프라페,False
+커피에반하다,자바칩 프라페,BOTH,스무디&프라페,False
+커피에반하다,체리츄,BOTH,스무디&프라페,False
+커피에반하다,초당 옥수수 스무디,BOTH,스무디&프라페,False
+커피에반하다,초코 바나나 프라페,BOTH,스무디&프라페,False
+커피에반하다,초코돼지쉑,BOTH,스무디&프라페,False
+커피에반하다,초코밀크티 스무디,BOTH,스무디&프라페,False
+커피에반하다,초코바나나 프로틴 쉐이크,BOTH,스무디&프라페,False
+커피에반하다,카라멜 프라페,BOTH,스무디&프라페,False
+커피에반하다,카라멜바나나프라페,BOTH,스무디&프라페,False
+커피에반하다,커피젤리 밀크쉐이크,BOTH,스무디&프라페,False
+커피에반하다,코코넛 그린티,BOTH,스무디&프라페,False
+커피에반하다,코코넛 더치,BOTH,스무디&프라페,False
+커피에반하다,코코넛 쿠앤크,BOTH,스무디&프라페,False
+커피에반하다,코코프레소,BOTH,스무디&프라페,False
+커피에반하다,쿠앤크 프라페,BOTH,스무디&프라페,False
+커피에반하다,퀸즈베리크러쉬,BOTH,스무디&프라페,False
+커피에반하다,파인레몬 링티 크러쉬,BOTH,스무디&프라페,False
+커피에반하다,파인애플 망고 스무디,BOTH,스무디&프라페,False
+커피에반하다,피치플라워 링티 크러쉬,BOTH,스무디&프라페,False
+커피에반하다,화이트 밀크티 스무디,BOTH,스무디&프라페,False
+커피에반하다,흑당 버블 스무디,BOTH,스무디&프라페,False
+커피에반하다,흑임자 프로틴 쉐이크,BOTH,스무디&프라페,False
+커피에반하다,히비스커스펀치슬러시,BOTH,스무디&프라페,False
+커피에반하다,그샷추,BOTH,에스프레소베이스,True
+커피에반하다,달고나 아인슈페너,BOTH,에스프레소베이스,True
+커피에반하다,달고나 크림커피,BOTH,에스프레소베이스,True
+커피에반하다,돌체라떼,BOTH,에스프레소베이스,True
+커피에반하다,마스카포네 이천 쌀 슈페너,BOTH,에스프레소베이스,True
+커피에반하다,모카바닐라볼,BOTH,에스프레소베이스,True
+커피에반하다,밀크티프레소,BOTH,에스프레소베이스,False
+커피에반하다,바닐라라떼,BOTH,에스프레소베이스,True
+커피에반하다,살인미숫,BOTH,에스프레소베이스,True
+커피에반하다,아메리카노,BOTH,에스프레소베이스,True
+커피에반하다,에스프레소,BOTH,에스프레소베이스,True
+커피에반하다,연유바닐라볼,BOTH,에스프레소베이스,True
+커피에반하다,카라멜 마끼아또,BOTH,에스프레소베이스,True
+커피에반하다,카라멜라떼,BOTH,에스프레소베이스,True
+커피에반하다,카라멜모카,BOTH,에스프레소베이스,True
+커피에반하다,카라멜바닐라볼,BOTH,에스프레소베이스,True
+커피에반하다,카페라떼,BOTH,에스프레소베이스,True
+커피에반하다,카페모카,BOTH,에스프레소베이스,True
+커피에반하다,카푸치노,BOTH,에스프레소베이스,True
+커피에반하다,커반 믹스커피,BOTH,에스프레소베이스,True
+커피에반하다,커피에 바나나,BOTH,에스프레소베이스,False
+커피에반하다,콜드브루,BOTH,에스프레소베이스,True
+커피에반하다,콜드브루라떼,BOTH,에스프레소베이스,True
+커피에반하다,토피넛라떼,BOTH,에스프레소베이스,True
+커피에반하다,화이트 아메리카노,BOTH,에스프레소베이스,True
+커피에반하다,흑임자크림라떼,BOTH,에스프레소베이스,True
+커피에반하다,건강주스 대추꿀잠,BOTH,에이드&주스,False
+커피에반하다,건강주스 레몬피부,BOTH,에이드&주스,False
+커피에반하다,건강주스 생강면역,BOTH,에이드&주스,False
+커피에반하다,건강주스 유자활력,BOTH,에이드&주스,False
+커피에반하다,건강주스 자몽미모,BOTH,에이드&주스,False
+커피에반하다,깔라만시 에이드,BOTH,에이드&주스,False
+커피에반하다,놀라운망고,BOTH,에이드&주스,False
+커피에반하다,놀라운청포도,BOTH,에이드&주스,False
+커피에반하다,딸기 주스,BOTH,에이드&주스,False
+커피에반하다,라임민트에이드,BOTH,에이드&주스,False
+커피에반하다,리얼 레몬에이드,BOTH,에이드&주스,False
+커피에반하다,리얼 복숭아에이드,BOTH,에이드&주스,False
+커피에반하다,리얼 자몽에이드,BOTH,에이드&주스,False
+커피에반하다,리얼 청포도에이드,BOTH,에이드&주스,False
+커피에반하다,리얼수박주스,BOTH,에이드&주스,False
+커피에반하다,블루레몬에이드,BOTH,에이드&주스,False
+커피에반하다,블루파인에이드,BOTH,에이드&주스,False
+커피에반하다,비타민 주스 딸기,BOTH,에이드&주스,False
+커피에반하다,비타민 주스 파인애플,BOTH,에이드&주스,False
+커피에반하다,비타민주스 골드키위,BOTH,에이드&주스,False
+커피에반하다,비타민주스 청포도,BOTH,에이드&주스,False
+커피에반하다,살구 자두 히비스 에이드,BOTH,에이드&주스,False
+커피에반하다,스파클링 망고,BOTH,에이드&주스,False
+커피에반하다,스파클링 베리,BOTH,에이드&주스,False
+커피에반하다,한라봉 에이드,BOTH,에이드&주스,False
+커피에반하다,히비스엘더에이드,BOTH,에이드&주스,False
+커피에반하다,Glow Tea 구절초,BOTH,티,False
+커피에반하다,Glow Tea 국화,BOTH,티,False
+커피에반하다,구절초차,BOTH,티,False
+커피에반하다,국화꽃차,BOTH,티,False
+커피에반하다,그린티,BOTH,티,False
+커피에반하다,깔라만시 티,BOTH,티,False
+커피에반하다,꿀과실차 대추,BOTH,티,False
+커피에반하다,꿀과실차 레몬,BOTH,티,False
+커피에반하다,꿀과실차 모과,BOTH,티,False
+커피에반하다,꿀과실차 생강,BOTH,티,False
+커피에반하다,꿀과실차 유자,BOTH,티,False
+커피에반하다,꿀과실차 자몽,BOTH,티,False
+커피에반하다,딸기 플래시드 자스민,BOTH,티,False
+커피에반하다,딸기티,BOTH,티,False
+커피에반하다,레몬 얼그레이 티,BOTH,티,False
+커피에반하다,루이보스오렌지,BOTH,티,False
+커피에반하다,살구자두 플래시드 티 (루이보스 오렌지),BOTH,티,False
+커피에반하다,살구자두 플래시드 티 (얼그레이 블랜딩),BOTH,티,False
+커피에반하다,살구자두 플래시드 티 (카모마일 블랜딩),BOTH,티,False
+커피에반하다,시트러스 티 뱅쇼,BOTH,티,False
+커피에반하다,쌍화차,BOTH,티,False
+커피에반하다,아망추,BOTH,티,False
+커피에반하다,아샷추,BOTH,티,False
+커피에반하다,아이스티 레몬,BOTH,티,False
+커피에반하다,아이스티 복숭아,BOTH,티,False
+커피에반하다,아파추,BOTH,티,False
+커피에반하다,얼그레이,BOTH,티,False
+커피에반하다,얼그레이 레몬 뱅쇼,BOTH,티,False
+커피에반하다,오렌지 자몽 블랙티,BOTH,티,False
+커피에반하다,유자 플래시드 루이보스,BOTH,티,False
+커피에반하다,유자 플래시드 얼그레이,BOTH,티,False
+커피에반하다,유자 플래시드 카모마일,BOTH,티,False
+커피에반하다,카페오르조,BOTH,티,False
+커피에반하다,캐모마일,BOTH,티,False
+커피에반하다,퀸즈플라워 티,BOTH,티,False
+커피에반하다,파인 플래시드 블루민트,BOTH,티,False
+커피에반하다,페퍼민트,BOTH,티,False
+커피에반하다,히비스커스엘더티,BOTH,티,False
+컴포즈커피,HOT 고구마라떼,HOT,논커피 라떼,False
+컴포즈커피,HOT 곡물라떼,HOT,논커피 라떼,False
+컴포즈커피,HOT 그린티라떼,HOT,논커피 라떼,False
+컴포즈커피,HOT 더블초코라떼,HOT,논커피 라떼,False
+컴포즈커피,HOT 밀크티,HOT,논커피 라떼,False
+컴포즈커피,HOT 쿠키초코라떼,HOT,논커피 라떼,False
+컴포즈커피,ICE 고구마라떼,ICE,논커피 라떼,False
+컴포즈커피,ICE 곡물라떼,ICE,논커피 라떼,False
+컴포즈커피,ICE 그린티라떼,ICE,논커피 라떼,False
+컴포즈커피,ICE 더블초코라떼,ICE,논커피 라떼,False
+컴포즈커피,ICE 밀크티,ICE,논커피 라떼,False
+컴포즈커피,ICE 쿠키초코라떼,ICE,논커피 라떼,False
+컴포즈커피,딸기라떼,BOTH,논커피 라떼,False
+컴포즈커피,딸기생초콜릿라떼,BOTH,논커피 라떼,False
+컴포즈커피,망고라떼,BOTH,논커피 라떼,False
+컴포즈커피,블루베리라떼,BOTH,논커피 라떼,False
+컴포즈커피,생초콜릿라떼,BOTH,논커피 라떼,False
+컴포즈커피,흑당밀크(우유),BOTH,논커피 라떼,False
+컴포즈커피,딸기 모찌 밀크쉐이크,ICE,밀크쉐이크,False
+컴포즈커피,인절미컵빙,ICE,밀크쉐이크,False
+컴포즈커피,캔디소다 밀크쉐이크,ICE,밀크쉐이크,False
+컴포즈커피,커피밀크쉐이크,ICE,밀크쉐이크,False
+컴포즈커피,쿠키 밀크쉐이크,ICE,밀크쉐이크,False
+컴포즈커피,팥절미 밀크쉐이크,ICE,밀크쉐이크,False
+컴포즈커피,플레인 밀크쉐이크,ICE,밀크쉐이크,False
+컴포즈커피,HOT THE CITY 올데이오트,HOT,시즌한정,False
+컴포즈커피,HOT 꿀 아메리카노,HOT,시즌한정,True
+컴포즈커피,HOT 매실차,HOT,시즌한정,False
+컴포즈커피,HOT 부여 밤 라떼,HOT,시즌한정,True
+컴포즈커피,HOT 부여 밤 생초콜릿 라떼,HOT,시즌한정,True
+컴포즈커피,HOT 쌍화차,HOT,시즌한정,False
+컴포즈커피,HOT 어센틱 말차 라떼,HOT,시즌한정,True
+컴포즈커피,HOT 청귤생강차,HOT,시즌한정,False
+컴포즈커피,ICE THE CITY 생초콜릿라떼,ICE,시즌한정,True
+컴포즈커피,ICE THE CITY 올데이오트,ICE,시즌한정,False
+컴포즈커피,ICE 꿀 아메리카노,ICE,시즌한정,True
+컴포즈커피,ICE 매샷추,ICE,시즌한정,False
+컴포즈커피,ICE 매실차,ICE,시즌한정,False
+컴포즈커피,ICE 부여 밤 라떼,ICE,시즌한정,True
+컴포즈커피,ICE 부여 밤 생초콜릿 라떼,ICE,시즌한정,True
+컴포즈커피,ICE 어센틱 말차 라떼,ICE,시즌한정,True
+컴포즈커피,ICE 에어레이팅 꿀 말차,ICE,시즌한정,False
+컴포즈커피,ICE 에어리 아메리카노,ICE,시즌한정,True
+컴포즈커피,ICE 컴포즈 믹스커피,ICE,시즌한정,False
+컴포즈커피,ICE 크림 말차 라떼,ICE,시즌한정,True
+컴포즈커피,넛츠&브라우니 큐브 쿠키,BOTH,시즌한정,False
+컴포즈커피,대추차,BOTH,시즌한정,False
+컴포즈커피,대파크림 햄샌드위치,BOTH,시즌한정,False
+컴포즈커피,딸기 솔티카라멜 프라페,ICE,시즌한정,False
+컴포즈커피,딸기 치즈케이크 스무디,ICE,시즌한정,False
+컴포즈커피,말차샷 유자 스무디,ICE,시즌한정,False
+컴포즈커피,베리펄 딸기라떼,BOTH,시즌한정,True
+컴포즈커피,베리펄 딸기주스,ICE,시즌한정,False
+컴포즈커피,쫄깃 분모자 떡볶이,BOTH,시즌한정,False
+컴포즈커피,초코요거스무디,ICE,시즌한정,False
+컴포즈커피,초코칩 블랙&화이트 쿠키,BOTH,시즌한정,False
+컴포즈커피,치폴레 햄샌드위치,BOTH,시즌한정,False
+컴포즈커피,화이트 초코칩&마카다미아 쿠키,BOTH,시즌한정,False
+컴포즈커피,국내산딸기주스,ICE,에이드 · 주스,False
+컴포즈커피,레몬에이드,ICE,에이드 · 주스,False
+컴포즈커피,망고에이드,ICE,에이드 · 주스,False
+컴포즈커피,복숭아주스,ICE,에이드 · 주스,False
+컴포즈커피,블루레몬 스페셜에이드,ICE,에이드 · 주스,False
+컴포즈커피,샤인머스캣케일주스,ICE,에이드 · 주스,False
+컴포즈커피,오렌지당근주스,ICE,에이드 · 주스,False
+컴포즈커피,유자에이드,ICE,에이드 · 주스,False
+컴포즈커피,자몽에이드,ICE,에이드 · 주스,False
+컴포즈커피,청포도 스페셜에이드,ICE,에이드 · 주스,False
+컴포즈커피,키위주스,ICE,에이드 · 주스,False
+컴포즈커피,패션후르츠 스페셜에이드,ICE,에이드 · 주스,False
+컴포즈커피,HOT 돌체라떼,HOT,커피 · 더치,True
+컴포즈커피,HOT 디카페인 아메리카노,HOT,커피 · 더치,True
+컴포즈커피,HOT 디카페인 콜드브루,HOT,커피 · 더치,True
+컴포즈커피,HOT 디카페인 콜드브루라떼,HOT,커피 · 더치,True
+컴포즈커피,HOT 바닐라라떼,HOT,커피 · 더치,True
+컴포즈커피,HOT 아메리카노,HOT,커피 · 더치,True
+컴포즈커피,HOT 카라멜마끼아또,HOT,커피 · 더치,True
+컴포즈커피,HOT 카페라떼,HOT,커피 · 더치,True
+컴포즈커피,HOT 카페모카,HOT,커피 · 더치,False
+컴포즈커피,HOT 콜드브루,HOT,커피 · 더치,True
+컴포즈커피,HOT 콜드브루라떼,HOT,커피 · 더치,True
+컴포즈커피,HOT 헤이즐넛라떼,HOT,커피 · 더치,True
+컴포즈커피,ICE 돌체라떼,ICE,커피 · 더치,True
+컴포즈커피,ICE 디카페인 아메리카노,ICE,커피 · 더치,True
+컴포즈커피,ICE 디카페인 콜드브루,ICE,커피 · 더치,True
+컴포즈커피,ICE 디카페인 콜드브루라떼,ICE,커피 · 더치,True
+컴포즈커피,ICE 바닐라라떼,ICE,커피 · 더치,True
+컴포즈커피,ICE 아메리카노,ICE,커피 · 더치,True
+컴포즈커피,ICE 카라멜마끼아또,ICE,커피 · 더치,True
+컴포즈커피,ICE 카페라떼,ICE,커피 · 더치,True
+컴포즈커피,ICE 카페모카,ICE,커피 · 더치,False
+컴포즈커피,ICE 콜드브루(에티오피아),ICE,커피 · 더치,True
+컴포즈커피,ICE 콜드브루라떼,ICE,커피 · 더치,True
+컴포즈커피,ICE 헤이즐넛 라떼,ICE,커피 · 더치,True
+컴포즈커피,달고나라떼,BOTH,커피 · 더치,True
+컴포즈커피,빅포즈 아메리카노,BOTH,커피 · 더치,True
+컴포즈커피,아인슈페너,BOTH,커피 · 더치,False
+컴포즈커피,아인슈페너라떼,BOTH,커피 · 더치,True
+컴포즈커피,에스프레소,BOTH,커피 · 더치,True
+컴포즈커피,카푸치노,BOTH,커피 · 더치,True
+컴포즈커피,흑당카페라떼,BOTH,커피 · 더치,True
+컴포즈커피,HOT 레몬티,HOT,티,False
+컴포즈커피,HOT 로즈마리,HOT,티,False
+컴포즈커피,HOT 블랙퍼스트,HOT,티,False
+컴포즈커피,HOT 아이스티,ICE,티,False
+컴포즈커피,HOT 얼그레이,HOT,티,False
+컴포즈커피,HOT 유자티,HOT,티,False
+컴포즈커피,HOT 자몽티,HOT,티,False
+컴포즈커피,HOT 자몽허니블랙티,HOT,티,False
+컴포즈커피,HOT 캐모마일,HOT,티,False
+컴포즈커피,HOT 페퍼민트,HOT,티,False
+컴포즈커피,ICE 레몬티,ICE,티,False
+컴포즈커피,ICE 로즈마리,ICE,티,False
+컴포즈커피,ICE 블랙퍼스트,ICE,티,False
+컴포즈커피,ICE 빅포즈 아이스티,ICE,티,False
+컴포즈커피,ICE 아이스티,ICE,티,False
+컴포즈커피,ICE 얼그레이,ICE,티,False
+컴포즈커피,ICE 유자티,ICE,티,False
+컴포즈커피,ICE 자몽티,ICE,티,False
+컴포즈커피,ICE 자몽허니블랙티,ICE,티,False
+컴포즈커피,ICE 캐모마일,ICE,티,False
+컴포즈커피,ICE 페퍼민트,ICE,티,False
+컴포즈커피,디카페인 아이스티,ICE,티,False
+컴포즈커피,디카페인 제로슈가 제로칼로리 아이스티,ICE,티,False
+컴포즈커피,빅포즈 디카페인 아이스티,ICE,티,False
+컴포즈커피,빅포즈 디카페인 제로슈가 제로칼로리 아이스티,ICE,티,False
+컴포즈커피,빅포즈 아망추,BOTH,티,False
+컴포즈커피,빅포즈 아샷추,BOTH,티,False
+컴포즈커피,빅포즈 제로슈가 제로칼로리 아이스티,ICE,티,False
+컴포즈커피,아망추,BOTH,티,False
+컴포즈커피,아샷추,BOTH,티,False
+컴포즈커피,제로슈가 제로칼로리 아이스티,ICE,티,False
+컴포즈커피,그린티프라페,ICE,프라페 · 스무디,False
+컴포즈커피,딸기스무디,ICE,프라페 · 스무디,False
+컴포즈커피,딸기요거트스무디,ICE,프라페 · 스무디,False
+컴포즈커피,리얼초코자바칩프라페,ICE,프라페 · 스무디,False
+컴포즈커피,망고스무디,ICE,프라페 · 스무디,False
+컴포즈커피,망고요거트스무디,ICE,프라페 · 스무디,False
+컴포즈커피,모카자바칩프라페,ICE,프라페 · 스무디,False
+컴포즈커피,블루베리스무디,ICE,프라페 · 스무디,False
+컴포즈커피,블루베리요거트스무디,ICE,프라페 · 스무디,False
+컴포즈커피,유자스무디,ICE,프라페 · 스무디,False
+컴포즈커피,쿠키초코프라페,ICE,프라페 · 스무디,False
+컴포즈커피,플레인요거트스무디,ICE,프라페 · 스무디,False
+탐앤탐스,슈크림 슈페너,BOTH,AMERICANO & LATTE,True
+탐앤탐스,아이스 바닐라 라떼,ICE,AMERICANO & LATTE,True
+탐앤탐스,아이스 아메리카노,ICE,AMERICANO & LATTE,True
+탐앤탐스,아이스 오리엔탈 라떼,ICE,AMERICANO & LATTE,True
+탐앤탐스,아이스 카라멜 마끼아또,ICE,AMERICANO & LATTE,True
+탐앤탐스,아이스 카페라떼,ICE,AMERICANO & LATTE,True
+탐앤탐스,아이스 카페모카,ICE,AMERICANO & LATTE,True
+탐앤탐스,아이스 카푸치노,ICE,AMERICANO & LATTE,True
+탐앤탐스,아이스 헤이즐넛 라떼,ICE,AMERICANO & LATTE,True
+탐앤탐스,코코넛 라떼,BOTH,AMERICANO & LATTE,True
+탐앤탐스,판단크림 코코넛 커피,BOTH,AMERICANO & LATTE,True
+탐앤탐스,디카페인 콜드브루,COLD_BREW,COLDBREW,True
+탐앤탐스,디카페인 콜드브루 라떼,COLD_BREW,COLDBREW,True
+탐앤탐스,오트 디카페인 콜드브루,COLD_BREW,COLDBREW,True
+탐앤탐스,오트 콜드브루,COLD_BREW,COLDBREW,True
+탐앤탐스,콜드브루,COLD_BREW,COLDBREW,True
+탐앤탐스,콜드브루 라떼,COLD_BREW,COLDBREW,True
+탐앤탐스,핫 콜드브루 라떼,COLD_BREW,COLDBREW,True
+탐앤탐스,에스프레소,BOTH,ESPRESSO,True
+탐앤탐스,에스프레소 - 마끼아또,BOTH,ESPRESSO,True
+탐앤탐스,에스프레소 - 콘파냐,BOTH,ESPRESSO,True
+탐앤탐스,그린티 아이스크림,ICE,LATTE & CHOCOLATE,False
+탐앤탐스,딸기 가득 라떼,BOTH,LATTE & CHOCOLATE,True
+탐앤탐스,딸기 슈크림 탐앤치노,BOTH,LATTE & CHOCOLATE,False
+탐앤탐스,딸기 피치 에이드,ICE,LATTE & CHOCOLATE,False
+탐앤탐스,말차 라떼,BOTH,LATTE & CHOCOLATE,True
+탐앤탐스,아이스 군고구마라떼,ICE,LATTE & CHOCOLATE,True
+탐앤탐스,아이스 제주 그린라떼,ICE,LATTE & CHOCOLATE,True
+탐앤탐스,아이스 제주 허니 그린라떼,ICE,LATTE & CHOCOLATE,True
+탐앤탐스,코코넛 밀크,BOTH,LATTE & CHOCOLATE,True
+탐앤탐스,판단 코코넛 라떼,BOTH,LATTE & CHOCOLATE,True
+탐앤탐스,싱글오리진 디카페인,BOTH,SINGLE ORIGIN,True
+탐앤탐스,싱글오리진 콜롬비아,BOTH,SINGLE ORIGIN,True
+탐앤탐스,아이스 싱글오리진 디카페인,ICE,SINGLE ORIGIN,True
+탐앤탐스,아이스 싱글오리진 콜롬비아,ICE,SINGLE ORIGIN,True
+탐앤탐스,블루 레몬 슬러시,BOTH,SLUSH,False
+탐앤탐스,딸기 스무디,ICE,SMOOTHIE,False
+탐앤탐스,딸기 요거트 스무디,ICE,SMOOTHIE,False
+탐앤탐스,망고 스무디,ICE,SMOOTHIE,False
+탐앤탐스,망고 요거트 스무디,ICE,SMOOTHIE,False
+탐앤탐스,멜론 스무디,ICE,SMOOTHIE,False
+탐앤탐스,블루베리 스무디,ICE,SMOOTHIE,False
+탐앤탐스,블루베리 요거트 스무디,ICE,SMOOTHIE,False
+탐앤탐스,플레인 요거트 스무디,ICE,SMOOTHIE,False
+탐앤탐스,플레인 요거트 아이스크림 스무디,ICE,SMOOTHIE,False
+탐앤탐스,배생강차,BOTH,TEA & ADE & JUICE,False
+탐앤탐스,쌍화차,BOTH,TEA & ADE & JUICE,False
+탐앤탐스,아이스 배생강차,ICE,TEA & ADE & JUICE,False
+탐앤탐스,아이스 쌍화차,ICE,TEA & ADE & JUICE,False
+탐앤탐스,아이스 핑크 레몬 히비스커스 티,ICE,TEA & ADE & JUICE,False
+탐앤탐스,아이스 허니 자몽 얼그레이 티,ICE,TEA & ADE & JUICE,False
+탐앤탐스,아이스 히비스커스 티,ICE,TEA & ADE & JUICE,False
+탐앤탐스,청도홍시 시나몬주스,ICE,TEA & ADE & JUICE,False
+탐앤탐스,청도홍시 주스,ICE,TEA & ADE & JUICE,False
+탐앤탐스,핑크 레몬 히비스커스 티,BOTH,TEA & ADE & JUICE,False
+탐앤탐스,허니 자몽 얼그레이 티,BOTH,TEA & ADE & JUICE,False
+탐앤탐스,히비스커스 티,BOTH,TEA & ADE & JUICE,False
+탐앤탐스,바닐라 탐앤치노,BOTH,TOMNCHINO & COFFEE,True
+탐앤탐스,판단 코코넛 커피스무디,ICE,TOMNCHINO & COFFEE,False
+탐앤탐스,그린민트 초코 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+탐앤탐스,그린티 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+탐앤탐스,말차 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+탐앤탐스,미숫크림 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+탐앤탐스,엑스트라 자바칩 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+탐앤탐스,자바칩 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+탐앤탐스,제주 그린티 초코칩 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+탐앤탐스,쿠키앤크림 탐앤치노,BOTH,TOMNCHINO & NON COFFEE,False
+텐퍼센트커피,2022 여름 과일 3종,BOTH,신메뉴,False
+텐퍼센트커피,2023 겨울시즌음료 2종,BOTH,신메뉴,False
+텐퍼센트커피,2023 겨울시즌음료 2종-크리스마스,BOTH,신메뉴,False
+텐퍼센트커피,2023 밀크카라멜라떼,BOTH,신메뉴,True
+텐퍼센트커피,2023 텐라떼,BOTH,신메뉴,True
+텐퍼센트커피,2023여름3종,BOTH,신메뉴,False
+텐퍼센트커피,2024 가을시즌,BOTH,신메뉴,False
+텐퍼센트커피,2024 겨울시즌,BOTH,신메뉴,False
+텐퍼센트커피,2024 비타민주스 2종,ICE,신메뉴,False
+텐퍼센트커피,2024 생딸기 2종,BOTH,신메뉴,False
+텐퍼센트커피,2024 신규 티 3종,BOTH,신메뉴,False
+텐퍼센트커피,2024 여름시즌,BOTH,신메뉴,False
+텐퍼센트커피,2024 초콜릿 시즌,BOTH,신메뉴,False
+텐퍼센트커피,2025 4월시즌,BOTH,신메뉴,False
+텐퍼센트커피,2025 과채주스,ICE,신메뉴,False
+텐퍼센트커피,2025 봄시즌 딸기,BOTH,신메뉴,False
+텐퍼센트커피,2025 여름시즌,BOTH,신메뉴,False
+텐퍼센트커피,2026 디카페인,BOTH,신메뉴,True
+텐퍼센트커피,고흥단호박3종,BOTH,신메뉴,False
+텐퍼센트커피,고흥스윗펌킨라떼,BOTH,신메뉴,True
+텐퍼센트커피,과일에이드 3종,ICE,신메뉴,False
+텐퍼센트커피,달고나카페라떼,BOTH,신메뉴,True
+텐퍼센트커피,돌체콜드브루&디카페인 콜드브루,COLD_BREW,신메뉴,True
+텐퍼센트커피,말차 6종,BOTH,신메뉴,False
+텐퍼센트커피,미니사이즈 4종,BOTH,신메뉴,False
+텐퍼센트커피,밀크카라멜라떼,BOTH,신메뉴,True
+텐퍼센트커피,바닐라커피프라페,ICE,신메뉴,False
+텐퍼센트커피,버블라떼 4종,BOTH,신메뉴,True
+텐퍼센트커피,봄가득 딸기 4종,BOTH,신메뉴,False
+텐퍼센트커피,블랙티 2종,BOTH,신메뉴,False
+텐퍼센트커피,솔티드밀크카라멜과 토닉커피,BOTH,신메뉴,False
+텐퍼센트커피,슈톨렌라떼&캐모마일 릴렉싱,BOTH,신메뉴,True
+텐퍼센트커피,스무디 3종,ICE,신메뉴,False
+텐퍼센트커피,스트로베리라떼,BOTH,신메뉴,True
+텐퍼센트커피,시그니처 라떼,BOTH,신메뉴,True
+텐퍼센트커피,시트러스티 4종,BOTH,신메뉴,False
+텐퍼센트커피,아보카도바나나 스무디,ICE,신메뉴,False
+텐퍼센트커피,우리곡물라떼,BOTH,신메뉴,True
+텐퍼센트커피,제로 3종,BOTH,신메뉴,False
+텐퍼센트커피,제로라이트 8종,BOTH,신메뉴,False
+텐퍼센트커피,젤라또 4종,BOTH,신메뉴,False
+텐퍼센트커피,커피 6종,BOTH,신메뉴,False
+텐퍼센트커피,크림치즈x시그니처음료,BOTH,신메뉴,False
+텐퍼센트커피,토피넛라떼,BOTH,신메뉴,True
+텐퍼센트커피,티 8종,BOTH,신메뉴,False
+텐퍼센트커피,티 블렌드 3종,BOTH,신메뉴,False
+텐퍼센트커피,파르페 포함 8종,BOTH,신메뉴,False
+텐퍼센트커피,팝핑민트초코프라페,ICE,신메뉴,False
+텐퍼센트커피,고흥 유자차,BOTH,음료/티,False
+텐퍼센트커피,딥앤베리 파르페,BOTH,음료/티,False
+텐퍼센트커피,딥앤초코 파르페,BOTH,음료/티,False
+텐퍼센트커피,딥앤커피 파르페,BOTH,음료/티,False
+텐퍼센트커피,딸기 요거트 프레치노,BOTH,음료/티,False
+텐퍼센트커피,딸기 코코넛 사고라떼,BOTH,음료/티,False
+텐퍼센트커피,라이트 그린텐피즈,BOTH,음료/티,False
+텐퍼센트커피,라이트 애플사이다비니거,BOTH,음료/티,False
+텐퍼센트커피,라이트 핑크텐피즈,BOTH,음료/티,False
+텐퍼센트커피,레몬에이드,ICE,음료/티,False
+텐퍼센트커피,로얄밀크티,BOTH,음료/티,False
+텐퍼센트커피,리얼딸기라떼,BOTH,음료/티,False
+텐퍼센트커피,리얼초코라떼,BOTH,음료/티,False
+텐퍼센트커피,말차 치즈폼 프레치노,BOTH,음료/티,False
+텐퍼센트커피,말차딸기크림라떼,BOTH,음료/티,False
+텐퍼센트커피,말차초코라떼,BOTH,음료/티,False
+텐퍼센트커피,망고 요거트 프레치노,BOTH,음료/티,False
+텐퍼센트커피,망고 코코넛 사고라떼,BOTH,음료/티,False
+텐퍼센트커피,망고딸기 프레치노,BOTH,음료/티,False
+텐퍼센트커피,블랙자몽티,BOTH,음료/티,False
+텐퍼센트커피,블루베리 요거트 프레치노,BOTH,음료/티,False
+텐퍼센트커피,시트러스그린,BOTH,음료/티,False
+텐퍼센트커피,아보카도바나나 프레치노,BOTH,음료/티,False
+텐퍼센트커피,애플망고 프레치노,BOTH,음료/티,False
+텐퍼센트커피,얼그레이프렌치블루,BOTH,음료/티,False
+텐퍼센트커피,오르조브루,BOTH,음료/티,False
+텐퍼센트커피,우바 피치아이스티,ICE,음료/티,False
+텐퍼센트커피,유기농제주녹차,BOTH,음료/티,False
+텐퍼센트커피,잉글리쉬브렉퍼스트,BOTH,음료/티,False
+텐퍼센트커피,자몽에이드,ICE,음료/티,False
+텐퍼센트커피,제로 망고아이스티,ICE,음료/티,False
+텐퍼센트커피,제로 사과아이스티,ICE,음료/티,False
+텐퍼센트커피,제로 체리콕,BOTH,음료/티,False
+텐퍼센트커피,제로 피치아이스티,ICE,음료/티,False
+텐퍼센트커피,진한 말차라떼,BOTH,음료/티,False
+텐퍼센트커피,진한 말차슈페너,BOTH,음료/티,False
+텐퍼센트커피,진한곡물라떼,BOTH,음료/티,False
+텐퍼센트커피,초콜릿 크런치 치즈폼 프레치노,BOTH,음료/티,False
+텐퍼센트커피,캐모마일메들리,BOTH,음료/티,False
+텐퍼센트커피,쿠키 치즈폼 프레치노,BOTH,음료/티,False
+텐퍼센트커피,페퍼민트,BOTH,음료/티,False
+텐퍼센트커피,플레인 요거트 프레치노,BOTH,음료/티,False
+텐퍼센트커피,허니레몬티,BOTH,음료/티,False
+텐퍼센트커피,허니자몽티,BOTH,음료/티,False
+텐퍼센트커피,히비스커스베리,BOTH,음료/티,False
+텐퍼센트커피,더티땅콩라떼,BOTH,커피,True
+텐퍼센트커피,돌체라떼,BOTH,커피,True
+텐퍼센트커피,돌체콜드브루라떼,COLD_BREW,커피,True
+텐퍼센트커피,바닐라빈라떼,BOTH,커피,True
+텐퍼센트커피,솔티드밀크카라멜,BOTH,커피,False
+텐퍼센트커피,쇼콜라프레소,BOTH,커피,True
+텐퍼센트커피,아메리카노,BOTH,커피,True
+텐퍼센트커피,아인슈페너,BOTH,커피,True
+텐퍼센트커피,에스프레소,BOTH,커피,True
+텐퍼센트커피,진한 말차카페라떼,BOTH,커피,True
+텐퍼센트커피,카페라떼,BOTH,커피,True
+텐퍼센트커피,카페모카,BOTH,커피,True
+텐퍼센트커피,콜드브루,COLD_BREW,커피,True
+텐퍼센트커피,콜드브루라떼,COLD_BREW,커피,True
+텐퍼센트커피,텐라떼,BOTH,커피,True
+텐퍼센트커피,플랫화이트,BOTH,커피,True
+투썸플레이스,구운 밤 라떼,BOTH,음료,True
+투썸플레이스,꿀 고구마 라떼,BOTH,음료,True
+투썸플레이스,딸기 듬뿍 라떼,BOTH,음료,True
+투썸플레이스,딸기 밀크 쉐이크,BOTH,음료,False
+투썸플레이스,딸기 바나나 쉐이크,BOTH,음료,False
+투썸플레이스,로얄 밀크티 쉐이크,BOTH,음료,False
+투썸플레이스,민트 초코프라페,ICE,음료,False
+투썸플레이스,바닐라 밀크 쉐이크,BOTH,음료,False
+투썸플레이스,복숭아에이드,ICE,음료,False
+투썸플레이스,블루베리 요거트 드링크,BOTH,음료,False
+투썸플레이스,생딸기 듬뿍 주스,ICE,음료,False
+투썸플레이스,샤인머스캣 청포도에이드,ICE,음료,False
+투썸플레이스,스트로베리 초콜릿 라떼,BOTH,음료,True
+투썸플레이스,스트로베리 피치프라페,ICE,음료,False
+투썸플레이스,애플망고 주스,ICE,음료,False
+투썸플레이스,오렌지 자몽 주스,ICE,음료,False
+투썸플레이스,오렌지에이드,ICE,음료,False
+투썸플레이스,요거트프라페,ICE,음료,False
+투썸플레이스,우리 대추 수정과,BOTH,음료,False
+투썸플레이스,우리 쌀 식혜,BOTH,음료,False
+투썸플레이스,자몽에이드,ICE,음료,False
+투썸플레이스,제주 한라봉 주스,ICE,음료,False
+투썸플레이스,초콜릿 라떼,BOTH,음료,True
+투썸플레이스,커피 쿠키 프라페,ICE,음료,False
+투썸플레이스,쿠키 쉐이크,BOTH,음료,False
+투썸플레이스,키위 바나나 주스,ICE,음료,False
+투썸플레이스,피스타치오 초콜릿 젤라또 쉐이크,BOTH,음료,False
+투썸플레이스,허니 레몬 에이드,ICE,음료,False
+투썸플레이스,현미 미숫가루,BOTH,음료,False
+투썸플레이스,달고나 라떼,BOTH,커피,True
+투썸플레이스,디카페인 콜드브루,COLD_BREW,커피,True
+투썸플레이스,디카페인 콜드브루 라떼,COLD_BREW,커피,True
+투썸플레이스,롱 블랙,BOTH,커피,True
+투썸플레이스,민트 아샷추,BOTH,커피,True
+투썸플레이스,바나나 샷 라떼,BOTH,커피,True
+투썸플레이스,바나나 샷 아메리카노,BOTH,커피,True
+투썸플레이스,바닐라 라떼,BOTH,커피,True
+투썸플레이스,바닐라빈 라떼,BOTH,커피,True
+투썸플레이스,바닐라빈 콜드브루 라떼,COLD_BREW,커피,True
+투썸플레이스,생크림 말차 카페 라떼,BOTH,커피,True
+투썸플레이스,생크림 아메리카노,BOTH,커피,True
+투썸플레이스,생크림 카페 라떼,BOTH,커피,True
+투썸플레이스,숏 라떼,BOTH,커피,True
+투썸플레이스,스페니쉬 연유 라떼,BOTH,커피,True
+투썸플레이스,아메리카노,BOTH,커피,True
+투썸플레이스,애플 아샷추,BOTH,커피,True
+투썸플레이스,에스프레소,BOTH,커피,True
+투썸플레이스,오트 화이트 라떼,BOTH,커피,True
+투썸플레이스,카라멜 마키아또,BOTH,커피,True
+투썸플레이스,카페 라떼,BOTH,커피,True
+투썸플레이스,카페 모카,BOTH,커피,True
+투썸플레이스,카푸치노,BOTH,커피,True
+투썸플레이스,콜드브루,COLD_BREW,커피,True
+투썸플레이스,콜드브루 라떼,COLD_BREW,커피,True
+투썸플레이스,피넛 헤이즐넛 라떼,BOTH,커피,True
+투썸플레이스,피스타치오 초콜릿 모카,BOTH,커피,True
+투썸플레이스,피치 아샷추,BOTH,커피,False
+투썸플레이스,ice버블 그린티 라떼,ICE,티/티라떼,False
+투썸플레이스,그나와 민트,BOTH,티/티라떼,False
+투썸플레이스,그린티 라떼,BOTH,티/티라떼,False
+투썸플레이스,로얄 밀크티,BOTH,티/티라떼,False
+투썸플레이스,루이보스 시트러스 티,BOTH,티/티라떼,False
+투썸플레이스,말차 크림 라떼,BOTH,티/티라떼,False
+투썸플레이스,민트 아이스티,ICE,티/티라떼,False
+투썸플레이스,바닐라빈 루이보스 밀크티,BOTH,티/티라떼,False
+투썸플레이스,애플 민트티,BOTH,티/티라떼,False
+투썸플레이스,애플 아이스티,ICE,티/티라떼,False
+투썸플레이스,얼그레이,BOTH,티/티라떼,False
+투썸플레이스,오렌지 자몽티,BOTH,티/티라떼,False
+투썸플레이스,유자 레몬티,BOTH,티/티라떼,False
+투썸플레이스,유자 생강차,BOTH,티/티라떼,False
+투썸플레이스,제주 유기농 녹차,BOTH,티/티라떼,False
+투썸플레이스,카모마일,BOTH,티/티라떼,False
+투썸플레이스,크림 카라멜,BOTH,티/티라떼,False
+투썸플레이스,피치 아이스티,ICE,티/티라떼,False
+투썸플레이스,허니 레몬티,BOTH,티/티라떼,False
+파스쿠찌,납작 복숭아 그라니따,BOTH,그라니따,False
+파스쿠찌,딸기 그라니따,BOTH,그라니따,False
+파스쿠찌,망고 요거트 그라니따,BOTH,그라니따,False
+파스쿠찌,블루베리 요거트 그라니따,BOTH,그라니따,False
+파스쿠찌,스트로베리 요거트그라니따,BOTH,그라니따,False
+파스쿠찌,시칠리아 레몬 그라니따,BOTH,그라니따,False
+파스쿠찌,자바칩 초코 그라니따,BOTH,그라니따,False
+파스쿠찌,코코넛 커피 그라니따,BOTH,그라니따,False
+파스쿠찌,플레인 요거트 그라니따,BOTH,그라니따,False
+파스쿠찌,K오곡 미숫가루 라떼,BOTH,기타음료,True
+파스쿠찌,라즈베리 아이스티,ICE,기타음료,False
+파스쿠찌,레몬 스파클링,BOTH,기타음료,False
+파스쿠찌,레몬 유자차,BOTH,기타음료,False
+파스쿠찌,밀크티,BOTH,기타음료,False
+파스쿠찌,복숭아 아이스티,ICE,기타음료,False
+파스쿠찌,아이스 K오곡미숫가루 라떼,ICE,기타음료,True
+파스쿠찌,아이스 레몬유자차,ICE,기타음료,False
+파스쿠찌,아이스 밀크티,ICE,기타음료,False
+파스쿠찌,아이스 오미자,ICE,기타음료,False
+파스쿠찌,아이스 자몽 주스,ICE,기타음료,False
+파스쿠찌,아이스 제주 말차 라떼,ICE,기타음료,True
+파스쿠찌,아이스 초콜릿 라떼,ICE,기타음료,True
+파스쿠찌,아이스 히비스커스 뱅쇼,ICE,기타음료,False
+파스쿠찌,오미자,BOTH,기타음료,False
+파스쿠찌,자몽 스파클링,BOTH,기타음료,False
+파스쿠찌,자몽 주스,ICE,기타음료,False
+파스쿠찌,제주 말차 라떼,BOTH,기타음료,True
+파스쿠찌,청포도 스파클링,BOTH,기타음료,False
+파스쿠찌,초콜릿 라떼,BOTH,기타음료,True
+파스쿠찌,히비스커스 뱅쇼,BOTH,기타음료,False
+파스쿠찌,두바이st 딥초코 라떼,BOTH,시즌음료,True
+파스쿠찌,딸기 라떼,BOTH,시즌음료,True
+파스쿠찌,딸기 말차 쉐이크,BOTH,시즌음료,False
+파스쿠찌,딸기 주스,ICE,시즌음료,False
+파스쿠찌,딸기 히비스커스,BOTH,시즌음료,False
+파스쿠찌,수정과 라떼,BOTH,시즌음료,True
+파스쿠찌,아이스 딸기 히비스커스,ICE,시즌음료,False
+파스쿠찌,아이스 수정과,ICE,시즌음료,False
+파스쿠찌,아이스 수정과 라떼,ICE,시즌음료,True
+파스쿠찌,요거 딸기 그라니따,BOTH,시즌음료,False
+파스쿠찌,요거 딸기 라떼,BOTH,시즌음료,True
+파스쿠찌,저당 말차 쉐이크,BOTH,시즌음료,False
+파스쿠찌,저당 말차 쉐이크 with 샷,BOTH,시즌음료,False
+파스쿠찌,포도 요거 크림티,BOTH,시즌음료,False
+파스쿠찌,에소플 마끼아또,BOTH,이탈리안커피,True
+파스쿠찌,에소플 콘파나,BOTH,이탈리안커피,True
+파스쿠찌,에스프레소 마끼아또,BOTH,이탈리안커피,True
+파스쿠찌,에스프레소 솔로,BOTH,이탈리안커피,True
+파스쿠찌,이탈리안 아포가또,BOTH,이탈리안커피,True
+파스쿠찌,바닐라 라떼 마끼아또,HOT,커피(HOT),True
+파스쿠찌,바닐라빈 골든라떼,HOT,커피(HOT),True
+파스쿠찌,아메리카노,HOT,커피(HOT),True
+파스쿠찌,카라멜 라떼 마끼아또,HOT,커피(HOT),True
+파스쿠찌,카페 모카,HOT,커피(HOT),True
+파스쿠찌,카페 헤이 오트,HOT,커피(HOT),True
+파스쿠찌,카페라떼,HOT,커피(HOT),True
+파스쿠찌,카푸치노,HOT,커피(HOT),True
+파스쿠찌,아이스 바닐라 라떼마끼아또,ICE,커피(ICED),True
+파스쿠찌,아이스 바닐라빈 골든라떼,ICE,커피(ICED),True
+파스쿠찌,아이스 아메리카노,ICE,커피(ICED),True
+파스쿠찌,아이스 카라멜 라떼마끼아또,ICE,커피(ICED),True
+파스쿠찌,아이스 카페 모카,ICE,커피(ICED),True
+파스쿠찌,아이스 카페 헤이 오트,ICE,커피(ICED),True
+파스쿠찌,아이스 카페라떼,ICE,커피(ICED),True
+파스쿠찌,초콜릿 젤라또 카페라떼,ICE,커피(ICED),True
+파스쿠찌,티라미수 젤라또 카페라떼,ICE,커피(ICED),True
+파스쿠찌,피넛 젤라또 카페라떼,ICE,커피(ICED),True
+파스쿠찌,연유 콜드브루 플로트,COLD_BREW,콜드브루,True
+파스쿠찌,콜드브루 라떼,COLD_BREW,콜드브루,True
+파스쿠찌,콜드브루 아메리카노,COLD_BREW,콜드브루,True
+파스쿠찌,콜드브루 원액,COLD_BREW,콜드브루,True
+파스쿠찌,민트크루,BOTH,티,False
+파스쿠찌,아이스 민트크루,ICE,티,False
+파스쿠찌,아이스 얼그레이,ICE,티,False
+파스쿠찌,아이스 오렌지 루이보스,ICE,티,False
+파스쿠찌,아이스 오렌지홍차,ICE,티,False
+파스쿠찌,아이스 프루티 하동 녹차,ICE,티,False
+파스쿠찌,아이스 플로럴 캐모마일,ICE,티,False
+파스쿠찌,얼그레이,BOTH,티,False
+파스쿠찌,오렌지 루이보스,BOTH,티,False
+파스쿠찌,오렌지홍차,BOTH,티,False
+파스쿠찌,프루티 하동 녹차,BOTH,티,False
+파스쿠찌,플로럴 캐모마일,BOTH,티,False
+팔공티,팔공믹스 냉커피,ICE,80 MIX,False
+팔공티,팔공믹스 슬러시,BOTH,80 MIX,False
+팔공티,팔공믹스 핫커피,HOT,80 MIX,False
+팔공티,블랙티,ICE,BREWED TEA,False
+팔공티,블랙티,HOT,BREWED TEA,False
+팔공티,얼그레이티,ICE,BREWED TEA,False
+팔공티,얼그레이티,HOT,BREWED TEA,False
+팔공티,우롱티,ICE,BREWED TEA,False
+팔공티,우롱티,HOT,BREWED TEA,False
+팔공티,우리 유차자,ICE,BREWED TEA,False
+팔공티,자스민 그린티,ICE,BREWED TEA,False
+팔공티,자스민 그린티,HOT,BREWED TEA,False
+팔공티,돌체라떼,ICE,COFFEE,True
+팔공티,돌체라떼,HOT,COFFEE,True
+팔공티,바닐라라떼,ICE,COFFEE,True
+팔공티,바닐라라떼,HOT,COFFEE,True
+팔공티,아메리카노,ICE,COFFEE,True
+팔공티,아메리카노,HOT,COFFEE,True
+팔공티,카페라떼,ICE,COFFEE,True
+팔공티,카페라떼,HOT,COFFEE,True
+팔공티,카페모카,ICE,COFFEE,True
+팔공티,카페모카,HOT,COFFEE,True
+팔공티,망고사고프룻티,BOTH,FRESH BREWED FRUIT TEA,False
+팔공티,자몽블랙프룻티,BOTH,FRESH BREWED FRUIT TEA,False
+팔공티,자몽블랙프룻티,HOT,FRESH BREWED FRUIT TEA,False
+팔공티,핑크리치프룻티,BOTH,FRESH BREWED FRUIT TEA,False
+팔공티,딸기요거트블렌디드,BOTH,ICE BLENDED,False
+팔공티,말차블렌디드,BOTH,ICE BLENDED,False
+팔공티,민트블렌디드,BOTH,ICE BLENDED,False
+팔공티,샤인머스캣블렌디드,BOTH,ICE BLENDED,False
+팔공티,얼그레이 쉐이크,BOTH,ICE BLENDED,False
+팔공티,요거트블렌디드,BOTH,ICE BLENDED,False
+팔공티,자몽요거트블렌디드,BOTH,ICE BLENDED,False
+팔공티,초코블렌디드,BOTH,ICE BLENDED,False
+팔공티,쿠키앤크림블렌디드,BOTH,ICE BLENDED,False
+팔공티,타로블렌디드,BOTH,ICE BLENDED,False
+팔공티,흑당 쉐이크,BOTH,ICE BLENDED,False
+팔공티,딸기 주스,ICE,ICED TEA/ADE/JUICE,False
+팔공티,레몬 에이드,ICE,ICED TEA/ADE/JUICE,False
+팔공티,망고 주스,ICE,ICED TEA/ADE/JUICE,False
+팔공티,복숭아아이스티,ICE,ICED TEA/ADE/JUICE,False
+팔공티,샤인머스캣 에이드,ICE,ICED TEA/ADE/JUICE,False
+팔공티,아이스티 (샷추가),ICE,ICED TEA/ADE/JUICE,False
+팔공티,아이스티(망고추가),ICE,ICED TEA/ADE/JUICE,False
+팔공티,자몽 에이드,ICE,ICED TEA/ADE/JUICE,False
+팔공티,핑크리치 에이드,ICE,ICED TEA/ADE/JUICE,False
+팔공티,딸기꾹꾹 라떼,BOTH,LATTE,True
+팔공티,말차라떼,ICE,LATTE,True
+팔공티,말차라떼,HOT,LATTE,True
+팔공티,초코 리얼 라떼,ICE,LATTE,True
+팔공티,초코 리얼 라떼,HOT,LATTE,True
+팔공티,말차밀크티,ICE,MILK TEA,False
+팔공티,말차밀크티,HOT,MILK TEA,False
+팔공티,망고사고밀크티,BOTH,MILK TEA,False
+팔공티,블랙밀크티,ICE,MILK TEA,False
+팔공티,블랙밀크티,HOT,MILK TEA,False
+팔공티,초코밀크티,ICE,MILK TEA,False
+팔공티,타로밀크티,ICE,MILK TEA,False
+팔공티,타로밀크티,HOT,MILK TEA,False
+팔공티,흑당밀크티,ICE,MILK TEA,False
+팔공티,흑당밀크티,HOT,MILK TEA,False
+팔공티,로투스크럼블,BOTH,TOPPING,False
+팔공티,밀크폼,BOTH,TOPPING,False
+팔공티,사고펄,BOTH,TOPPING,False
+팔공티,샷 추가,BOTH,TOPPING,False
+팔공티,알로에펄,BOTH,TOPPING,False
+팔공티,초코소스,BOTH,TOPPING,False
+팔공티,카라멜소스,BOTH,TOPPING,False
+팔공티,코코넛펄,BOTH,TOPPING,False
+팔공티,코코볼,BOTH,TOPPING,False
+팔공티,타피오카 펄,BOTH,TOPPING,False
+팔공티,후루트링,BOTH,TOPPING,False
+팔공티,딸기베리콕! 젤라또 블렌디드,ICE,딸기,False
+팔공티,딸기초콕! 젤라또 블렌디드,ICE,딸기,False
+팔공티,딸기콕! 밀크티,ICE,딸기,False
+팔공티,핑크캐모마일티,HOT,딸기,False
+팔공티,핑크캐모마일티,ICE,딸기,False
+팔공티,말차 젤라또 밀크티,BOTH,말차,False
+팔공티,말차요거트블렌디드,BOTH,말차,False
+팔공티,말차유자티,ICE,말차,False
+팔공티,말차유자티,HOT,말차,False
+팔공티,말차초코밀크티,ICE,말차,False
+팔공티,말차초코밀크티,HOT,말차,False
+팔공티,망고꾹꾹 라떼,BOTH,망고,True
+팔공티,망고요거트블렌디드,BOTH,망고,False
+팔공티,오미자 에이드,ICE,우리나라 전통차,False
+팔공티,우리 오미자차,ICE,우리나라 전통차,False
+팔공티,우리 오미자차,HOT,우리나라 전통차,False
+팔공티,우리 유자차,HOT,우리나라 전통차,False
+팔공티,우리 유자차,ICE,우리나라 전통차,False
+팔공티,유자 에이드,ICE,우리나라 전통차,False
+팔공티,전통 수정과,ICE,우리나라 전통차,False
+팔공티,전통 수정과,HOT,우리나라 전통차,False
+팔공티,아인슈페너,ICE,제로/크림/아인슈페너,False
+팔공티,아인슈페너,HOT,제로/크림/아인슈페너,False
+팔공티,제로 로얄밀크티,ICE,제로/크림/아인슈페너,False
+팔공티,제로 로얄밀크티,HOT,제로/크림/아인슈페너,False
+팔공티,제로 복숭아아이스티,ICE,제로/크림/아인슈페너,False
+팔공티,크림라떼,ICE,제로/크림/아인슈페너,True
+팔공티,크림라떼,HOT,제로/크림/아인슈페너,True
+팔공티,달달말차 팥빙수,BOTH,젤라또 라운지,False
+팔공티,딸기 젤라또,BOTH,젤라또 라운지,False
+팔공티,딸기쿠키! 젤라또 쉐이크,BOTH,젤라또 라운지,False
+팔공티,말차 젤라또,BOTH,젤라또 라운지,False
+팔공티,맛차말차 젤라또 파르페,BOTH,젤라또 라운지,False
+팔공티,밀크 팥빙수,BOTH,젤라또 라운지,False
+팔공티,바닐라 젤라또,BOTH,젤라또 라운지,False
+팔공티,상큼딸기 젤라또 파르페,BOTH,젤라또 라운지,False
+팔공티,스윗밀키! 젤라또 쉐이크,BOTH,젤라또 라운지,False
+팔공티,쫀득초코 젤라또 파르페,BOTH,젤라또 라운지,False
+팔공티,초코 젤라또,BOTH,젤라또 라운지,False
+팔공티,초코초코쵸! 젤라또 쉐이크,BOTH,젤라또 라운지,False
+팔공티,카라멜 아포가토,BOTH,젤라또 라운지,False
+폴바셋,H고창 고구마 라떼SGochang Sweet Potato Latte,HOT,BEVERAGE,True
+폴바셋,I고창 고구마 라떼SIced Gochang Sweet Potato Latte,ICE,BEVERAGE,True
+폴바셋,I체리블라썸 말차라떼SCherry Blossom Matcha Latte,ICE,BEVERAGE,True
+폴바셋,VENTI 납작 복숭아 에이드Flat Peach Ade,ICE,BEVERAGE,False
+폴바셋,VENTI 제주 한라봉 에이드Jeju Hallabong Ade,ICE,BEVERAGE,False
+폴바셋,경산대추 생강차,HOT,BEVERAGE,False
+폴바셋,고창 복분자 에이드,ICE,BEVERAGE,False
+폴바셋,납작복숭아 에이드,ICE,BEVERAGE,False
+폴바셋,더블 초콜릿 프라페,ICE,BEVERAGE,False
+폴바셋,딥 초콜릿 라떼,HOT,BEVERAGE,True
+폴바셋,딸기 바나나 요거트,ICE,BEVERAGE,False
+폴바셋,로얄 캐모마일 허브차,HOT,BEVERAGE,False
+폴바셋,루이보스 밀크티,HOT,BEVERAGE,False
+폴바셋,망고 파인애플 프라페,ICE,BEVERAGE,False
+폴바셋,밀크 초콜릿,HOT,BEVERAGE,False
+폴바셋,비타민,ICE,BEVERAGE,False
+폴바셋,비트 사과 주스,ICE,BEVERAGE,False
+폴바셋,샤인 다즐링 홍차,HOT,BEVERAGE,False
+폴바셋,샤인머스캣 케일 주스,ICE,BEVERAGE,False
+폴바셋,스팀 밀크,HOT,BEVERAGE,False
+폴바셋,아이스 경산대추 생강차,ICE,BEVERAGE,False
+폴바셋,아이스 딥 초콜릿 라떼,ICE,BEVERAGE,True
+폴바셋,아이스 로얄 캐모마일 허브차,ICE,BEVERAGE,False
+폴바셋,아이스 루이보스 밀크티,ICE,BEVERAGE,False
+폴바셋,아이스 밀크,ICE,BEVERAGE,False
+폴바셋,아이스 밀크 초콜릿,ICE,BEVERAGE,False
+폴바셋,아이스 샤인 다즐링 홍차,ICE,BEVERAGE,False
+폴바셋,아이스 제주 말차 라떼,ICE,BEVERAGE,True
+폴바셋,아이스 코코넛 말차 라떼,ICE,BEVERAGE,True
+폴바셋,아이스 쿨 민트 허브차,ICE,BEVERAGE,False
+폴바셋,아이스 크림슨 펀치 과일차,ICE,BEVERAGE,False
+폴바셋,제로칼로리 바나바 레몬 우롱티,ICE,BEVERAGE,False
+폴바셋,제주 레몬 에이드,ICE,BEVERAGE,False
+폴바셋,제주 말차 라떼,HOT,BEVERAGE,True
+폴바셋,제주 말차 라떼 프라페,ICE,BEVERAGE,True
+폴바셋,제주 선셋 레몬 에이드,ICE,BEVERAGE,False
+폴바셋,제주 오션 레몬 에이드,ICE,BEVERAGE,False
+폴바셋,제주 한라봉 에이드,ICE,BEVERAGE,False
+폴바셋,제주 한라봉 티,BOTH,BEVERAGE,False
+폴바셋,체리블라썸 요거트 프라페,ICE,BEVERAGE,False
+폴바셋,카라멜 마키아토 프라페,ICE,BEVERAGE,False
+폴바셋,커피칩 라떼 프라페,ICE,BEVERAGE,True
+폴바셋,코코넛 말차 라떼,HOT,BEVERAGE,True
+폴바셋,쿨 민트 허브차,HOT,BEVERAGE,False
+폴바셋,크림슨 펀치 과일차,HOT,BEVERAGE,False
+폴바셋,핑크 구아바 자몽 에이드,ICE,BEVERAGE,False
+폴바셋,H고창 땅콩 카페라떼SGochang Peanut Cafe Latte,HOT,COFFEE,True
+폴바셋,I고창 땅콩 카페라떼SIced Gochang Peanut Cafe Latte,ICE,COFFEE,True
+폴바셋,I체리블라썸 카페라떼SCherry Blossom Cafe Latte,ICE,COFFEE,True
+폴바셋,VENTI 콜드브루 라떼Cold Brew Latte,COLD_BREW,COFFEE,True
+폴바셋,VENTI 콜드브루Cold Brew,COLD_BREW,COFFEE,True
+폴바셋,디카페인 락토프리 카페라떼,HOT,COFFEE,True
+폴바셋,디카페인 밀크 소프트 아포가토,BOTH,COFFEE,True
+폴바셋,디카페인 바닐라빈 카페라떼,HOT,COFFEE,True
+폴바셋,디카페인 스페니쉬 카페라떼,HOT,COFFEE,True
+폴바셋,디카페인 시나몬 카페라떼,HOT,COFFEE,True
+폴바셋,디카페인 아메리카노,HOT,COFFEE,True
+폴바셋,디카페인 카라멜 마키아토,HOT,COFFEE,True
+폴바셋,디카페인 카페라떼,HOT,COFFEE,True
+폴바셋,디카페인 카페오트,HOT,COFFEE,True
+폴바셋,디카페인 카푸치노,HOT,COFFEE,True
+폴바셋,디카페인 플랫화이트,HOT,COFFEE,True
+폴바셋,락토프리 카페 라떼,HOT,COFFEE,True
+폴바셋,룽고,HOT,COFFEE,True
+폴바셋,리스트레토,HOT,COFFEE,True
+폴바셋,바닐라빈 카페라떼,HOT,COFFEE,True
+폴바셋,스페니쉬 카페 라떼,HOT,COFFEE,True
+폴바셋,시나몬 카페 라떼,HOT,COFFEE,True
+폴바셋,아메리카노,HOT,COFFEE,True
+폴바셋,아이스 디카페인 락토프리 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 디카페인 바닐라빈 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 디카페인 스페니쉬 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 디카페인 시나몬 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 디카페인 아메리카노,ICE,COFFEE,True
+폴바셋,아이스 디카페인 아이스크림 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 디카페인 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 디카페인 카페오트,ICE,COFFEE,True
+폴바셋,아이스 디카페인 플랫화이트,ICE,COFFEE,True
+폴바셋,아이스 디카페인카라멜 마키아토,ICE,COFFEE,True
+폴바셋,아이스 락토프리 카페 라떼,ICE,COFFEE,True
+폴바셋,아이스 룽고,ICE,COFFEE,True
+폴바셋,아이스 바닐라빈 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 스페니쉬 카페 라떼,ICE,COFFEE,True
+폴바셋,아이스 시나몬 카페 라떼,ICE,COFFEE,True
+폴바셋,아이스 아메리카노,ICE,COFFEE,True
+폴바셋,아이스 제주말차 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 카라멜 마키아토,ICE,COFFEE,True
+폴바셋,아이스 카페 모카,ICE,COFFEE,True
+폴바셋,아이스 카페 오트,ICE,COFFEE,True
+폴바셋,아이스 카페라떼,ICE,COFFEE,True
+폴바셋,아이스 코코넛 판단 카페 라떼,ICE,COFFEE,True
+폴바셋,아이스 플랫화이트,ICE,COFFEE,True
+폴바셋,에스프레소,HOT,COFFEE,True
+폴바셋,에스프레소 마키아토,HOT,COFFEE,True
+폴바셋,제주말차 카페라떼,HOT,COFFEE,True
+폴바셋,초콜릿 에스프레소 콘 파나,HOT,COFFEE,True
+폴바셋,카라멜 마키아토,HOT,COFFEE,True
+폴바셋,카페 모카,HOT,COFFEE,True
+폴바셋,카페 오트,HOT,COFFEE,True
+폴바셋,카페라떼,HOT,COFFEE,True
+폴바셋,카푸치노,HOT,COFFEE,True
+폴바셋,커피큐브,ICE,COFFEE,True
+폴바셋,코코넛 판단 카페 라떼,HOT,COFFEE,True
+폴바셋,콜드브루 라떼 푸릇프룻,ICE,COFFEE,True
+폴바셋,콜드브루 푸릇프룻,ICE,COFFEE,True
+폴바셋,플랫 화이트,HOT,COFFEE,True
+하삼동커피,고구마라떼,BOTH,라떼,True
+하삼동커피,달고나라떼,BOTH,라떼,True
+하삼동커피,딥초코라떼,BOTH,라떼,True
+하삼동커피,딸기라떼,ICE,라떼,True
+하삼동커피,말차라떼,BOTH,라떼,True
+하삼동커피,민트초코라떼,BOTH,라떼,True
+하삼동커피,밀크티라떼,BOTH,라떼,True
+하삼동커피,뽕뽕우유,ICE,라떼,False
+하삼동커피,쑥라떼,BOTH,라떼,True
+하삼동커피,얼그레이라떼,BOTH,라떼,True
+하삼동커피,오곡라떼,BOTH,라떼,True
+하삼동커피,토피넛라떼,BOTH,라떼,True
+하삼동커피,1.1L돌체라떼,ICE,보틀,True
+하삼동커피,1.1L디카페인콜드브루,ICE,보틀,True
+하삼동커피,1.1L딥초코라떼,ICE,보틀,True
+하삼동커피,1.1L레몬에이드,ICE,보틀,False
+하삼동커피,1.1L말차라떼,ICE,보틀,True
+하삼동커피,1.1L매실차,ICE,보틀,True
+하삼동커피,1.1L바닐라라떼,ICE,보틀,True
+하삼동커피,1.1L복숭아아이스티,ICE,보틀,False
+하삼동커피,1.1L블루레몬에이드,ICE,보틀,False
+하삼동커피,1.1L수박주스,ICE,보틀,False
+하삼동커피,1.1L식혜,ICE,보틀,True
+하삼동커피,1.1L아메리카노,ICE,보틀,True
+하삼동커피,1.1L얼그레이,ICE,보틀,True
+하삼동커피,1.1L옛다방커피,ICE,보틀,True
+하삼동커피,1.1L오곡라떼,ICE,보틀,True
+하삼동커피,1.1L자몽에이드,ICE,보틀,False
+하삼동커피,1.1L카페라떼,ICE,보틀,True
+하삼동커피,1.1L콜드브루,ICE,보틀,True
+하삼동커피,1.1L페퍼민트,ICE,보틀,True
+하삼동커피,1.1L허니자몽블랙티,ICE,보틀,False
+하삼동커피,1.1L헤이즐넛라떼,ICE,보틀,True
+하삼동커피,1.1L히비스커스에이드,ICE,보틀,False
+하삼동커피,딥초코스무디,ICE,스무디,False
+하삼동커피,딸기셰이크,ICE,스무디,False
+하삼동커피,딸기요거트스무디,ICE,스무디,False
+하삼동커피,레몬스무디,ICE,스무디,False
+하삼동커피,말차스무디,ICE,스무디,False
+하삼동커피,망고요거트스무디,ICE,스무디,False
+하삼동커피,민트초코스무디,ICE,스무디,False
+하삼동커피,밀크셰이크,ICE,스무디,False
+하삼동커피,밀크티스무디,ICE,스무디,False
+하삼동커피,복숭아요거트스무디,ICE,스무디,False
+하삼동커피,블루베리요거트스무디,ICE,스무디,False
+하삼동커피,쑥스무디,ICE,스무디,False
+하삼동커피,오렌지스무디,ICE,스무디,False
+하삼동커피,자몽스무디,ICE,스무디,False
+하삼동커피,청포도스무디,ICE,스무디,False
+하삼동커피,초코셰이크,ICE,스무디,False
+하삼동커피,커피스무디,ICE,스무디,False
+하삼동커피,쿠앤크스무디,ICE,스무디,False
+하삼동커피,플레인요거트스무디,ICE,스무디,False
+하삼동커피,달고나카페라떼,BOTH,시그니처,True
+하삼동커피,돌체라떼,BOTH,시그니처,True
+하삼동커피,히말라야(소금커피),BOTH,시그니처,True
+하삼동커피,광동쌍화차,BOTH,신메뉴/시즌메뉴,True
+하삼동커피,댕댕이차,BOTH,신메뉴/시즌메뉴,True
+하삼동커피,말차구름 딸기라떼,ICE,신메뉴/시즌메뉴,True
+하삼동커피,말차구름 망고라떼,ICE,신메뉴/시즌메뉴,True
+하삼동커피,말차구름 망고스무디,ICE,신메뉴/시즌메뉴,False
+하삼동커피,말차구름 초코라떼,ICE,신메뉴/시즌메뉴,True
+하삼동커피,말차구름 카페라떼,BOTH,신메뉴/시즌메뉴,True
+하삼동커피,배도라지차,BOTH,신메뉴/시즌메뉴,True
+하삼동커피,양송이 컵 스프,HOT,신메뉴/시즌메뉴,True
+하삼동커피,옥수수 컵 스프,HOT,신메뉴/시즌메뉴,True
+하삼동커피,레몬에이드,ICE,에이드,False
+하삼동커피,블루레몬에이드,ICE,에이드,False
+하삼동커피,오렌지에이드,ICE,에이드,False
+하삼동커피,자몽에이드,ICE,에이드,False
+하삼동커피,청포도에이드,ICE,에이드,False
+하삼동커피,히비스커스에이드,ICE,에이드,False
+하삼동커피,ABC주스,ICE,주스/버블티,False
+하삼동커피,딸기주스,ICE,주스/버블티,False
+하삼동커피,딸바주스,ICE,주스/버블티,False
+하삼동커피,말차버블티,ICE,주스/버블티,False
+하삼동커피,밀크티버블티,ICE,주스/버블티,False
+하삼동커피,바나나주스,ICE,주스/버블티,False
+하삼동커피,수박주스,ICE,주스/버블티,False
+하삼동커피,애플주스,ICE,주스/버블티,False
+하삼동커피,청도홍시주스,ICE,주스/버블티,False
+하삼동커피,초코버블티,ICE,주스/버블티,False
+하삼동커피,케일애플파인주스,ICE,주스/버블티,False
+하삼동커피,키위주스,ICE,주스/버블티,False
+하삼동커피,타로버블티,ICE,주스/버블티,False
+하삼동커피,흑당버블티,ICE,주스/버블티,False
+하삼동커피,레몬차,BOTH,차,False
+하삼동커피,매실차,BOTH,차,False
+하삼동커피,뱅쇼,BOTH,차,False
+하삼동커피,복숭아아이스티,ICE,차,False
+하삼동커피,생강레몬차,BOTH,차,False
+하삼동커피,식혜,ICE,차,False
+하삼동커피,애플그린티,BOTH,차,False
+하삼동커피,애플민트티,BOTH,차,False
+하삼동커피,애플얼그레이,BOTH,차,False
+하삼동커피,애플캐모마일,BOTH,차,False
+하삼동커피,얼그레이,BOTH,차,False
+하삼동커피,유기농보성녹차,BOTH,차,False
+하삼동커피,유자차,BOTH,차,False
+하삼동커피,자몽차,BOTH,차,False
+하삼동커피,캐모마일,BOTH,차,False
+하삼동커피,페퍼민트,BOTH,차,False
+하삼동커피,허니자몽블랙티,BOTH,차,False
+하삼동커피,구름라떼,BOTH,커피,True
+하삼동커피,바닐라라떼,BOTH,커피,True
+하삼동커피,샷 온 레몬티,ICE,커피,False
+하삼동커피,아메리카노,BOTH,커피,True
+하삼동커피,아샷추,ICE,커피,True
+하삼동커피,에스프레소,HOT,커피,True
+하삼동커피,옛다방커피,BOTH,커피,True
+하삼동커피,카라멜라떼,BOTH,커피,True
+하삼동커피,카라멜마끼아또,BOTH,커피,True
+하삼동커피,카페라떼,BOTH,커피,True
+하삼동커피,카페모카,BOTH,커피,True
+하삼동커피,카푸치노,BOTH,커피,True
+하삼동커피,코코넛카페라떼,BOTH,커피,True
+하삼동커피,콩커피,ICE,커피,True
+하삼동커피,킹아메리카노,ICE,커피,True
+하삼동커피,헤이즐넛라떼,BOTH,커피,True
+하삼동커피,흑당카페라떼,BOTH,커피,True
+하삼동커피,디카페인 콜드브루,ICE,콜드브루/디카페인,True
+하삼동커피,디카페인 콜드브루 돌체라떼,ICE,콜드브루/디카페인,True
+하삼동커피,디카페인 콜드브루 라떼,ICE,콜드브루/디카페인,True
+하삼동커피,디카페인 콜드브루 바닐라라떼,ICE,콜드브루/디카페인,True
+하삼동커피,콜드브루,ICE,콜드브루/디카페인,True
+하삼동커피,콜드브루 돌체라떼,ICE,콜드브루/디카페인,True
+하삼동커피,콜드브루 라떼,ICE,콜드브루/디카페인,True
+하삼동커피,콜드브루 바닐라라떼,ICE,콜드브루/디카페인,True
+하삼동커피,콜드브루 아인슈페너,ICE,콜드브루/디카페인,True
+하이오커피,1L 고구마라떼,ICE,1L BOTTLE,True
+하이오커피,1L 녹차라떼,ICE,1L BOTTLE,True
+하이오커피,1L 딸기라떼,ICE,1L BOTTLE,True
+하이오커피,1L 레몬티,ICE,1L BOTTLE,False
+하이오커피,1L 루이보스티,ICE,1L BOTTLE,False
+하이오커피,1L 망고에이드,ICE,1L BOTTLE,False
+하이오커피,1L 미숫가루 라떼,ICE,1L BOTTLE,True
+하이오커피,1L 믹스커피,ICE,1L BOTTLE,False
+하이오커피,1L 민트초코칩 라떼,ICE,1L BOTTLE,True
+하이오커피,1L 바닐라라떼,ICE,1L BOTTLE,True
+하이오커피,1L 베리에이드,ICE,1L BOTTLE,False
+하이오커피,1L 블루레몬에이드,ICE,1L BOTTLE,False
+하이오커피,1L 블루베리 라떼,ICE,1L BOTTLE,True
+하이오커피,1L 스트로베리 루이보스티,ICE,1L BOTTLE,False
+하이오커피,1L 식혜,ICE,1L BOTTLE,False
+하이오커피,1L 아메리카노,ICE,1L BOTTLE,True
+하이오커피,1L 아이스티 복숭아,ICE,1L BOTTLE,False
+하이오커피,1L 얼그레이티,ICE,1L BOTTLE,False
+하이오커피,1L 유자레몬에이드,ICE,1L BOTTLE,False
+하이오커피,1L 유자민트티,ICE,1L BOTTLE,False
+하이오커피,1L 유자티,ICE,1L BOTTLE,False
+하이오커피,1L 자몽블랙티,ICE,1L BOTTLE,False
+하이오커피,1L 자몽에이드,ICE,1L BOTTLE,False
+하이오커피,1L 자몽티,ICE,1L BOTTLE,False
+하이오커피,1L 청포도에이드,ICE,1L BOTTLE,False
+하이오커피,1L 초코라떼,ICE,1L BOTTLE,True
+하이오커피,1L 카라멜 마끼아또,ICE,1L BOTTLE,True
+하이오커피,1L 카페라떼,ICE,1L BOTTLE,True
+하이오커피,1L 캐모마일티,ICE,1L BOTTLE,False
+하이오커피,1L 페퍼민트티,ICE,1L BOTTLE,False
+하이오커피,1L 헤이즐넛 라떼,ICE,1L BOTTLE,True
+하이오커피,1L 홍차라떼,ICE,1L BOTTLE,True
+하이오커피,HOT 스트로베리 루이보스티,HOT,ADE&TEA,False
+하이오커피,HOT 유자민트티,HOT,ADE&TEA,False
+하이오커피,HOT 자몽블랙티,HOT,ADE&TEA,False
+하이오커피,ICE 루이보스티,ICE,ADE&TEA,False
+하이오커피,ICE 스트로베리 루이보스티,ICE,ADE&TEA,False
+하이오커피,ICE 얼그레이티,ICE,ADE&TEA,False
+하이오커피,ICE 유자민트티,ICE,ADE&TEA,False
+하이오커피,ICE 자몽블랙티,ICE,ADE&TEA,False
+하이오커피,ICE 캐모마일티,ICE,ADE&TEA,False
+하이오커피,ICE 페퍼민트티,ICE,ADE&TEA,False
+하이오커피,레몬티,BOTH,ADE&TEA,False
+하이오커피,루이보스티,HOT,ADE&TEA,False
+하이오커피,망고에이드,ICE,ADE&TEA,False
+하이오커피,베리에이드,ICE,ADE&TEA,False
+하이오커피,블루레몬 에이드,ICE,ADE&TEA,False
+하이오커피,식혜,ICE,ADE&TEA,False
+하이오커피,아이스티 복숭아,ICE,ADE&TEA,False
+하이오커피,얼그레이티,HOT,ADE&TEA,False
+하이오커피,유자레몬에이드,ICE,ADE&TEA,False
+하이오커피,유자티,BOTH,ADE&TEA,False
+하이오커피,자몽 에이드,ICE,ADE&TEA,False
+하이오커피,자몽티,BOTH,ADE&TEA,False
+하이오커피,청포도 에이드,ICE,ADE&TEA,False
+하이오커피,캐모마일티,HOT,ADE&TEA,False
+하이오커피,페퍼민트티,HOT,ADE&TEA,False
+하이오커피,HOT 고구마라떼,HOT,BEVERAGE,True
+하이오커피,HOT 녹차라떼,HOT,BEVERAGE,True
+하이오커피,HOT 민트초코칩라떼,HOT,BEVERAGE,True
+하이오커피,HOT 블루베리라떼,HOT,BEVERAGE,True
+하이오커피,HOT 초코라떼,HOT,BEVERAGE,True
+하이오커피,HOT 홍차라떼,HOT,BEVERAGE,True
+하이오커피,ICE 고구마라떼,ICE,BEVERAGE,True
+하이오커피,ICE 녹차라떼,ICE,BEVERAGE,True
+하이오커피,ICE 민트초코칩라떼,ICE,BEVERAGE,True
+하이오커피,ICE 블루베리라떼,ICE,BEVERAGE,True
+하이오커피,ICE 초코라떼,ICE,BEVERAGE,True
+하이오커피,ICE 홍차라떼,ICE,BEVERAGE,True
+하이오커피,딸기 라떼,ICE,BEVERAGE,True
+하이오커피,말차 크림 라떼,ICE,BEVERAGE,True
+하이오커피,미숫가루 라떼,ICE,BEVERAGE,True
+하이오커피,녹차 프라페,ICE,BLENDED,False
+하이오커피,딸기 요거트 스무디,ICE,BLENDED,False
+하이오커피,딸기밀크쉐이크,ICE,BLENDED,False
+하이오커피,망고 요거트 스무디,ICE,BLENDED,False
+하이오커피,민트초코칩 프라페,ICE,BLENDED,False
+하이오커피,밀크쉐이크,ICE,BLENDED,False
+하이오커피,블루베리 요거트 스무디,ICE,BLENDED,False
+하이오커피,자바초코칩 프라페,ICE,BLENDED,False
+하이오커피,초코밀크쉐이크,ICE,BLENDED,False
+하이오커피,캔디밀크쉐이크,ICE,BLENDED,False
+하이오커피,커피밀크쉐이크,ICE,BLENDED,False
+하이오커피,코코넛 망고,ICE,BLENDED,False
+하이오커피,코코넛 밀크,ICE,BLENDED,False
+하이오커피,코코넛 커피,ICE,BLENDED,False
+하이오커피,쿠키&크림 프라페,ICE,BLENDED,False
+하이오커피,폭탄초코 프라페,ICE,BLENDED,False
+하이오커피,플레인 요거트 스무디,ICE,BLENDED,False
+하이오커피,타로밀크버블린',ICE,BUBBLIN',False
+하이오커피,홍차밀크버블린',ICE,BUBBLIN',False
+하이오커피,흑당밀크버블린',ICE,BUBBLIN',False
+하이오커피,HOT 딥카페라떼,HOT,COFFEE,True
+하이오커피,HOT 믹스커피,HOT,COFFEE,True
+하이오커피,HOT 아메리카노,HOT,COFFEE,True
+하이오커피,HOT 연유 라떼,HOT,COFFEE,True
+하이오커피,HOT 카라멜 마끼아또,HOT,COFFEE,True
+하이오커피,HOT 카페 라떼,HOT,COFFEE,True
+하이오커피,HOT 카페 모카,HOT,COFFEE,True
+하이오커피,HOT 카푸치노,HOT,COFFEE,True
+하이오커피,HOT 헤이즐넛 라떼,HOT,COFFEE,True
+하이오커피,ICE 딥카페라떼,ICE,COFFEE,True
+하이오커피,ICE 믹스커피,ICE,COFFEE,True
+하이오커피,ICE 바닐라 라떼,ICE,COFFEE,True
+하이오커피,ICE 아메리카노,ICE,COFFEE,True
+하이오커피,ICE 연유라떼,ICE,COFFEE,True
+하이오커피,ICE 카라멜 마끼아또,ICE,COFFEE,True
+하이오커피,ICE 카페 라떼,ICE,COFFEE,True
+하이오커피,ICE 카페모카,ICE,COFFEE,True
+하이오커피,ICE 카푸치노,ICE,COFFEE,True
+하이오커피,ICE 헤이즐넛 라떼,ICE,COFFEE,True
+하이오커피,말차 크림 카페 라떼,ICE,COFFEE,True
+하이오커피,바닐라 라떼,BOTH,COFFEE,True
+하이오커피,하이슈페너,ICE,COFFEE,True
+하이오커피,HOT 디카페인 콜드브루,HOT,COLD BREW,True
+하이오커피,HOT 콜드브루,HOT,COLD BREW,True
+하이오커피,ICE 디카페인 콜드브루,ICE,COLD BREW,True
+하이오커피,ICE 콜드브루,ICE,COLD BREW,True
+하이오커피,콜드브루 라떼,ICE,COLD BREW,True
+하이오커피,콜드브루 바닐라라떼,ICE,COLD BREW,True
+하이오커피,콜드브루 아인슈페너,ICE,COLD BREW,True
+하이오커피,콜드브루 연유라떼,ICE,COLD BREW,True
+하이오커피,콜드브루 카라멜라떼,ICE,COLD BREW,True
+하이오커피,콜드브루 헤이즐넛라떼,ICE,COLD BREW,True
+하이오커피,HOT 말차 티라미수 라떼,HOT,NEW,True
+하이오커피,HOT 슈크림 카페라떼,HOT,NEW,True
+하이오커피,HOT 쌍화차,HOT,NEW,False
+하이오커피,HOT 유자생강차,HOT,NEW,False
+하이오커피,HOT 율무차,HOT,NEW,False
+하이오커피,HOT 티라미수 라떼,HOT,NEW,True
+하이오커피,ICE 말차 티라미수 라떼,ICE,NEW,True
+하이오커피,ICE 티라미수 라떼,ICE,NEW,True
+하이오커피,골드키위 주스,ICE,NEW,False
+하이오커피,김쿼카 오리지널 팝콘,BOTH,NEW,False
+하이오커피,김쿼카 초콜렛 팝콘,BOTH,NEW,False
+하이오커피,김쿼카 카라멜 팝콘,BOTH,NEW,False
+하이오커피,끼리 딸기 찰떡,BOTH,NEW,False
+하이오커피,끼리 치즈 찰떡,BOTH,NEW,False
+하이오커피,두바이 쫀득 쿠키,BOTH,NEW,False
+하이오커피,두바이 초코 라떼,ICE,NEW,True
+하이오커피,두바이 초코 프라페,ICE,NEW,False
+하이오커피,딸기 밀키 에이드,ICE,NEW,False
+하이오커피,딸기 슈크림 라떼,ICE,NEW,True
+하이오커피,딸기 주스,ICE,NEW,False
+하이오커피,딸기 초코폼 라떼,ICE,NEW,True
+하이오커피,딸기 티라미수 라떼,ICE,NEW,True
+하이오커피,딸기 핑크폼 라떼,ICE,NEW,True
+하이오커피,망고주스,ICE,NEW,False
+하이오커피,뽀또치즈 쿼카롱,BOTH,NEW,False
+하이오커피,순우유 쿼카롱,BOTH,NEW,False
+하이오커피,슈크림 카페라떼,ICE,NEW,True
+하이오커피,쌍화차,ICE,NEW,False
+하이오커피,유자생강차,ICE,NEW,False
+하이오커피,율무차,ICE,NEW,False
+하이오커피,한라봉주스,ICE,NEW,False
+하이오커피,딸기 스노잉,ICE,SIGNATURE,False
+하이오커피,망고 스노잉,ICE,SIGNATURE,False
+하이오커피,바다 소금 라떼,ICE,SIGNATURE,True
+하이오커피,바다 소금 커피,ICE,SIGNATURE,False
+하이오커피,블루베리 스노잉,ICE,SIGNATURE,False
+할리스,돌체 라떼,BOTH,COFFEE,True
+할리스,두쫀크 돌체라떼,ICE,COFFEE,True
+할리스,두쫀크 아인슈페너,ICE,COFFEE,True
+할리스,디카페인 콜드브루,BOTH,COFFEE,True
+할리스,디카페인 콜드브루 라떼,BOTH,COFFEE,True
+할리스,디카페인 콜드브루 바닐라 딜라이트,BOTH,COFFEE,True
+할리스,디카페인 콜드브루 아샷추,ICE,COFFEE,True
+할리스,디카페인 콜드브루 저당 바닐라 딜라이트,BOTH,COFFEE,True
+할리스,몬스터 아메리카노,ICE,COFFEE,True
+할리스,바닐라 딜라이트,BOTH,COFFEE,True
+할리스,바닐라 딜라이트 아인슈페너,ICE,COFFEE,True
+할리스,블랙아리아 딥라떼,BOTH,COFFEE,True
+할리스,블랙아리아 아메리카노,BOTH,COFFEE,True
+할리스,아메리카노,BOTH,COFFEE,True
+할리스,아샷추,ICE,COFFEE,True
+할리스,아포가토,ICE,COFFEE,True
+할리스,에스프레소,HOT,COFFEE,True
+할리스,유자리카노,ICE,COFFEE,True
+할리스,저당 바닐라 딜라이트,BOTH,COFFEE,True
+할리스,카라멜 마키아또,BOTH,COFFEE,True
+할리스,카페 라떼,BOTH,COFFEE,True
+할리스,카페 모카,BOTH,COFFEE,True
+할리스,카푸치노,HOT,COFFEE,True
+할리스,콜드브루,ICE,COFFEE,True
+할리스,콜드브루 딜라이트,ICE,COFFEE,True
+할리스,콜드브루 라떼,ICE,COFFEE,True
+할리스,고흥 유자차,BOTH,라떼·초콜릿·티,False
+할리스,꿀모과차,BOTH,라떼·초콜릿·티,False
+할리스,대추 생강차,BOTH,라떼·초콜릿·티,False
+할리스,두쫀크 초코라떼,ICE,라떼·초콜릿·티,False
+할리스,딸기 라떼,ICE,라떼·초콜릿·티,False
+할리스,레몬 생강차,BOTH,라떼·초콜릿·티,False
+할리스,로얄 밀크 버블티,ICE,라떼·초콜릿·티,False
+할리스,로얄 밀크티 라떼,BOTH,라떼·초콜릿·티,False
+할리스,민트초코,BOTH,라떼·초콜릿·티,False
+할리스,복숭아 얼그레이,BOTH,라떼·초콜릿·티,False
+할리스,아이스티,ICE,라떼·초콜릿·티,False
+할리스,얼그레이,BOTH,라떼·초콜릿·티,False
+할리스,유자 캐모마일,BOTH,라떼·초콜릿·티,False
+할리스,제주 레몬 애플티,BOTH,라떼·초콜릿·티,False
+할리스,제주 말차 라떼,BOTH,라떼·초콜릿·티,False
+할리스,제주 한라봉 감귤차,BOTH,라떼·초콜릿·티,False
+할리스,캐모마일,BOTH,라떼·초콜릿·티,False
+할리스,페퍼민트,BOTH,라떼·초콜릿·티,False
+할리스,핑크 파인 캐모마일티,ICE,라떼·초콜릿·티,False
+할리스,핫/아이스초코,BOTH,라떼·초콜릿·티,False
+할리스,해남 녹차,BOTH,라떼·초콜릿·티,False
+할리스,홍자몽차,BOTH,라떼·초콜릿·티,False
+할리스,화이트초코,BOTH,라떼·초콜릿·티,False
+할리스,흑당 버블티,ICE,라떼·초콜릿·티,False
+할리스,딸기 스무디,ICE,스무디·주스,False
+할리스,사과 비트 착즙 주스,ICE,스무디·주스,False
+할리스,애플망고 스무디,ICE,스무디·주스,False
+할리스,오렌지 당근 착즙 주스,ICE,스무디·주스,False
+할리스,오렌지 자몽 생과일 주스,ICE,스무디·주스,False
+할리스,청포도 케일 착즙 주스,ICE,스무디·주스,False
+할리스,토마토 생과일 주스,ICE,스무디·주스,False
+할리스,피치 딸기 블렌디드,ICE,스무디·주스,False
+할리스,레몬에이드,ICE,스파클링,False
+할리스,복숭아 자두 스파클링,ICE,스파클링,False
+할리스,서울 오로라 스파클링,ICE,스파클링,False
+할리스,유자몽 스파클링,ICE,스파클링,False
+할리스,청포도 스파클링,ICE,스파클링,False
+할리스,더블 초코칩 할리치노,ICE,할리치노·빙수,False
+할리스,두바이st. 빠작 초코 파르페,ICE,할리치노·빙수,False
+할리스,딸기 치즈케익 할리치노,ICE,할리치노·빙수,False
+할리스,민트 초코칩 할리치노,ICE,할리치노·빙수,False
+할리스,제주 말차 할리치노,ICE,할리치노·빙수,False
+할리스,콜드브루 할리치노,ICE,할리치노·빙수,True
+할리스,플레인 요거트 할리치노,ICE,할리치노·빙수,False
