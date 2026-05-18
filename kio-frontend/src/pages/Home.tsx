@@ -1,6 +1,7 @@
 import { NavBar } from "../components/NavBar";
 import { TopBar } from "../components/TopBar";
 import { useState } from "react";
+import { useCategoryStore } from "../store/categoryStore";
 import {
   coffee1,
   imgCafeLatte, imgCappuccino, imgVanillaLatte, imgCaramelMacchiato, imgEspresso,
@@ -49,7 +50,7 @@ const MENUS: MenuItem[] = [
 ];
 
 export const Home = () => {
-  const [activeCategory, setActiveCategory] = useState("전체");
+  const { activeCategory, setCategory: setActiveCategory } = useCategoryStore();
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const filteredMenus = activeCategory === "전체"
