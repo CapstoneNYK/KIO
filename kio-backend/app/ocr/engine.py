@@ -1,13 +1,18 @@
+import os
 import easyocr
+from dotenv import load_dotenv
+
+load_dotenv()
 
 _reader = None
 
 def _get_reader() -> easyocr.Reader:
     global _reader
     if _reader is None:
+        model_dir = os.getenv("EASYOCR_MODEL_DIR")
         _reader = easyocr.Reader(
             ['ko', 'en'],
-            model_storage_directory=r'C:\Users\pyk71\.EasyOCR\model'
+            model_storage_directory=model_dir,
         )
     return _reader
 
