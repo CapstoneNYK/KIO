@@ -5,7 +5,7 @@ import { logo } from "../assets";
 import { useCategoryStore } from "../store/categoryStore";
 
 const LEARN_SCREENS = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
-const API = "http://localhost:8000/ocr";
+const API = `${import.meta.env.VITE_API_URL}/ocr`;
 
 type Mode = "idle" | "learning" | "querying";
 
@@ -129,7 +129,7 @@ export const AssistantButton = () => {
   const handleMouseDown = () => {
     pressTimer.current = setTimeout(() => startLearning(), 1500);
   };
-  const handleMouseUp = () => clearTimeout(pressTimer.current);
+  const handleMouseUp = () => clearTimeout(pressTimer.current ?? undefined);
 
   const handleClick = () => {
     if (mode === "idle") setMode("querying");
