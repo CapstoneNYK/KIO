@@ -7,9 +7,8 @@ import {
   imgCafeLatte, imgCappuccino, imgVanillaLatte, imgCaramelMacchiato, imgEspresso,
   imgStrawberrySmoothie, imgMangoSmoothie, imgBlueberrySmoothie,
   imgLemonAde, imgGreengrapesAde, imgGapefruitAde, 
-  imgOrangejuice, imgCarrotjuice,
+  imgOrangejuice, imgMangoJuice, imgStrawberryBananaJuice,
   imgHibiscus, imgChamomile, imgEarlgrey, imgPeppermint,
-  imgApplejuice,
 } from "../assets";
 import { Card } from "../components/Card";
 import { MenuModal } from "../components/MenuModal";
@@ -32,16 +31,16 @@ const MENUS: MenuItem[] = [
   { id: 9,  title: "디카페인 바닐라라떼", price: 5500, img: imgVanillaLatte, category: "디카페인" },
   // 스무디
   { id: 10, title: "딸기 스무디",     price: 5500, img: imgStrawberrySmoothie,  category: "스무디" },
-  { id: 11, title: "망고 스무디",     price: 5500, img: imgMangoSmoothie,       category: "스무디" },
+  { id: 11, title: "망고 요거트 스무디",     price: 5500, img: imgMangoSmoothie,       category: "스무디" },
   { id: 12, title: "블루베리 스무디", price: 5500, img: imgBlueberrySmoothie,   category: "스무디" },
   // 에이드
   { id: 13, title: "레몬 에이드",     price: 4500, img: imgLemonAde, category: "에이드" },
   { id: 14, title: "자몽 에이드",     price: 4500, img: imgGapefruitAde,     category: "에이드" },
   { id: 15, title: "청포도 에이드",   price: 4500, img: imgGreengrapesAde,     category: "에이드" },
   // 주스
-  { id: 16, title: "오렌지 주스",     price: 4000, img: imgOrangejuice, category: "주스" },
-  { id: 17, title: "사과 주스",       price: 4000, img: imgApplejuice, category: "주스" },
-  { id: 18, title: "당근 주스",       price: 4500, img: imgCarrotjuice, category: "주스" },
+  { id: 16, title: "오렌지 주스",       price: 4000, img: imgOrangejuice,          category: "주스" },
+  { id: 17, title: "망고 주스",         price: 4500, img: imgMangoJuice,            category: "주스" },
+  { id: 18, title: "딸기 바나나 주스",  price: 4500, img: imgStrawberryBananaJuice, category: "주스" },
   // 티
   { id: 19, title: "얼그레이",        price: 3000, img: imgEarlgrey,      category: "티" },
   { id: 20, title: "캐모마일",        price: 3000, img: imgChamomile,      category: "티" },
