@@ -13,8 +13,8 @@ export { default as imgLemonAde } from "./images/음료사진/레몬에이드.sv
 export { default as imgGreengrapesAde } from "./images/음료사진/청포도에이드.svg";
 export { default as imgGapefruitAde } from "./images/음료사진/자몽에이드.svg";
 export { default as imgOrangejuice } from "./images/음료사진/오렌지주스.svg";
-export { default as imgCarrotjuice } from "./images/음료사진/당근주스.svg";
-export { default as imgApplejuice } from "./images/음료사진/사과주스.svg";
+export { default as imgMangoJuice } from "./images/음료사진/망고주스.svg";
+export { default as imgStrawberryBananaJuice } from "./images/음료사진/딸바주스.png";
 export { default as imgHibiscus } from "./images/음료사진/히비스커스.svg";
 export { default as imgEarlgrey } from "./images/음료사진/얼그레이.svg";
 export { default as imgPeppermint } from "./images/음료사진/페퍼민트.svg";
