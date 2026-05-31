@@ -1,7 +1,11 @@
 import os
+
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from ai.recommend import qa_chain
 from app.ocr.router import router as ocr_router
 
 load_dotenv()
@@ -19,6 +23,19 @@ app.add_middleware(
 app.include_router(ocr_router)
 
 
+class QueryRequest(BaseModel):
+    query: str
+
+
 @app.get("/")
 def root():
     return {"msg": "hello"}
+
+
+@app.post("/api/recommend")
+async def ask_menu(request: QueryRequest):
+    if not request.query.strip():
+        raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
+
+    answer = qa_chain.invoke(request.query)
+    return {"question": request.query, "answer": answer}
