@@ -1,9 +1,11 @@
-import { Outlet } from "react-router";
+import { Outlet } from "react-router-dom";
+import { AssistantButton } from "./components/AssistantButton";
 
 export default function App() {
   return (
-    <div className="flex h-full w-full items-center justify-center bg-gray-100">
-      <div className="flex h-full w-full max-w-md flex-col overflow-y-auto bg-white p-5">
+    <div className="min-h-screen w-full bg-[#FFEFCE]">
+      <AssistantButton />
+      <div className="w-full min-h-screen flex flex-col">
         <Outlet />
       </div>
     </div>
