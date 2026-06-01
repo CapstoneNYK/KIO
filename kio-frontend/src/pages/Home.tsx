@@ -2,55 +2,17 @@ import { NavBar } from "../components/NavBar";
 import { TopBar } from "../components/TopBar";
 import { useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
-import {
-  coffee1,
-  imgCafeLatte, imgCappuccino, imgVanillaLatte, imgCaramelMacchiato, imgEspresso,
-  imgStrawberrySmoothie, imgMangoSmoothie, imgBlueberrySmoothie,
-  imgLemonAde, imgGreengrapesAde, imgGapefruitAde, 
-  imgOrangejuice, imgMangoJuice, imgStrawberryBananaJuice,
-  imgHibiscus, imgChamomile, imgEarlgrey, imgPeppermint,
-} from "../assets";
 import { Card } from "../components/Card";
 import { MenuModal } from "../components/MenuModal";
 import { CartBar } from "../components/CartBar";
+import { SpeechInput } from "../components/SpeechInput";
+import { MENUS, CATEGORIES } from "../data/menus";
 import type { MenuItem } from "../types/menu";
-
-const CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
-
-const MENUS: MenuItem[] = [
-  // 커피
-  { id: 1,  title: "아메리카노",      price: 2000, img: coffee1,              category: "커피" },
-  { id: 2,  title: "카페라떼",        price: 3000, img: imgCafeLatte,         category: "커피" },
-  { id: 3,  title: "카푸치노",        price: 4500, img: imgCappuccino,        category: "커피" },
-  { id: 4,  title: "바닐라라떼",      price: 5000, img: imgVanillaLatte,      category: "커피" },
-  { id: 5,  title: "카라멜마키아토",  price: 5000, img: imgCaramelMacchiato, category: "커피" },
-  { id: 6,  title: "에스프레소",      price: 1500, img: imgEspresso,          category: "커피" },
-  // 디카페인
-  { id: 7,  title: "디카페인 아메리카노", price: 4500, img: coffee1,         category: "디카페인" },
-  { id: 8,  title: "디카페인 라떼",       price: 5000, img: imgCafeLatte,    category: "디카페인" },
-  { id: 9,  title: "디카페인 바닐라라떼", price: 5500, img: imgVanillaLatte, category: "디카페인" },
-  // 스무디
-  { id: 10, title: "딸기 스무디",     price: 5500, img: imgStrawberrySmoothie,  category: "스무디" },
-  { id: 11, title: "망고 요거트 스무디",     price: 5500, img: imgMangoSmoothie,       category: "스무디" },
-  { id: 12, title: "블루베리 스무디", price: 5500, img: imgBlueberrySmoothie,   category: "스무디" },
-  // 에이드
-  { id: 13, title: "레몬 에이드",     price: 4500, img: imgLemonAde, category: "에이드" },
-  { id: 14, title: "자몽 에이드",     price: 4500, img: imgGapefruitAde,     category: "에이드" },
-  { id: 15, title: "청포도 에이드",   price: 4500, img: imgGreengrapesAde,     category: "에이드" },
-  // 주스
-  { id: 16, title: "오렌지 주스",       price: 4000, img: imgOrangejuice,          category: "주스" },
-  { id: 17, title: "망고 주스",         price: 4500, img: imgMangoJuice,            category: "주스" },
-  { id: 18, title: "딸기 바나나 주스",  price: 4500, img: imgStrawberryBananaJuice, category: "주스" },
-  // 티
-  { id: 19, title: "얼그레이",        price: 3000, img: imgEarlgrey,      category: "티" },
-  { id: 20, title: "캐모마일",        price: 3000, img: imgChamomile,      category: "티" },
-  { id: 21, title: "페퍼민트",        price: 3000, img: imgPeppermint,      category: "티" },
-  { id: 22, title: "히비스커스",      price: 3000, img: imgHibiscus,  category: "티" },
-];
 
 export const Home = () => {
   const { activeCategory, setCategory: setActiveCategory } = useCategoryStore();
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   const filteredMenus = activeCategory === "전체"
     ? MENUS
@@ -75,8 +37,41 @@ export const Home = () => {
           />
         ))}
       </div>
-      
+
       <CartBar />
+
+      {/* 음성 주문 플로팅 버튼 */}
+      <div className="fixed bottom-24 left-4 z-50">
+        <button
+          onClick={() => setVoiceOpen((v) => !v)}
+          className={`
+            w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200
+            ${voiceOpen
+              ? "bg-amber-600 ring-4 ring-amber-300"
+              : "bg-amber-500 hover:bg-amber-600 hover:scale-105"}
+          `}
+          title="음성 주문"
+        >
+          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93A8.001 8.001 0 0 1 4 11H6a6 6 0 0 0 12 0h2a8.001 8.001 0 0 1-7 7.93V22h2v2H9v-2h2v-2.07z" />
+          </svg>
+        </button>
+
+        {voiceOpen && (
+          <div className="absolute bottom-16 left-0 bg-white rounded-2xl shadow-xl p-4 w-80">
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-sm font-bold text-gray-700">음성 주문</p>
+              <button
+                onClick={() => setVoiceOpen(false)}
+                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+              >
+                ✕
+              </button>
+            </div>
+            <SpeechInput />
+          </div>
+        )}
+      </div>
 
       {selectedItem && (
         <MenuModal
