@@ -3,6 +3,7 @@ export type Intent = "recommend" | "qa" | "order";
 export interface OrderInfo {
   menu: string | null;
   temperature: "ICE" | "HOT";
+  quantity: number;
   needs_recommendation: boolean;
 }
 

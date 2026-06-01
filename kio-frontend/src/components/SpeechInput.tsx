@@ -43,7 +43,7 @@ export const SpeechInput = () => {
       if (res.intent === "order" && res.order?.menu) {
         const menuItem = findMenuItem(res.order.menu);
         if (menuItem) {
-          addItem(menuItem, 1, res.order.temperature as Temperature, [], false);
+          addItem(menuItem, res.order.quantity ?? 1, res.order.temperature as Temperature, [], false);
         }
       }
     } catch (error) {

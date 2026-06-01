@@ -9,6 +9,7 @@ from ai.recommend import qa_chain
 from ai.intent import classify_intent
 from ai.entity import extract_entity
 from app.ocr.router import router as ocr_router
+from app.ocr.db import get_all_menu_texts
 
 load_dotenv()
 
@@ -51,7 +52,8 @@ async def ask_intent(request: QueryRequest):
     intent = classify_intent(request.query)
 
     if intent == "order":
-        entity = extract_entity(request.query)
+        ocr_menus = get_all_menu_texts()
+        entity = extract_entity(request.query, ocr_menus)
         base_menu = None
         temperature = "ICE"
 
@@ -80,6 +82,7 @@ async def ask_intent(request: QueryRequest):
             "order": {
                 "menu": base_menu,
                 "temperature": temperature,
+                "quantity": entity["quantity"],
                 "needs_recommendation": entity["needs_recommendation"],
             },
         }
