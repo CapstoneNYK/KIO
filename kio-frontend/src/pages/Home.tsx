@@ -6,6 +6,8 @@ import { Card } from "../components/Card";
 import { MenuModal } from "../components/MenuModal";
 import { CartBar } from "../components/CartBar";
 import { SpeechInput } from "../components/SpeechInput";
+import { CouponScanner } from "../components/CouponScanner";
+import { useCouponStore } from "../store/couponStore";
 import { MENUS, CATEGORIES } from "../data/menus";
 import type { MenuItem } from "../types/menu";
 
@@ -13,6 +15,7 @@ export const Home = () => {
   const { activeCategory, setCategory: setActiveCategory } = useCategoryStore();
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const { scanOpen, closeScan } = useCouponStore();
 
   const filteredMenus = activeCategory === "전체"
     ? MENUS
@@ -80,6 +83,8 @@ export const Home = () => {
           onOrder={() => setSelectedItem(null)}
         />
       )}
+
+      {scanOpen && <CouponScanner onClose={closeScan} />}
     </div>
   );
 };
