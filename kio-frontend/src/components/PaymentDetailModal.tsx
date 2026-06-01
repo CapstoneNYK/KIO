@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
+import { useLearningStore } from "../store/learningStore";
 import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
 import { PaymentCompleteModal } from "./PaymentCompleteModal";
 
@@ -324,6 +325,17 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
   const title = TITLES[method] ?? "결제";
   const [isProcessing, setIsProcessing] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+
+  useEffect(() => {
+    setShowComplete(learningScreen === "payment_complete");
+  }, [learningScreen]);
+
+  useEffect(() => {
+    if (guideScreen === "payment_complete") setShowComplete(true);
+  }, [guideScreen]);
 
   const handleApprove = () => {
     setIsProcessing(true);
