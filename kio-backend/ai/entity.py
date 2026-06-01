@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Optional
-from dictionary import MENU_KEYWORDS, ATTRIBUTE_KEYWORDS
+from ai.dictionary import MENU_KEYWORDS, ATTRIBUTE_KEYWORDS
 
 # 텍스트 정리
 def normalize_text(text: str) -> str:

@@ -5,7 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda ,RunnablePassthrough
 from langchain_pinecone import PineconeVectorStore
-from dictionary import MENU_DICTIONARY
+from ai.dictionary import MENU_DICTIONARY
 
 load_dotenv()
 dictionary = MENU_DICTIONARY
