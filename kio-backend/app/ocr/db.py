@@ -69,3 +69,11 @@ def get_screens() -> list[dict]:
             "SELECT screen_name, captured_at FROM screens ORDER BY captured_at DESC"
         ).fetchall()
         return [dict(r) for r in rows]
+
+
+def get_all_menu_texts() -> list[str]:
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT text FROM elements WHERE label = 'menu_item' ORDER BY text"
+        ).fetchall()
+        return [r[0] for r in rows]
