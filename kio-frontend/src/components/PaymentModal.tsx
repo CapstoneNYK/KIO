@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket } from "react-icons/lu";
 import { PaymentDetailModal } from "./PaymentDetailModal";
 import { iconKT, iconCJONE, iconTMembership, iconTUzu, iconKakao, iconNaver } from "../assets";
+import { useLearningStore } from "../store/learningStore";
 
 interface PaymentModalProps {
   onClose: () => void;
@@ -24,8 +25,21 @@ const PAYMENT_METHODS = [
   { id: "naver", label: "네이버페이", icon: null, imgIcon: iconNaver },
 ];
 
+const DETAIL_SCREENS = ["payment_card", "payment_complete"];
+
 export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+
+  useEffect(() => {
+    setSelectedMethod(DETAIL_SCREENS.includes(learningScreen ?? "") ? "card" : null);
+  }, [learningScreen]);
+
+  useEffect(() => {
+    if (DETAIL_SCREENS.includes(guideScreen ?? "")) setSelectedMethod("card");
+  }, [guideScreen]);
 
   const handleSelect = (id: string) => {
     setSelectedMethod(id);

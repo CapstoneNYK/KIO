@@ -3,8 +3,14 @@ import { toBlob } from "html-to-image";
 import { useNavigate } from "react-router-dom";
 import { logo } from "../assets";
 import { useCategoryStore } from "../store/categoryStore";
+import { useLearningStore } from "../store/learningStore";
+import { useCartStore } from "../store/cartStore";
+import { MENUS } from "../data/menus";
 
-const LEARN_SCREENS = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
+const HOME_CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
+const MODAL_SCREENS = ["menu_modal", "cart", "order_confirm", "payment", "payment_card", "payment_complete"];
+const TOTAL_SCREENS = 1 + HOME_CATEGORIES.length + MODAL_SCREENS.length;
+
 const API = `${import.meta.env.VITE_API_URL}/ocr`;
 
 type Mode = "idle" | "learning" | "querying";
@@ -68,36 +74,82 @@ export const AssistantButton = () => {
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const setCategory = useCategoryStore((s) => s.setCategory);
+  const setLearningScreen = useLearningStore((s) => s.setLearningScreen);
+  const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
+  const { addItem, clear: clearCart, items } = useCartStore();
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const captureAndLearn = async (screenName: string, progress: { count: number }) => {
+    setCurrentScreen(screenName);
+    const removeOverride = injectOklchOverride();
+    try {
+      const blob = await captureScreen();
+      const formData = new FormData();
+      formData.append("file", blob, "screen.png");
+      formData.append("screen_name", screenName);
+      await fetch(`${API}/learn`, { method: "POST", body: formData });
+    } finally {
+      removeOverride();
+    }
+    setLearnProgress(++progress.count);
+  };
 
   const startLearning = async () => {
     setMode("learning");
     setLearnProgress(0);
+    const progress = { count: 0 };
+
+    // 1. Splash screen
+    navigate("/");
+    await sleep(800);
+    await captureAndLearn("splash", progress);
+
+    // 2. Home screens with categories
     navigate("/home");
     await sleep(800);
-
-    for (let i = 0; i < LEARN_SCREENS.length; i++) {
-      const cat = LEARN_SCREENS[i];
-      const screenName = `home_${cat}`;
-      setCurrentScreen(screenName);
+    for (const cat of HOME_CATEGORIES) {
       setCategory(cat);
       await sleep(600);
-
-      const removeOverride = injectOklchOverride();
-      try {
-        const blob = await captureScreen();
-        const formData = new FormData();
-        formData.append("file", blob, "screen.png");
-        formData.append("screen_name", screenName);
-        await fetch(`${API}/learn`, { method: "POST", body: formData });
-      } finally {
-        removeOverride();
-      }
-      setLearnProgress(i + 1);
+      await captureAndLearn(`home_${cat}`, progress);
     }
-
     setCategory("전체");
+
+    // 3. Menu modal (first menu item)
+    setLearningScreen("menu_modal");
+    await sleep(600);
+    await captureAndLearn("menu_modal", progress);
+    setLearningScreen(null);
+    await sleep(300);
+
+    // 4. Cart screen
+    addItem(MENUS[0], 1, "HOT", [], false);
+    await sleep(600);
+    await captureAndLearn("cart", progress);
+
+    // 5. Order confirm modal
+    setLearningScreen("order_confirm");
+    await sleep(600);
+    await captureAndLearn("order_confirm", progress);
+
+    // 6. Payment selection modal
+    setLearningScreen("payment");
+    await sleep(600);
+    await captureAndLearn("payment", progress);
+
+    // 7. Payment card detail (cascade: order_confirm → payment → payment_card)
+    setLearningScreen("payment_card");
+    await sleep(800);
+    await captureAndLearn("payment_card", progress);
+
+    // 8. Payment complete (cascade: all 4 modals)
+    setLearningScreen("payment_complete");
+    await sleep(1000);
+    await captureAndLearn("payment_complete", progress);
+
+    // Cleanup
+    setLearningScreen(null);
+    clearCart();
     setMode("idle");
     setLearnProgress(0);
     setCurrentScreen("");
@@ -107,23 +159,58 @@ export const AssistantButton = () => {
     const trimmed = queryText.trim();
     if (!trimmed) return;
 
+    setMode("idle");
+    setQueryText("");
+
     const res = await fetch(`${API}/query?text=${encodeURIComponent(trimmed)}`);
     const data = await res.json();
     if (!data.results.length) return;
 
-    const best: Highlight = data.results[0];
-    const cat = best.screen_name.replace("home_", "");
+    const best = data.results[0] as Highlight;
+    const screenName = best.screen_name;
 
-    navigate("/home");
-    await new Promise((r) => setTimeout(r, 300));
-    setCategory(cat === "전체" ? "전체" : cat);
-    await new Promise((r) => setTimeout(r, 300));
+    const MODAL_GUIDE_SCREENS = ["order_confirm", "payment", "payment_card", "payment_complete"];
+    const CART_REQUIRED = ["cart", ...MODAL_GUIDE_SCREENS];
 
+    if (CART_REQUIRED.includes(screenName) && items.length === 0) {
+      // 결제 화면 안내는 장바구니에 메뉴가 있어야 가능
+      return;
+    }
+
+    // 화면 이동
+    if (screenName === "splash") {
+      navigate("/");
+    } else {
+      navigate("/home");
+    }
+    await sleep(400);
+
+    // 화면별 상태 세팅
+    if (screenName.startsWith("home_")) {
+      const cat = screenName.replace("home_", "");
+      setCategory(cat === "전체" ? "전체" : cat);
+      await sleep(300);
+    } else if (screenName === "menu_modal") {
+      setGuideScreen("menu_modal");
+      await sleep(600);
+    } else if (MODAL_GUIDE_SCREENS.includes(screenName)) {
+      setGuideScreen(screenName);
+      await sleep(1000); // 모달 캐스케이드 대기
+    }
+
+    // 강조 표시
     const dpr = window.devicePixelRatio || 1;
-    setHighlight({ ...best, x1: best.x1 / dpr, y1: best.y1 / dpr, x2: best.x2 / dpr, y2: best.y2 / dpr });
-    setMode("idle");
-    setQueryText("");
-    setTimeout(() => setHighlight(null), 3000);
+    setHighlight({
+      ...best,
+      x1: best.x1 / dpr, y1: best.y1 / dpr,
+      x2: best.x2 / dpr, y2: best.y2 / dpr,
+    });
+
+    // 8초 후 강조 제거 (guideScreen은 사용자가 모달 닫을 때까지 유지)
+    setTimeout(() => {
+      setHighlight(null);
+      setGuideScreen(null);
+    }, 8000);
   };
 
   const handleMouseDown = () => {
@@ -138,7 +225,7 @@ export const AssistantButton = () => {
 
   return (
     <>
-      <div id="kio-assistant" className="fixed top-4 right-4 z-[9999] flex flex-col items-end gap-2">
+      <div id="kio-assistant" className="fixed top-4 right-4 z-9999 flex flex-col items-end gap-2">
         <button
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
@@ -163,11 +250,11 @@ export const AssistantButton = () => {
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-pink-400 transition-all duration-300"
-                style={{ width: `${(learnProgress / LEARN_SCREENS.length) * 100}%` }}
+                style={{ width: `${(learnProgress / TOTAL_SCREENS) * 100}%` }}
               />
             </div>
             <p className="text-right text-gray-400 mt-1">
-              {learnProgress} / {LEARN_SCREENS.length}
+              {learnProgress} / {TOTAL_SCREENS}
             </p>
           </div>
         )}
@@ -196,7 +283,7 @@ export const AssistantButton = () => {
 
       {highlight && (
         <div
-          className="fixed z-[9998] pointer-events-none"
+          className="fixed z-9998 pointer-events-none"
           style={{
             left: highlight.x1,
             top: highlight.y1,

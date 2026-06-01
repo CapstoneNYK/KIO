@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
+import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
 import { PaymentModal } from "./PaymentModal";
 
@@ -10,9 +11,22 @@ interface OrderConfirmModalProps {
   onNext: () => void;
 }
 
+const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
+
 export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirmModalProps) => {
   const { items, updateQuantity } = useCartStore();
   const [showPayment, setShowPayment] = useState(false);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+
+  useEffect(() => {
+    setShowPayment(PAYMENT_SCREENS.includes(learningScreen ?? ""));
+  }, [learningScreen]);
+
+  useEffect(() => {
+    if (PAYMENT_SCREENS.includes(guideScreen ?? "")) setShowPayment(true);
+  }, [guideScreen]);
 
   const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
   const discountPrice = 0;
