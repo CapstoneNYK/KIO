@@ -40,8 +40,8 @@ async def ask_menu(request: QueryRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
-    answer = recommend_chain.invoke(request.query)
-    return {"question": request.query, "answer": answer}
+    result = recommend_chain.invoke(request.query)
+    return {"question": request.query, "answer": result.answer, "recommended_menus": result.menus}
 
 
 @app.post("/api/ask")
@@ -87,8 +87,13 @@ async def ask_intent(request: QueryRequest):
             },
         }
     elif intent == "recommend":
-        answer = recommend_chain.invoke(request.query)
-        return {"question": request.query, "intent": intent, "answer": answer}
+        result = recommend_chain.invoke(request.query)
+        return {
+            "question": request.query,
+            "intent": intent,
+            "answer": result.answer,
+            "recommended_menus": result.menus,
+        }
     else:
         answer = qa_chain.invoke(request.query)
         return {"question": request.query, "intent": intent, "answer": answer}

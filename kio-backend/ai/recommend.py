@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
@@ -8,8 +9,6 @@ from ai.dictionary import MENU_DICTIONARY
 from app.ocr.db import get_all_menu_texts
 
 load_dotenv()
-
-llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
 
 # ── QA 체인 (Pinecone RAG) ───────────────────────────────────────────────────
@@ -57,7 +56,12 @@ qa_chain = (
 )
 
 
-# ── 추천 체인 (OCR DB + GPT) ─────────────────────────────────────────────────
+# ── 추천 체인 (OCR DB + GPT, 구조화 출력) ────────────────────────────────────
+
+class RecommendOutput(BaseModel):
+    answer: str        # 손님에게 보여줄 추천 메시지
+    menus: list[str]   # 추천 메뉴명 목록 (OCR DB에 있는 이름 그대로)
+
 
 def _build_menu_context() -> str:
     menus = get_all_menu_texts()
@@ -77,7 +81,15 @@ _recommend_prompt = ChatPromptTemplate.from_template("""
 위 메뉴 목록에서만 골라 손님의 취향에 맞는 음료를 1~2가지 추천해 주세요.
 각 메뉴가 왜 어울리는지 맛 특징을 한 줄로 설명해 주세요.
 목록에 없는 메뉴는 절대 추천하지 마세요.
+
+반드시 아래 JSON 형식으로만 응답하세요:
+{{
+  "answer": "1. 메뉴명 - 맛 설명\\n2. 메뉴명 - 맛 설명",
+  "menus": ["메뉴명1", "메뉴명2"]
+}}
 """)
+
+_recommend_llm = ChatOpenAI(model="gpt-4o", temperature=0.7).with_structured_output(RecommendOutput)
 
 recommend_chain = (
     {
@@ -85,6 +97,5 @@ recommend_chain = (
         "menus": RunnableLambda(lambda _: _build_menu_context()),
     }
     | _recommend_prompt
-    | llm
-    | StrOutputParser()
+    | _recommend_llm
 )
