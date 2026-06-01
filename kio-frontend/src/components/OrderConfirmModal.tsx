@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
+import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { OptionCounter } from "./OptionCounter";
 import { PaymentModal } from "./PaymentModal";
 
@@ -12,10 +13,13 @@ interface OrderConfirmModalProps {
 
 export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirmModalProps) => {
   const { items, updateQuantity } = useCartStore();
+  const coupons = useCouponStore((s) => s.coupons);
   const [showPayment, setShowPayment] = useState(false);
 
   const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-  const discountPrice = 0;
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount);
+  const discountPrice = freeDiscount + couponDiscount;
 
   const getOptionSummary = (cartItem: typeof items[number]) => {
     const parts: string[] = [];
@@ -111,7 +115,9 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           </div>
           <div className="flex justify-between mb-2">
             <span className="text-gray-700">할인 금액</span>
-            <span className="font-semibold text-gray-900">{discountPrice.toLocaleString()}원</span>
+            <span className={`font-semibold ${discountPrice > 0 ? "text-green-600" : "text-gray-900"}`}>
+              {discountPrice > 0 ? "-" : ""}{discountPrice.toLocaleString()}원
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="font-bold text-gray-900">결제 금액</span>
