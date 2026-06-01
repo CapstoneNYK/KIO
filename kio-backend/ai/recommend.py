@@ -1,62 +1,42 @@
-import os
 from dotenv import load_dotenv
-from langchain_openai import OpenAIEmbeddings,ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableLambda ,RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_pinecone import PineconeVectorStore
 from ai.dictionary import MENU_DICTIONARY
+from app.ocr.db import get_all_menu_texts
 
 load_dotenv()
-dictionary = MENU_DICTIONARY
 
-# 임베딩 모델 (의미 기반 검색용)
+llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
+
+
+# ── QA 체인 (Pinecone RAG) ───────────────────────────────────────────────────
+
+_qa_llm = ChatOpenAI(model="gpt-4o", temperature=0)
 embedding = OpenAIEmbeddings(model="text-embedding-3-small")
+vectorstore = PineconeVectorStore(index_name="cafe-menu-index", embedding=embedding)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
 
-# LLM 모델 
-llm = ChatOpenAI(model='gpt-4o')
+_dictionary_text = "\n".join(f"{k} → {v}" for k, v in MENU_DICTIONARY.items())
 
-# 벡터 DB 연결
-vectorstore = PineconeVectorStore(
-    index_name="cafe-menu-index",
-    embedding=embedding
-)
+_dict_prompt = ChatPromptTemplate.from_template("""
+사용자의 질문을 보고, 아래 사전을 참고해 질문을 표준화하세요.
+변경할 필요가 없다면 질문을 그대로 반환하세요.
 
-# RAG (유사한 메뉴 5개 검색)
-retriever = vectorstore.as_retriever(search_kwargs={'k': 5})
-
-# LLM이 읽기 쉬운 문자열로 변환
-def format_docs(docs):
-    return "\n\n".join(doc.page_content for doc in docs)
-
-# LLM 프롬프트에 넣기 좋은 형태로 변환
-dictionary_text = "\n".join(
-    [f"{k} → {v}" for k, v in dictionary.items()]
-)
-
-# 질문 표준화 체인
-dictionary_prompt = ChatPromptTemplate.from_template("""
-    사용자의 질문을 보고, 아래 사전을 참고해 질문을 표준화하세요.
-    변경할 필요가 없다면 질문을 그대로 반환하세요.
-
-    사전: {dictionary}
-    
-    질문: {question}
+사전: {dictionary}
+질문: {question}
 """)
 
-# 질문 표준화 체인 (사전 기반)
-dictionary_chain = (
-    {
-        "question": RunnablePassthrough(),
-        "dictionary": RunnableLambda(lambda _: dictionary_text)
-    }
-    | dictionary_prompt
-    | llm
+_dict_chain = (
+    {"question": RunnablePassthrough(), "dictionary": RunnableLambda(lambda _: _dictionary_text)}
+    | _dict_prompt
+    | _qa_llm
     | StrOutputParser()
 )
 
-# 최종 QA 체인 (사전 기반 질문 표준화 + RAG)
-qa_prompt = ChatPromptTemplate.from_template("""
+_qa_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 메뉴 추천 전문가입니다.
 아래 검색된 메뉴 정보를 바탕으로 질문에 답변해주세요.
 모르는 경우 모른다고 말하고, 답변은 간결하게 해주세요.
@@ -66,20 +46,45 @@ qa_prompt = ChatPromptTemplate.from_template("""
 답변:
 """)
 
-# 최종 QA 체인
 qa_chain = (
     {
-        "question": dictionary_chain,
-        "context": dictionary_chain | retriever | format_docs
+        "question": _dict_chain,
+        "context": _dict_chain | retriever | (lambda docs: "\n\n".join(d.page_content for d in docs)),
     }
-    | qa_prompt
-    | llm
+    | _qa_prompt
+    | _qa_llm
     | StrOutputParser()
 )
 
-# 실행
-# if __name__ == "__main__":
-#     query = "커피베이 아아 있어?"
-#     answer = qa_chain.invoke(query)
-#     print("질문:", query)
-#     print("답변:", answer)
+
+# ── 추천 체인 (OCR DB + GPT) ─────────────────────────────────────────────────
+
+def _build_menu_context() -> str:
+    menus = get_all_menu_texts()
+    if not menus:
+        return "현재 등록된 메뉴가 없습니다."
+    return "\n".join(f"- {m}" for m in menus)
+
+
+_recommend_prompt = ChatPromptTemplate.from_template("""
+당신은 카페 키오스크 음료 추천 전문가입니다.
+아래는 현재 주문 가능한 메뉴 목록입니다.
+
+{menus}
+
+손님 요청: {question}
+
+위 메뉴 목록에서만 골라 손님의 취향에 맞는 음료를 1~2가지 추천해 주세요.
+각 메뉴가 왜 어울리는지 맛 특징을 한 줄로 설명해 주세요.
+목록에 없는 메뉴는 절대 추천하지 마세요.
+""")
+
+recommend_chain = (
+    {
+        "question": RunnablePassthrough(),
+        "menus": RunnableLambda(lambda _: _build_menu_context()),
+    }
+    | _recommend_prompt
+    | llm
+    | StrOutputParser()
+)

@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ai.recommend import qa_chain
+from ai.recommend import qa_chain, recommend_chain
 from ai.intent import classify_intent
 from ai.entity import extract_entity
 from app.ocr.router import router as ocr_router
@@ -40,7 +40,7 @@ async def ask_menu(request: QueryRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
-    answer = qa_chain.invoke(request.query)
+    answer = recommend_chain.invoke(request.query)
     return {"question": request.query, "answer": answer}
 
 
@@ -86,6 +86,9 @@ async def ask_intent(request: QueryRequest):
                 "needs_recommendation": entity["needs_recommendation"],
             },
         }
+    elif intent == "recommend":
+        answer = recommend_chain.invoke(request.query)
+        return {"question": request.query, "intent": intent, "answer": answer}
     else:
         answer = qa_chain.invoke(request.query)
         return {"question": request.query, "intent": intent, "answer": answer}
