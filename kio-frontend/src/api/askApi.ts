@@ -12,6 +12,7 @@ export interface AskResponse {
   intent: Intent;
   answer: string;
   order?: OrderInfo;
+  recommended_menus?: string[];
 }
 
 export const askApi = async (query: string): Promise<AskResponse> => {

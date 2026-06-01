@@ -16,12 +16,25 @@ function findMenuItem(menuName: string | null): MenuItem | null {
   );
 }
 
+const NUMBER_REF: { pattern: RegExp; index: number }[] = [
+  { pattern: /1번|첫\s*번째|첫째/, index: 0 },
+  { pattern: /2번|두\s*번째|둘째/, index: 1 },
+];
+
 export const SpeechInput = () => {
   const { transcript, listening, startListening, stopListening, resetTranscript } = useSTT("ko-KR");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const answerRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((s) => s.addItem);
+
+  const resolveMenuFromRef = (query: string): string | null => {
+    for (const { pattern, index } of NUMBER_REF) {
+      if (pattern.test(query)) return lastRecommended[index] ?? null;
+    }
+    return null;
+  };
 
   const handleButtonClick = () => {
     if (listening) {
@@ -40,10 +53,26 @@ export const SpeechInput = () => {
       const res = await askApi(query);
       setAnswer(res.answer);
 
-      if (res.intent === "order" && res.order?.menu) {
-        const menuItem = findMenuItem(res.order.menu);
-        if (menuItem) {
-          addItem(menuItem, res.order.quantity ?? 1, res.order.temperature as Temperature, [], false);
+      if (res.intent === "recommend" && res.recommended_menus) {
+        setLastRecommended(res.recommended_menus);
+      }
+
+      if (res.intent === "order") {
+        let menuName = res.order?.menu ?? null;
+        let temperature = res.order?.temperature as Temperature ?? "ICE";
+
+        if (!menuName) {
+          menuName = resolveMenuFromRef(query);
+          if (menuName) {
+            temperature = menuName.startsWith("핫") || menuName.startsWith("따뜻") ? "HOT" : "ICE";
+          }
+        }
+
+        if (menuName) {
+          const menuItem = findMenuItem(menuName);
+          if (menuItem) {
+            addItem(menuItem, res.order?.quantity ?? 1, temperature, [], false);
+          }
         }
       }
     } catch (error) {
