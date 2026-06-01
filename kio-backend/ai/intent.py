@@ -12,13 +12,13 @@ llm = ChatOpenAI(
 )
 
 # 의도 종류
-INTENTS = ["recommend", "qa", "order"]
+INTENTS = ["recommend", "qa", "order", "coupon"]
 
 # 의도 분류 프롬프트
 intent_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음성 주문 시스템의 AI입니다.
 
-사용자의 입력을 아래 3가지 의도 중 하나로 분류하세요.
+사용자의 입력을 아래 4가지 의도 중 하나로 분류하세요.
 
 1. recommend → 메뉴 추천 요청
    - 예: "당 떨어지는데 음료 추천해줘", "달달한 거 뭐 있어?"
@@ -29,12 +29,15 @@ intent_prompt = ChatPromptTemplate.from_template("""
 3. order → 주문 또는 행동 요청
    - 예: "아메리카노 하나 줘", "라떼 주문할게", "이거 담아줘"
 
+4. coupon → 쿠폰/상품권 사용 요청 또는 질문
+   - 예: "이 쿠폰 어떻게 써?", "쿠폰 사용하고 싶어", "상품권 쓰는 방법 알려줘", "이거 쿠폰인데 어떻게 해?"
+
 규칙:
-- 반드시 아래 셋 중 하나만 출력하세요
+- 반드시 아래 넷 중 하나만 출력하세요
 - 다른 말 절대 하지 마세요
 
 출력:
-recommend / qa / order
+recommend / qa / order / coupon
 
 사용자 입력: {question}
 """)

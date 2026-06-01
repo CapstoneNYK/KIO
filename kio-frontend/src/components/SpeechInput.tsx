@@ -2,6 +2,7 @@ import { useSTT } from "../utils/sttUtil";
 import { useState, useEffect, useRef } from "react";
 import { askApi } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
+import { useCouponStore } from "../store/couponStore";
 import { MENUS } from "../data/menus";
 import type { MenuItem, Temperature } from "../types/menu";
 
@@ -28,6 +29,7 @@ export const SpeechInput = () => {
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const answerRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((s) => s.addItem);
+  const openScan = useCouponStore((s) => s.openScan);
 
   const resolveMenuFromRef = (query: string): string | null => {
     for (const { pattern, index } of NUMBER_REF) {
@@ -74,6 +76,10 @@ export const SpeechInput = () => {
             addItem(menuItem, res.order?.quantity ?? 1, temperature, [], false);
           }
         }
+      }
+
+      if (res.intent === "coupon") {
+        openScan();
       }
     } catch (error) {
       console.error(error);

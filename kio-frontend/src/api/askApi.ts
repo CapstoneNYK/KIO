@@ -1,4 +1,4 @@
-export type Intent = "recommend" | "qa" | "order";
+export type Intent = "recommend" | "qa" | "order" | "coupon";
 
 export interface OrderInfo {
   menu: string | null;
