@@ -14,10 +14,11 @@ export const CartBar = () => {
   if (items.length === 0) return null;
 
   const totalQty = items.reduce((sum, i) => sum + i.quantity, 0);
-  // 무료 아이템은 가격 계산에서 제외
-  const totalPrice = items.reduce((sum, i) => i.isFree ? sum : sum + i.item.price * i.quantity, 0);
-  const discount = calcDiscount(coupons, totalPrice);
-  const finalPrice = totalPrice - discount;
+  const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount);
+  const totalDiscount = freeDiscount + couponDiscount;
+  const finalPrice = totalPrice - totalDiscount;
 
   return (
     <div className="border-t border-gray-200 bg-white px-4 pt-3 pb-4 shrink-0">
@@ -54,13 +55,9 @@ export const CartBar = () => {
               <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                 {cartItem.item.title}
               </p>
-              {cartItem.isFree ? (
-                <p className="text-xs font-bold text-green-600 mb-1">무료 🎟️</p>
-              ) : (
-                <p className="text-sm font-bold text-orange-500 mb-1">
-                  {(cartItem.item.price * cartItem.quantity).toLocaleString()}원
-                </p>
-              )}
+              <p className="text-sm font-bold text-orange-500 mb-1">
+                {(cartItem.item.price * cartItem.quantity).toLocaleString()}원
+              </p>
               <OptionCounter
                 count={cartItem.quantity}
                 min={1}
@@ -79,9 +76,9 @@ export const CartBar = () => {
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-gray-600">총 {totalQty}개</span>
         <div className="text-right">
-          {discount > 0 && (
+          {totalDiscount > 0 && (
             <p className="text-xs text-green-600 font-semibold">
-              쿠폰 할인 -{discount.toLocaleString()}원
+              쿠폰 할인 -{totalDiscount.toLocaleString()}원
             </p>
           )}
           <p className="text-xs text-gray-400">결제 금액</p>

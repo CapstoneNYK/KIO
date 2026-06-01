@@ -45,7 +45,7 @@ export const CouponScanner = ({ onClose }: CouponScannerProps) => {
           const menuItem = MENUS.find((m) => m.title === data.menu);
           if (menuItem) {
             // isFree: true로 추가 → 가격 0원으로 처리, 쿠폰스토어 등록 불필요
-            addItem(menuItem, 1, "ICE", [], false, true);
+            addItem(menuItem, 1, "ICE", [], true, true);
           }
         }
       } catch {

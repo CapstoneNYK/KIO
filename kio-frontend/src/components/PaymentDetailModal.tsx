@@ -54,11 +54,11 @@ const CardPayment = ({
   onCancel: () => void;
   onApprove: () => void;
 }) => {
-  const cartTotal = useCartStore((s) =>
-    s.items.reduce((sum, i) => i.isFree ? sum : sum + i.item.price * i.quantity, 0)
-  );
+  const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
-  const discount = calcDiscount(coupons, cartTotal);
+  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
   const totalPrice = cartTotal - discount;
   const [cardNumber, setCardNumber] = useState("");
 
@@ -116,11 +116,11 @@ const CardPayment = ({
 
 // 모바일 상품권
 const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
-  const cartTotal = useCartStore((s) =>
-    s.items.reduce((sum, i) => i.isFree ? sum : sum + i.item.price * i.quantity, 0)
-  );
+  const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
-  const discount = calcDiscount(coupons, cartTotal);
+  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
   const totalPrice = cartTotal - discount;
   const [coupon, setCoupon] = useState("");
 
@@ -280,11 +280,11 @@ const AppBarcodePayment = ({
   logoIcon: string;
   onApprove: () => void;
 }) => {
-  const cartTotal = useCartStore((s) =>
-    s.items.reduce((sum, i) => i.isFree ? sum : sum + i.item.price * i.quantity, 0)
-  );
+  const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
-  const discount = calcDiscount(coupons, cartTotal);
+  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
   const totalPrice = cartTotal - discount;
   const [remaining, setRemaining] = useState(5);
 
