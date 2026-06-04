@@ -44,9 +44,10 @@ export const CouponScanner = ({ onClose }: CouponScannerProps) => {
         if (data.type === "product" && data.menu) {
           const menuItem = MENUS.find((m) => m.title === data.menu);
           if (menuItem) {
-            // isFree: true로 추가 → 가격 0원으로 처리, 쿠폰스토어 등록 불필요
             addItem(menuItem, 1, "ICE", [], true, true);
           }
+          onClose();
+          return;
         }
       } catch {
         setError("스캔 처리 중 오류가 발생했습니다.");
@@ -73,7 +74,7 @@ export const CouponScanner = ({ onClose }: CouponScannerProps) => {
 
   return (
     <div className="fixed inset-0 z-9997 bg-black/70 flex items-center justify-center">
-      <div className="relative bg-white rounded-2xl w-[85%] max-w-sm overflow-hidden shadow-2xl">
+      <div className="relative bg-white rounded-2xl w-[90%] max-w-md overflow-hidden shadow-2xl">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <p className="font-bold text-gray-800">쿠폰 스캔</p>
@@ -87,11 +88,11 @@ export const CouponScanner = ({ onClose }: CouponScannerProps) => {
           <>
             <div
               className="relative mx-5 mt-5 mb-3 rounded-xl overflow-hidden bg-black"
-              style={{ aspectRatio: "1" }}
+              style={{ aspectRatio: "5 / 2" }}
             >
               <video ref={ref} className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} autoPlay muted playsInline />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-44 h-44 border-2 border-white/80 rounded-xl" />
+                <div className="w-4/5 h-3/4 border-2 border-white/80 rounded-xl" />
               </div>
             </div>
             <p className="text-center text-sm text-gray-400 pb-5">바코드를 사각형 안에 맞춰주세요</p>
@@ -118,12 +119,14 @@ export const CouponScanner = ({ onClose }: CouponScannerProps) => {
 
         {/* 금액 상품권 결과 */}
         {result?.type === "amount" && (
-          <div className="px-5 py-6 flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-3xl">🎟️</div>
-            <p className="font-bold text-gray-800 text-base text-center">{result.description}</p>
-            <div className="w-full rounded-xl bg-amber-50 border border-amber-200 py-4 text-center">
-              <p className="text-xs text-gray-400 mb-1">사용 가능 금액</p>
-              <p className="text-2xl font-bold text-amber-600">{result.balance?.toLocaleString()}원</p>
+          <div className="px-5 py-6 flex flex-col gap-4">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">쿠폰 종류</p>
+              <p className="font-bold text-gray-800 text-base">{result.description}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">잔액</p>
+              <p className="font-bold text-orange-500 text-base">{result.balance?.toLocaleString()}원</p>
             </div>
             <div className="flex gap-2 w-full">
               <button

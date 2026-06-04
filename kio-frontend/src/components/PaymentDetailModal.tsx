@@ -4,6 +4,7 @@ import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
 import { PaymentCompleteModal } from "./PaymentCompleteModal";
+import { CouponScanner } from "./CouponScanner";
 
 interface PaymentDetailModalProps {
   method: string;
@@ -57,7 +58,7 @@ const CardPayment = ({
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
   const totalPrice = cartTotal - discount;
   const [cardNumber, setCardNumber] = useState("");
@@ -119,15 +120,22 @@ const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
   const totalPrice = cartTotal - discount;
   const [coupon, setCoupon] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleNumPress = (val: string) => {
     if (val === "clear") { setCoupon(""); return; }
     if (val === "back") { setCoupon((p) => p.slice(0, -1)); return; }
     setCoupon((p) => p + val);
+  };
+
+  const handleQuery = () => {
+    if (!coupon) {
+      setShowScanner(true);
+    }
   };
 
   return (
@@ -167,7 +175,7 @@ const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
 
       <div className="flex gap-3 mb-4">
         <button
-          onClick={onCancel}
+          onClick={handleQuery}
           className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
@@ -186,6 +194,8 @@ const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
       </p>
 
       <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain" />
+
+      {showScanner && <CouponScanner onClose={() => setShowScanner(false)} />}
     </>
   );
 };
@@ -283,7 +293,7 @@ const AppBarcodePayment = ({
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
   const totalPrice = cartTotal - discount;
   const [remaining, setRemaining] = useState(5);
