@@ -17,7 +17,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
   const [showPayment, setShowPayment] = useState(false);
 
   const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount);
   const discountPrice = freeDiscount + couponDiscount;
 

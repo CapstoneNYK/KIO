@@ -15,7 +15,7 @@ export const CartBar = () => {
 
   const totalQty = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price * i.quantity : sum, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount);
   const totalDiscount = freeDiscount + couponDiscount;
   const finalPrice = totalPrice - totalDiscount;
@@ -75,16 +75,18 @@ export const CartBar = () => {
       {/* 합계 + 주문 버튼 */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-gray-600">총 {totalQty}개</span>
-        <div className="text-right">
+        <div className="flex flex-col items-end gap-0.5">
           {totalDiscount > 0 && (
             <p className="text-xs text-green-600 font-semibold">
               쿠폰 할인 -{totalDiscount.toLocaleString()}원
             </p>
           )}
-          <p className="text-xs text-gray-400">결제 금액</p>
-          <p className="text-base font-bold text-orange-500">
-            {finalPrice.toLocaleString()}원
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-gray-400">결제 금액</p>
+            <p className="text-base font-bold text-orange-500">
+              {finalPrice.toLocaleString()}원
+            </p>
+          </div>
         </div>
       </div>
 
