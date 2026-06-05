@@ -1,4 +1,4 @@
-export type Intent = "recommend" | "qa" | "order";
+export type Intent = "recommend" | "qa" | "order" | "payment";
 
 export interface OrderInfo {
   menu: string | null;
@@ -13,6 +13,7 @@ export interface AskResponse {
   answer: string;
   order?: OrderInfo;
   recommended_menus?: string[];
+  payment_method?: string | null;
 }
 
 export const askApi = async (query: string): Promise<AskResponse> => {
