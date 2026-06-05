@@ -86,17 +86,19 @@ export const SpeechInput = () => {
 
         if (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu)) {
           const refMenus = resolveMenusFromRef(query);
+          const quantity = ordersToProcess[0]?.quantity ?? 1;
           const added: string[] = [];
           for (const refMenu of refMenus) {
             const temperature: Temperature = refMenu.startsWith("핫") || refMenu.startsWith("따뜻") ? "HOT" : "ICE";
             const menuItem = findMenuItem(refMenu);
             if (menuItem) {
-              addItem(menuItem, 1, temperature, [], false);
+              addItem(menuItem, quantity, temperature, [], false);
               added.push(refMenu);
             }
           }
           if (added.length > 0) {
-            botText = `${added.join(", ")}을(를) 장바구니에 담았습니다.`;
+            const qtyText = quantity > 1 ? ` ${quantity}개` : "";
+            botText = `${added.join(", ")}${qtyText}을(를) 장바구니에 담았습니다.`;
           }
         } else {
           for (const orderInfo of ordersToProcess) {
