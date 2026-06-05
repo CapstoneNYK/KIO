@@ -3,6 +3,8 @@ import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket, LuSparkles } from "r
 import { PaymentDetailModal } from "./PaymentDetailModal";
 import { iconKT, iconCJONE, iconTMembership, iconTUzu, iconKakao, iconNaver } from "../assets";
 import { useLearningStore } from "../store/learningStore";
+import { useCartStore } from "../store/cartStore";
+import { useCouponStore, calcDiscount } from "../store/couponStore";
 
 interface PaymentModalProps {
   onClose: () => void;
@@ -33,6 +35,14 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const highlightPaymentMethod = useLearningStore((s) => s.highlightPaymentMethod);
   const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
+  const items = useCartStore((s) => s.items);
+  const coupons = useCouponStore((s) => s.coupons);
+
+  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => (i.isFree ? sum + i.item.price : sum), 0);
+  const couponDiscount = calcDiscount(coupons, cartTotal - freeDiscount);
+  const remainingPrice = cartTotal - freeDiscount - couponDiscount;
+  const hasAmountCoupon = coupons.some((c) => c.type === "amount");
 
   useEffect(() => {
     setSelectedMethod(DETAIL_SCREENS.includes(learningScreen ?? "") ? "card" : null);
@@ -68,6 +78,17 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
+          {/* 상품권 차액 결제 안내 */}
+          {hasAmountCoupon && remainingPrice > 0 && (
+            <div className="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200">
+              <p className="text-sm font-semibold text-amber-700">상품권이 적용됐어요</p>
+              <p className="text-sm text-amber-600">
+                남은 결제금액{" "}
+                <span className="font-bold">{remainingPrice.toLocaleString()}원</span>을 결제해주세요
+              </p>
+            </div>
+          )}
+
           {/* 할인수단 */}
           <p className="font-bold text-gray-800 text-lg mb-4">할인수단</p>
           <div className="grid grid-cols-2 gap-4 mb-8">
