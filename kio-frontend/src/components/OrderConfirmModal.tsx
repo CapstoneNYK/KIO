@@ -20,6 +20,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
   const [userPayment, setUserPayment] = useState(false);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
+  const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
 
   const showPayment = userPayment
     || PAYMENT_SCREENS.includes(learningScreen ?? "")
@@ -163,9 +164,10 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
 
       {showPayment && (
         <PaymentModal
-          onClose={() => setUserPayment(false)}
+          onClose={() => { setUserPayment(false); setGuideScreen(null); }}
           onSelect={(_method) => {
             setUserPayment(false);
+            setGuideScreen(null);
             onNext();
           }}
         />
