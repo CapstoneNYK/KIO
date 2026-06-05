@@ -5,7 +5,7 @@ import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { MENUS } from "../data/menus";
-import type { MenuItem, Temperature } from "../types/menu";
+import type { MenuItem, Temperature, MenuOption } from "../types/menu";
 
 type Message = { role: "user" | "bot"; text: string };
 
@@ -112,7 +112,8 @@ export const SpeechInput = () => {
             if (!orderInfo.menu) continue;
             const temperature = orderInfo.temperature as Temperature ?? "ICE";
             const menuItem = findMenuItem(orderInfo.menu);
-            if (menuItem) addItem(menuItem, orderInfo.quantity ?? 1, temperature, [], false);
+            const menuOptions: MenuOption[] = (orderInfo.options ?? []).map((name) => ({ name, count: 1 }));
+            if (menuItem) addItem(menuItem, orderInfo.quantity ?? 1, temperature, menuOptions, false);
           }
         }
       }

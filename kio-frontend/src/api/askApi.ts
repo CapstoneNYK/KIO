@@ -4,6 +4,7 @@ export interface OrderInfo {
   menu: string | null;
   temperature: "ICE" | "HOT";
   quantity: number;
+  options?: string[];
   needs_recommendation: boolean;
 }
 

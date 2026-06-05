@@ -11,25 +11,15 @@ interface MenuModalProps {
 }
 
 const COFFEE_OPTIONS: MenuOption[] = [
-  { name: "텀블러 할인", count: 0 },
   { name: "샷추가", count: 0 },
   { name: "연하게", count: 0 },
-  { name: "빨대 / 스틱 필요", count: 0 },
-  { name: "캐리어 / 봉투 필요", count: 0 },
 ];
 
 const TEA_OPTIONS: MenuOption[] = [
-  { name: "텀블러 할인", count: 0 },
   { name: "샷추가", count: 0 },
-  { name: "빨대 / 스틱 필요", count: 0 },
-  { name: "캐리어 / 봉투 필요", count: 0 },
 ];
 
-const NON_COFFEE_OPTIONS: MenuOption[] = [
-  { name: "텀블러 할인", count: 0 },
-  { name: "빨대 / 스틱 필요", count: 0 },
-  { name: "캐리어 / 봉투 필요", count: 0 },
-];
+const NON_COFFEE_OPTIONS: MenuOption[] = [];
 
 const COFFEE_CATEGORIES = ["커피", "디카페인"];
 const TEA_CATEGORIES = ["티"];
@@ -54,9 +44,9 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
     );
   };
 
-  const handleOrder = (isPackaging: boolean) => {
-    addItem(item, quantity, temperature, options, isPackaging);
-    onOrder(item, quantity, temperature, options, isPackaging);
+  const handleOrder = () => {
+    addItem(item, quantity, temperature, options, false);
+    onOrder(item, quantity, temperature, options, false);
     onClose();
   };
 
@@ -125,38 +115,33 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
           </div>}
 
           {/* 선택옵션 */}
-          <p className="font-bold text-gray-800 text-xl mb-4">선택옵션</p>
-          <div className="flex flex-col gap-8 pl-4">
-            {options.map((opt, idx) => (
-              <div key={opt.name} className="flex items-center gap-4">
-                <span className="flex-1 text-gray-700 text-xl">{opt.name}</span>
-                <OptionCounter
-                  count={opt.count}
-                  onDecrement={() => updateOption(idx, -1)}
-                  onIncrement={() => updateOption(idx, 1)}
-                />
+          {options.length > 0 && (
+            <>
+              <p className="font-bold text-gray-800 text-xl mb-4">선택옵션</p>
+              <div className="flex flex-col gap-8 pl-4">
+                {options.map((opt, idx) => (
+                  <div key={opt.name} className="flex items-center gap-4">
+                    <span className="flex-1 text-gray-700 text-xl">{opt.name}</span>
+                    <OptionCounter
+                      count={opt.count}
+                      onDecrement={() => updateOption(idx, -1)}
+                      onIncrement={() => updateOption(idx, 1)}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
 
-        {/* 주문 버튼 */}
-        <div className="flex gap-4 px-8 py-6">
+        {/* 담기 버튼 */}
+        <div className="px-8 py-6">
           <button
-            onClick={() => handleOrder(false)}
-            className="flex-1 text-white rounded-xl py-5 text-lg font-bold active:brightness-95 transition" style={{ backgroundColor: '#FFB900' }}
+            onClick={handleOrder}
+            className="w-full text-white rounded-xl py-5 text-lg font-bold active:brightness-95 transition"
+            style={{ backgroundColor: "#FFB900" }}
           >
-            먹고가기
-            <br />
-            <span className="text-sm font-normal">(다회용컵)</span>
-          </button>
-          <button
-            onClick={() => handleOrder(true)}
-            className="flex-1 text-white rounded-xl py-5 text-lg font-bold active:brightness-95 transition" style={{ backgroundColor: '#FFB900' }}
-          >
-            포장하기
-            <br />
-            <span className="text-sm font-normal">(일회용컵)</span>
+            담기
           </button>
         </div>
       </div>
