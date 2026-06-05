@@ -2,6 +2,7 @@ import { useSTT } from "../utils/sttUtil";
 import { useState, useEffect, useRef } from "react";
 import { askApi } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
+import { useLearningStore } from "../store/learningStore";
 import { MENUS } from "../data/menus";
 import type { MenuItem, Temperature } from "../types/menu";
 
@@ -28,6 +29,9 @@ export const SpeechInput = () => {
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const answerRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((s) => s.addItem);
+  const cartItems = useCartStore((s) => s.items);
+  const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
+  const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
 
   const resolveMenuFromRef = (query: string): string | null => {
     for (const { pattern, index } of NUMBER_REF) {
@@ -55,6 +59,16 @@ export const SpeechInput = () => {
 
       if (res.intent === "recommend" && res.recommended_menus) {
         setLastRecommended(res.recommended_menus);
+      }
+
+      if (res.intent === "payment") {
+        if (cartItems.length === 0) {
+          setAnswer("장바구니가 비어 있어요. 먼저 메뉴를 담아주세요.");
+        } else {
+          setHighlightPaymentMethod(res.payment_method ?? null);
+          setGuideScreen(res.payment_method ? "payment" : "order_confirm");
+        }
+        return;
       }
 
       if (res.intent === "order") {
