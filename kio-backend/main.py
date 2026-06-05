@@ -5,8 +5,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ai.recommend import qa_chain
+from ai.recommend import qa_chain, recommend_chain
+from ai.intent import classify_intent
+from ai.entity import extract_entity
+from ai.payment import get_payment_response
 from app.ocr.router import router as ocr_router
+from app.ocr.db import get_all_menu_texts
 
 load_dotenv()
 
@@ -37,5 +41,68 @@ async def ask_menu(request: QueryRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
-    answer = qa_chain.invoke(request.query)
-    return {"question": request.query, "answer": answer}
+    result = recommend_chain.invoke(request.query)
+    return {"question": request.query, "answer": result.answer, "recommended_menus": result.menus}
+
+
+@app.post("/api/ask")
+async def ask_intent(request: QueryRequest):
+    if not request.query.strip():
+        raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
+
+    intent = classify_intent(request.query)
+
+    if intent == "order":
+        ocr_menus = get_all_menu_texts()
+        entity = extract_entity(request.query, ocr_menus)
+        base_menu = None
+        temperature = "ICE"
+
+        if entity["menu"]:
+            raw = entity["menu"]
+            if raw.startswith("아이스 "):
+                base_menu = raw[4:]
+                temperature = "ICE"
+            elif raw.startswith("핫 "):
+                base_menu = raw[2:]
+                temperature = "HOT"
+            else:
+                base_menu = raw
+                temperature = "HOT" if "hot" in entity["attributes"] else "ICE"
+
+        if base_menu:
+            temp_str = "아이스" if temperature == "ICE" else "따뜻한"
+            answer = f"{temp_str} {base_menu}을(를) 장바구니에 담았습니다."
+        else:
+            answer = "어떤 메뉴를 주문하시겠어요?"
+
+        return {
+            "question": request.query,
+            "intent": "order",
+            "answer": answer,
+            "order": {
+                "menu": base_menu,
+                "temperature": temperature,
+                "quantity": entity["quantity"],
+                "needs_recommendation": entity["needs_recommendation"],
+            },
+        }
+    elif intent == "recommend":
+        result = recommend_chain.invoke(request.query)
+        return {
+            "question": request.query,
+            "intent": intent,
+            "answer": result.answer,
+            "recommended_menus": result.menus,
+        }
+    elif intent == "payment":
+        answer, payment_method = get_payment_response(request.query)
+        return {
+            "question": request.query,
+            "intent": "payment",
+            "answer": answer,
+            "payment_method": payment_method,
+        }
+    else:
+        answer = qa_chain.invoke(request.query)
+        return {"question": request.query, "intent": intent, "answer": answer}

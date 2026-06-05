@@ -1,19 +1,44 @@
 import { useSTT } from "../utils/sttUtil";
 import { useState, useEffect, useRef } from "react";
-import { recommendApi } from "../api/recommendApi";
+import { askApi } from "../api/askApi";
+import { useCartStore } from "../store/cartStore";
+import { useLearningStore } from "../store/learningStore";
+import { MENUS } from "../data/menus";
+import type { MenuItem, Temperature } from "../types/menu";
+
+function findMenuItem(menuName: string | null): MenuItem | null {
+  if (!menuName) return null;
+  const normalized = menuName.replace(/\s/g, "").toLowerCase();
+  return (
+    MENUS.find((m) => {
+      const title = m.title.replace(/\s/g, "").toLowerCase();
+      return title.includes(normalized) || normalized.includes(title);
+    }) ?? null
+  );
+}
+
+const NUMBER_REF: { pattern: RegExp; index: number }[] = [
+  { pattern: /1번|첫\s*번째|첫째/, index: 0 },
+  { pattern: /2번|두\s*번째|둘째/, index: 1 },
+];
 
 export const SpeechInput = () => {
-  const {
-    transcript,
-    listening,
-    startListening,
-    stopListening,
-    resetTranscript,
-  } = useSTT("ko-KR");
-
+  const { transcript, listening, startListening, stopListening, resetTranscript } = useSTT("ko-KR");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const answerRef = useRef<HTMLDivElement>(null);
+  const addItem = useCartStore((s) => s.addItem);
+  const cartItems = useCartStore((s) => s.items);
+  const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
+  const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
+
+  const resolveMenuFromRef = (query: string): string | null => {
+    for (const { pattern, index } of NUMBER_REF) {
+      if (pattern.test(query)) return lastRecommended[index] ?? null;
+    }
+    return null;
+  };
 
   const handleButtonClick = () => {
     if (listening) {
@@ -27,11 +52,43 @@ export const SpeechInput = () => {
 
   const handleAsk = async (query: string) => {
     if (!query.trim()) return;
-
     setLoading(true);
     try {
-      const answer = await recommendApi(query);
-      setAnswer(answer);
+      const res = await askApi(query);
+      setAnswer(res.answer);
+
+      if (res.intent === "recommend" && res.recommended_menus) {
+        setLastRecommended(res.recommended_menus);
+      }
+
+      if (res.intent === "payment") {
+        if (cartItems.length === 0) {
+          setAnswer("장바구니가 비어 있어요. 먼저 메뉴를 담아주세요.");
+        } else {
+          setHighlightPaymentMethod(res.payment_method ?? null);
+          setGuideScreen(res.payment_method ? "payment" : "order_confirm");
+        }
+        return;
+      }
+
+      if (res.intent === "order") {
+        let menuName = res.order?.menu ?? null;
+        let temperature = res.order?.temperature as Temperature ?? "ICE";
+
+        if (!menuName) {
+          menuName = resolveMenuFromRef(query);
+          if (menuName) {
+            temperature = menuName.startsWith("핫") || menuName.startsWith("따뜻") ? "HOT" : "ICE";
+          }
+        }
+
+        if (menuName) {
+          const menuItem = findMenuItem(menuName);
+          if (menuItem) {
+            addItem(menuItem, res.order?.quantity ?? 1, temperature, [], false);
+          }
+        }
+      }
     } catch (error) {
       console.error(error);
       setAnswer("질문 처리 중 오류가 발생했습니다.");
@@ -40,7 +97,6 @@ export const SpeechInput = () => {
     }
   };
 
-  // 음성인식 중지되면 자동으로 API 호출
   useEffect(() => {
     if (!listening && transcript) {
       handleAsk(transcript);
@@ -48,32 +104,34 @@ export const SpeechInput = () => {
   }, [listening, transcript]);
 
   useEffect(() => {
-    if (answer) {
-      answerRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    if (answer) answerRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [answer]);
 
   return (
-    <div>
-      <div className="w-full max-w-md flex flex-col gap-12">
-        {/* 사용자 말풍선 */}
+    <div className="flex flex-col h-full">
+      {/* 채팅 히스토리 영역 (스크롤) */}
+      <div className="flex-1 overflow-y-auto flex flex-col gap-3 p-3 min-h-0">
+        {!transcript && !answer && !loading && (
+          <p className="text-xs text-pink-300 text-center pt-4">
+            아래 버튼을 눌러 말씀해 주세요
+          </p>
+        )}
+
         {transcript && (
           <div className="flex justify-end">
-            <div className="relative bg-amber-400 text-amber-950 px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
+            <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
               <p className="text-sm leading-relaxed">{transcript}</p>
-              <div className="absolute bottom-0 right-0 translate-x-1 translate-y-1 w-3 h-3 bg-amber-400 clip-tail" />
             </div>
           </div>
         )}
 
-        {/* AI 답변 말풍선 */}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white border border-amber-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
+            <div className="bg-white border border-pink-100 px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm">
               <div className="flex gap-1 items-center h-5">
-                <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-2 h-2 bg-amber-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
@@ -81,49 +139,37 @@ export const SpeechInput = () => {
 
         {answer && !loading && (
           <div className="flex justify-start" ref={answerRef}>
-            <div className="bg-white border border-amber-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
+            <div className="bg-white border border-pink-100 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
               <p className="text-sm text-gray-800 leading-relaxed">{answer}</p>
             </div>
           </div>
         )}
+      </div>
 
-        {/* 마이크 버튼 */}
-        <div className="flex flex-col items-center gap-3 mt-4">
-          <button
-            onClick={handleButtonClick}
-            className={`
-              w-20 h-20 rounded-full flex items-center justify-center shadow-md transition-all duration-200
-              ${
-                listening
-                  ? "bg-red-500 hover:bg-red-600 scale-110 ring-4 ring-red-300 animate-pulse"
-                  : "bg-amber-500 hover:bg-amber-600 hover:scale-105"
-              }
-            `}
-          >
-            {listening ? (
-              /* 중지 아이콘 */
-              <svg
-                className="w-8 h-8 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-            ) : (
-              /* 마이크 아이콘 */
-              <svg
-                className="w-8 h-8 text-white"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93A8.001 8.001 0 0 1 4 11H6a6 6 0 0 0 12 0h2a8.001 8.001 0 0 1-7 7.93V22h2v2H9v-2h2v-2.07z" />
-              </svg>
-            )}
-          </button>
-          <p className="text-xs text-amber-700">
-            {listening ? "듣는 중... 탭하면 중지" : "탭하면 음성 인식 시작"}
-          </p>
-        </div>
+      {/* 마이크 버튼 (하단 고정) */}
+      <div className="flex flex-col items-center gap-2 p-3 border-t border-pink-50">
+        <button
+          onClick={handleButtonClick}
+          className={`
+            w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all duration-200
+            ${listening
+              ? "bg-red-500 hover:bg-red-600 scale-110 ring-4 ring-red-300 animate-pulse"
+              : "bg-pink-500 hover:bg-pink-600 hover:scale-105"}
+          `}
+        >
+          {listening ? (
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93A8.001 8.001 0 0 1 4 11H6a6 6 0 0 0 12 0h2a8.001 8.001 0 0 1-7 7.93V22h2v2H9v-2h2v-2.07z" />
+            </svg>
+          )}
+        </button>
+        <p className={`text-xs font-medium ${listening ? "text-red-500" : "text-pink-500"}`}>
+          {listening ? "듣는 중... 탭하면 중지" : "탭하면 음성 주문 시작"}
+        </p>
       </div>
     </div>
   );
