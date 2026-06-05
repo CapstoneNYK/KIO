@@ -20,7 +20,6 @@ export { default as imgEarlgrey } from "./images/음료사진/얼그레이.svg";
 export { default as imgPeppermint } from "./images/음료사진/페퍼민트.svg";
 export { default as imgChamomile } from "./images/음료사진/캐모마일.svg";
 
-
 export { default as imgCardPayment } from "./images/결제사진/카드결제.svg";
 export { default as imgAppCard } from "./images/결제사진/앱카드결제.svg";
 export { default as imgBarcode } from "./images/결제사진/바코드.svg";
@@ -30,3 +29,8 @@ export { default as iconTMembership } from "./icons/T멤버십.svg";
 export { default as iconTUzu } from "./icons/T우주.svg";
 export { default as iconKakao } from "./icons/카카오페이.svg";
 export { default as iconNaver } from "./icons/네이버페이.svg";
+
+export { default as kt_poster } from "./images/poster/kt_poster.png";
+export { default as t_poster } from "./images/poster/t_poster.png";
+export { default as tpass_poster } from "./images/poster/tpass_poster.png";
+export { default as cafe_logo } from "./images/poster/cafe_logo.png";
