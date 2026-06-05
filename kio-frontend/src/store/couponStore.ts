@@ -10,7 +10,8 @@ interface CouponStore {
   removeCoupon: (code: string) => void;
   clearCoupons: () => void;
   scanOpen: boolean;
-  openScan: () => void;
+  scanSource: "assistant" | "payment";
+  openScan: (source?: "assistant" | "payment") => void;
   closeScan: () => void;
 }
 
@@ -25,7 +26,8 @@ export const useCouponStore = create<CouponStore>((set) => ({
     set((s) => ({ coupons: s.coupons.filter((c) => c.code !== code) })),
   clearCoupons: () => set({ coupons: [] }),
   scanOpen: false,
-  openScan: () => set({ scanOpen: true }),
+  scanSource: "payment",
+  openScan: (source = "payment") => set({ scanOpen: true, scanSource: source }),
   closeScan: () => set({ scanOpen: false }),
 }));
 

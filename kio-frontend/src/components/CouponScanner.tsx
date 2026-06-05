@@ -16,9 +16,10 @@ interface CouponResult {
 
 interface CouponScannerProps {
   onClose: () => void;
+  onGuideToVoucher?: () => void;
 }
 
-export const CouponScanner = ({ onClose }: CouponScannerProps) => {
+export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps) => {
   const [result, setResult] = useState<CouponResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scanned, setScanned] = useState(false);
@@ -128,21 +129,36 @@ export const CouponScanner = ({ onClose }: CouponScannerProps) => {
               <p className="text-xs text-gray-400 mb-1">잔액</p>
               <p className="font-bold text-orange-500 text-base">{result.balance?.toLocaleString()}원</p>
             </div>
-            <div className="flex gap-2 w-full">
-              <button
-                onClick={onClose}
-                className="flex-1 py-3 rounded-xl font-semibold text-gray-600 border border-gray-200 text-sm"
-              >
-                닫기
-              </button>
-              <button
-                onClick={handleUseAmountCoupon}
-                className="flex-1 py-3 rounded-xl font-bold text-white text-sm"
-                style={{ backgroundColor: "#FFB900" }}
-              >
-                결제에 사용
-              </button>
-            </div>
+            {onGuideToVoucher ? (
+              <>
+                <p className="text-xs text-gray-500 text-center">
+                  결제 수단에서 모바일 상품권을 선택하면 사용할 수 있어요
+                </p>
+                <button
+                  onClick={onGuideToVoucher}
+                  className="w-full py-3 rounded-xl font-bold text-white text-sm"
+                  style={{ backgroundColor: "#FFB900" }}
+                >
+                  모바일 상품권으로 결제하기
+                </button>
+              </>
+            ) : (
+              <div className="flex gap-2 w-full">
+                <button
+                  onClick={onClose}
+                  className="flex-1 py-3 rounded-xl font-semibold text-gray-600 border border-gray-200 text-sm"
+                >
+                  닫기
+                </button>
+                <button
+                  onClick={handleUseAmountCoupon}
+                  className="flex-1 py-3 rounded-xl font-bold text-white text-sm"
+                  style={{ backgroundColor: "#FFB900" }}
+                >
+                  결제에 사용
+                </button>
+              </div>
+            )}
           </div>
         )}
 
