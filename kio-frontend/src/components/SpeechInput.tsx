@@ -35,11 +35,15 @@ export const SpeechInput = () => {
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
 
-  const resolveMenuFromRef = (query: string): string | null => {
+  const resolveMenusFromRef = (query: string): string[] => {
+    const resolved: string[] = [];
     for (const { pattern, index } of NUMBER_REF) {
-      if (pattern.test(query)) return lastRecommended[index] ?? null;
+      if (pattern.test(query)) {
+        const menu = lastRecommended[index];
+        if (menu) resolved.push(menu);
+      }
     }
-    return null;
+    return resolved;
   };
 
   const handleButtonClick = () => {
@@ -77,11 +81,18 @@ export const SpeechInput = () => {
         const ordersToProcess = res.orders ?? [];
 
         if (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu)) {
-          const refMenu = resolveMenuFromRef(query);
-          if (refMenu) {
+          const refMenus = resolveMenusFromRef(query);
+          const added: string[] = [];
+          for (const refMenu of refMenus) {
             const temperature: Temperature = refMenu.startsWith("핫") || refMenu.startsWith("따뜻") ? "HOT" : "ICE";
             const menuItem = findMenuItem(refMenu);
-            if (menuItem) addItem(menuItem, 1, temperature, [], false);
+            if (menuItem) {
+              addItem(menuItem, 1, temperature, [], false);
+              added.push(refMenu);
+            }
+          }
+          if (added.length > 0) {
+            setAnswer(`${added.join(", ")}을(를) 장바구니에 담았습니다.`);
           }
         } else {
           for (const orderInfo of ordersToProcess) {
