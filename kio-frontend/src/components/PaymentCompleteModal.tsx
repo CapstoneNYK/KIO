@@ -1,6 +1,7 @@
 import { LuX } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
+import { useLearningStore } from "../store/learningStore";
 
 interface PaymentCompleteModalProps {
   onClose: () => void;
@@ -9,9 +10,13 @@ interface PaymentCompleteModalProps {
 export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => {
   const navigate = useNavigate();
   const clear = useCartStore((s) => s.clear);
+  const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
+  const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
 
   const finish = () => {
     clear();
+    setGuideScreen(null);
+    setHighlightPaymentMethod(null);
     navigate("/");
   };
 

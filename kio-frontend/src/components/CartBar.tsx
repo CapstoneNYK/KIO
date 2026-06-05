@@ -1,13 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PiShoppingCartSimple } from "react-icons/pi";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
+import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
 import { OrderConfirmModal } from "./OrderConfirmModal";
+
+const CONFIRM_SCREENS = ["order_confirm", "payment", "payment_card", "payment_complete"];
 
 export const CartBar = () => {
   const { items, removeItem, updateQuantity, clear } = useCartStore();
   const [showConfirm, setShowConfirm] = useState(false);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+
+  useEffect(() => {
+    setShowConfirm(CONFIRM_SCREENS.includes(learningScreen ?? ""));
+  }, [learningScreen]);
+
+  useEffect(() => {
+    if (CONFIRM_SCREENS.includes(guideScreen ?? "")) setShowConfirm(true);
+  }, [guideScreen]);
 
   if (items.length === 0) return null;
 
