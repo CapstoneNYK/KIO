@@ -102,20 +102,95 @@ def extract_entity(text: str, ocr_menus: list = None) -> Dict:
     }
 
 
-MULTI_SPLIT_PATTERN = re.compile(r'\s*(?:이랑|랑|하고|그리고|과|와)\s*')
+MULTI_SPLIT_PATTERN = re.compile(r'\s*(?:이랑|랑|하고|그리고|과|와|,|，)\s*')
+
+
+def extract_all_menus_from_text(text: str, ocr_menus: list = None) -> list:
+    """구분자 없이 나열된 텍스트에서 등장 순서대로 모든 메뉴 추출.
+    축약어 치환을 먼저 하면 '바닐라라떼'→'바닐라카페라떼'처럼 깨지므로,
+    풀 메뉴명으로 직접 매칭만 수행한다."""
+    text_norm = normalize_text(text)
+
+    # 후보: OCR 메뉴 + MENU_KEYWORDS 값(풀 메뉴명) + 키(축약어), 길이 내림차순
+    candidates = []
+    if ocr_menus:
+        candidates += [(normalize_text(m), m) for m in ocr_menus]
+    for v in set(MENU_KEYWORDS.values()):
+        candidates.append((normalize_text(v), v))
+    for k, v in MENU_KEYWORDS.items():
+        norm_k = normalize_text(k)
+        norm_v = normalize_text(v)
+        if norm_k != norm_v:
+            candidates.append((norm_k, v))
+
+    seen = set()
+    unique = []
+    for norm, original in sorted(candidates, key=lambda x: -len(x[0])):
+        if norm not in seen:
+            seen.add(norm)
+            unique.append((norm, original))
+
+    found = []
+    remaining = text_norm
+    while remaining:
+        best_pos = len(remaining)
+        best = None
+        for norm, original in unique:
+            pos = remaining.find(norm)
+            if 0 <= pos < best_pos:
+                best_pos = pos
+                best = (norm, original)
+            elif best and 0 <= pos == best_pos and len(norm) > len(best[0]):
+                best = (norm, original)  # 같은 위치면 긴 것 우선
+        if best is None:
+            break
+        norm, original = best
+
+        # 메뉴 이후 ~ 다음 메뉴 시작 전 구간에서 수량 추출
+        after_menu = remaining[best_pos + len(norm):]
+        next_menu_pos = len(after_menu)
+        for n2, _ in unique:
+            p = after_menu.find(n2)
+            if 0 <= p < next_menu_pos:
+                next_menu_pos = p
+        qty_segment = after_menu[:next_menu_pos]
+        qty = extract_quantity(qty_segment) if qty_segment else 1
+
+        found.append((original, qty))
+        remaining = remaining[:best_pos] + remaining[best_pos + len(norm):]
+
+    return found
 
 
 def extract_multi_order(text: str, ocr_menus: list = None) -> list:
+    # 1단계: 구분자로 분리 시도
     parts = MULTI_SPLIT_PATTERN.split(text)
-    results = []
-    for part in parts:
-        part = part.strip()
-        if not part:
-            continue
-        entity = extract_entity(part, ocr_menus)
-        if entity["menu"]:
-            results.append(entity)
+    if len(parts) > 1:
+        results = []
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            entity = extract_entity(part, ocr_menus)
+            if entity["menu"]:
+                results.append(entity)
+        if results:
+            return results
 
-    if not results:
-        return [extract_entity(text, ocr_menus)]
-    return results
+    # 2단계: 구분자 없이 나열된 경우 전체 텍스트 스캔
+    menu_qty_pairs = extract_all_menus_from_text(text, ocr_menus)
+    if len(menu_qty_pairs) > 1:
+        attrs = extract_attributes(text)
+        results = []
+        for menu, qty in menu_qty_pairs:
+            results.append({
+                "menu": menu,
+                "attributes": attrs,
+                "quantity": qty,
+                "needs_recommendation": False,
+                "matched_menu": menu,
+                "confidence": 0.7,
+            })
+        return results
+
+    return [extract_entity(text, ocr_menus)]
