@@ -90,6 +90,7 @@ export const AssistantButton = () => {
     if (location.pathname === "/") setMode("idle");
   }, [location.pathname]);
   const scanOpen = useCouponStore((s) => s.scanOpen);
+  const guideScreen = useLearningStore((s) => s.guideScreen);
   const setCategory = useCategoryStore((s) => s.setCategory);
   const setLearningScreen = useLearningStore((s) => s.setLearningScreen);
   const { addItem, clear: clearCart } = useCartStore();
@@ -97,6 +98,10 @@ export const AssistantButton = () => {
   useEffect(() => {
     if (scanOpen) setMode("idle");
   }, [scanOpen]);
+
+  useEffect(() => {
+    if (guideScreen) setMode("idle");
+  }, [guideScreen]);
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
