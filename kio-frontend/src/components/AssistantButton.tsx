@@ -199,9 +199,9 @@ export const AssistantButton = () => {
 
       {/* 음성 어시스턴트 채팅 패널 */}
       {mode === "voice" && (
-        <div className="bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col overflow-hidden shrink-0">
+        <div className="bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col shrink-0">
           {/* 헤더 */}
-          <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0 rounded-t-2xl">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-pink-400 inline-block" />
               <span className="text-sm font-bold text-pink-700">
