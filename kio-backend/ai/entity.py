@@ -100,3 +100,22 @@ def extract_entity(text: str, ocr_menus: list = None) -> Dict:
         "matched_menu": menu,
         "confidence": 0.9 if ocr_menus else 0.7
     }
+
+
+MULTI_SPLIT_PATTERN = re.compile(r'\s*(?:이랑|랑|하고|그리고|과|와)\s*')
+
+
+def extract_multi_order(text: str, ocr_menus: list = None) -> list:
+    parts = MULTI_SPLIT_PATTERN.split(text)
+    results = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        entity = extract_entity(part, ocr_menus)
+        if entity["menu"]:
+            results.append(entity)
+
+    if not results:
+        return [extract_entity(text, ocr_menus)]
+    return results

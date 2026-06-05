@@ -15,6 +15,7 @@ export const CartBar = () => {
   const [userConfirm, setUserConfirm] = useState(false);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
+  const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
 
   const showConfirm = userConfirm
     || CONFIRM_SCREENS.includes(learningScreen ?? "")
@@ -109,9 +110,9 @@ export const CartBar = () => {
 
       {showConfirm && (
         <OrderConfirmModal
-          onClose={() => setUserConfirm(false)}
-          onCancelAll={() => { clear(); setUserConfirm(false); }}
-          onNext={() => setUserConfirm(false)}
+          onClose={() => { setUserConfirm(false); setGuideScreen(null); }}
+          onCancelAll={() => { clear(); setUserConfirm(false); setGuideScreen(null); }}
+          onNext={() => { setUserConfirm(false); setGuideScreen(null); }}
         />
       )}
     </div>

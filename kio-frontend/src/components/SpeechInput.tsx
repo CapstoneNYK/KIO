@@ -74,20 +74,21 @@ export const SpeechInput = () => {
       }
 
       if (res.intent === "order") {
-        let menuName = res.order?.menu ?? null;
-        let temperature = res.order?.temperature as Temperature ?? "ICE";
+        const ordersToProcess = res.orders ?? [];
 
-        if (!menuName) {
-          menuName = resolveMenuFromRef(query);
-          if (menuName) {
-            temperature = menuName.startsWith("핫") || menuName.startsWith("따뜻") ? "HOT" : "ICE";
+        if (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu)) {
+          const refMenu = resolveMenuFromRef(query);
+          if (refMenu) {
+            const temperature: Temperature = refMenu.startsWith("핫") || refMenu.startsWith("따뜻") ? "HOT" : "ICE";
+            const menuItem = findMenuItem(refMenu);
+            if (menuItem) addItem(menuItem, 1, temperature, [], false);
           }
-        }
-
-        if (menuName) {
-          const menuItem = findMenuItem(menuName);
-          if (menuItem) {
-            addItem(menuItem, res.order?.quantity ?? 1, temperature, [], false);
+        } else {
+          for (const orderInfo of ordersToProcess) {
+            if (!orderInfo.menu) continue;
+            const temperature = orderInfo.temperature as Temperature ?? "ICE";
+            const menuItem = findMenuItem(orderInfo.menu);
+            if (menuItem) addItem(menuItem, orderInfo.quantity ?? 1, temperature, [], false);
           }
         }
       }

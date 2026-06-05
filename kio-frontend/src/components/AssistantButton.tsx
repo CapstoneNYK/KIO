@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { toBlob } from "html-to-image";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { logo } from "../assets";
 import { useCategoryStore } from "../store/categoryStore";
 import { useLearningStore } from "../store/learningStore";
@@ -68,6 +68,11 @@ export const AssistantButton = () => {
   const [currentScreen, setCurrentScreen] = useState("");
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === "/") setMode("idle");
+  }, [location.pathname]);
   const setCategory = useCategoryStore((s) => s.setCategory);
   const setLearningScreen = useLearningStore((s) => s.setLearningScreen);
   const { addItem, clear: clearCart } = useCartStore();

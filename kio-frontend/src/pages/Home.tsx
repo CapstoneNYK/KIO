@@ -28,7 +28,7 @@ export const Home = () => {
     PAYMENT_GUIDE_SCREENS.includes(guideScreen ?? "") && cartItems.length === 0;
 
   const learningForcesReset =
-    learningScreen === null || learningScreen === "splash" || (learningScreen?.startsWith("home_") ?? false);
+    learningScreen === "splash" || (learningScreen?.startsWith("home_") ?? false);
 
   const selectedItem =
     learningScreen === "menu_modal" || guideScreen === "menu_modal"
