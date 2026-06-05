@@ -7,6 +7,8 @@ import { useLearningStore } from "../store/learningStore";
 import { MENUS } from "../data/menus";
 import type { MenuItem, Temperature } from "../types/menu";
 
+type Message = { role: "user" | "bot"; text: string };
+
 function findMenuItem(menuName: string | null): MenuItem | null {
   if (!menuName) return null;
   const normalized = menuName.replace(/\s/g, "").toLowerCase();
@@ -25,10 +27,10 @@ const NUMBER_REF: { pattern: RegExp; index: number }[] = [
 
 export const SpeechInput = () => {
   const { transcript, listening, startListening, stopListening, resetTranscript } = useSTT("ko-KR");
-  const [answer, setAnswer] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
-  const answerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
   const openScan = useCouponStore((s) => s.openScan);
@@ -51,7 +53,6 @@ export const SpeechInput = () => {
       stopListening();
     } else {
       resetTranscript();
-      setAnswer("");
       startListening();
     }
   };
@@ -59,9 +60,10 @@ export const SpeechInput = () => {
   const handleAsk = async (query: string) => {
     if (!query.trim()) return;
     setLoading(true);
+    setMessages((prev) => [...prev, { role: "user", text: query }]);
     try {
       const res = await askApi(query);
-      setAnswer(res.answer);
+      let botText = res.answer;
 
       if (res.intent === "recommend" && res.recommended_menus) {
         setLastRecommended(res.recommended_menus);
@@ -69,10 +71,12 @@ export const SpeechInput = () => {
 
       if (res.intent === "payment") {
         if (cartItems.length === 0) {
-          setAnswer("장바구니가 비어 있어요. 먼저 메뉴를 담아주세요.");
+          botText = "장바구니가 비어 있어요. 먼저 메뉴를 담아주세요.";
+          setMessages((prev) => [...prev, { role: "bot", text: botText }]);
         } else {
           setHighlightPaymentMethod(res.payment_method ?? null);
           setGuideScreen(res.payment_method ? "payment" : "order_confirm");
+          setMessages([]);
         }
         return;
       }
@@ -92,7 +96,7 @@ export const SpeechInput = () => {
             }
           }
           if (added.length > 0) {
-            setAnswer(`${added.join(", ")}을(를) 장바구니에 담았습니다.`);
+            botText = `${added.join(", ")}을(를) 장바구니에 담았습니다.`;
           }
         } else {
           for (const orderInfo of ordersToProcess) {
@@ -107,9 +111,11 @@ export const SpeechInput = () => {
       if (res.intent === "coupon") {
         openScan();
       }
+
+      setMessages((prev) => [...prev, { role: "bot", text: botText }]);
     } catch (error) {
       console.error(error);
-      setAnswer("질문 처리 중 오류가 발생했습니다.");
+      setMessages((prev) => [...prev, { role: "bot", text: "질문 처리 중 오류가 발생했습니다." }]);
     } finally {
       setLoading(false);
     }
@@ -122,21 +128,38 @@ export const SpeechInput = () => {
   }, [listening, transcript]);
 
   useEffect(() => {
-    if (answer) answerRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [answer]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   return (
     <div className="flex flex-col h-full">
-      {/* 채팅 히스토리 영역 (스크롤) */}
+      {/* 채팅 히스토리 영역 (스크롤, 높이 고정) */}
       <div className="flex-1 overflow-y-auto flex flex-col gap-3 p-3 min-h-0">
-        {!transcript && !answer && !loading && (
+        {messages.length === 0 && !listening && !loading && (
           <p className="text-xs text-pink-300 text-center pt-4">
             아래 버튼을 눌러 말씀해 주세요
           </p>
         )}
 
-        {transcript && (
-          <div className="flex justify-end">
+        {messages.map((msg, i) =>
+          msg.role === "user" ? (
+            <div key={i} className="flex justify-end">
+              <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
+                <p className="text-sm leading-relaxed">{msg.text}</p>
+              </div>
+            </div>
+          ) : (
+            <div key={i} className="flex justify-start">
+              <div className="bg-white border border-pink-100 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
+                <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>
+              </div>
+            </div>
+          )
+        )}
+
+        {/* 음성 인식 중 실시간 미리보기 */}
+        {listening && transcript && (
+          <div className="flex justify-end opacity-60">
             <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
               <p className="text-sm leading-relaxed">{transcript}</p>
             </div>
@@ -155,13 +178,7 @@ export const SpeechInput = () => {
           </div>
         )}
 
-        {answer && !loading && (
-          <div className="flex justify-start" ref={answerRef}>
-            <div className="bg-white border border-pink-100 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
-              <p className="text-sm text-gray-800 leading-relaxed">{answer}</p>
-            </div>
-          </div>
-        )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* 마이크 버튼 (하단 고정) */}
