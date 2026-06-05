@@ -3,9 +3,15 @@ import { toBlob } from "html-to-image";
 import { useNavigate } from "react-router-dom";
 import { logo } from "../assets";
 import { useCategoryStore } from "../store/categoryStore";
+import { useLearningStore } from "../store/learningStore";
+import { useCartStore } from "../store/cartStore";
+import { MENUS } from "../data/menus";
 import { SpeechInput } from "./SpeechInput";
 
-const LEARN_SCREENS = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
+const HOME_CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
+const MODAL_SCREENS = ["menu_modal", "cart", "order_confirm", "payment", "payment_card", "payment_complete"];
+const TOTAL_SCREENS = 1 + HOME_CATEGORIES.length + MODAL_SCREENS.length;
+
 const API = `${import.meta.env.VITE_API_URL}/ocr`;
 
 type Mode = "idle" | "learning" | "voice";
@@ -23,6 +29,7 @@ function injectOklchOverride(): () => void {
           if (val.includes("oklch")) entries.push({ prop, val });
         }
       }
+    // eslint-disable-next-line no-empty
     } catch {}
   }
   if (entries.length === 0) return () => {};
@@ -62,36 +69,72 @@ export const AssistantButton = () => {
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const setCategory = useCategoryStore((s) => s.setCategory);
+  const setLearningScreen = useLearningStore((s) => s.setLearningScreen);
+  const { addItem, clear: clearCart } = useCartStore();
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  const captureAndLearn = async (screenName: string, progress: { count: number }) => {
+    setCurrentScreen(screenName);
+    const removeOverride = injectOklchOverride();
+    try {
+      const blob = await captureScreen();
+      const formData = new FormData();
+      formData.append("file", blob, "screen.png");
+      formData.append("screen_name", screenName);
+      await fetch(`${API}/learn`, { method: "POST", body: formData });
+    } finally {
+      removeOverride();
+    }
+    setLearnProgress(++progress.count);
+  };
 
   const startLearning = async () => {
     setMode("learning");
     setLearnProgress(0);
+    const progress = { count: 0 };
+
+    navigate("/");
+    await sleep(800);
+    await captureAndLearn("splash", progress);
+
     navigate("/home");
     await sleep(800);
-
-    for (let i = 0; i < LEARN_SCREENS.length; i++) {
-      const cat = LEARN_SCREENS[i];
-      const screenName = `home_${cat}`;
-      setCurrentScreen(screenName);
+    for (const cat of HOME_CATEGORIES) {
       setCategory(cat);
       await sleep(600);
-
-      const removeOverride = injectOklchOverride();
-      try {
-        const blob = await captureScreen();
-        const formData = new FormData();
-        formData.append("file", blob, "screen.png");
-        formData.append("screen_name", screenName);
-        await fetch(`${API}/learn`, { method: "POST", body: formData });
-      } finally {
-        removeOverride();
-      }
-      setLearnProgress(i + 1);
+      await captureAndLearn(`home_${cat}`, progress);
     }
-
     setCategory("전체");
+
+    setLearningScreen("menu_modal");
+    await sleep(600);
+    await captureAndLearn("menu_modal", progress);
+    setLearningScreen(null);
+    await sleep(300);
+
+    addItem(MENUS[0], 1, "HOT", [], false);
+    await sleep(600);
+    await captureAndLearn("cart", progress);
+
+    setLearningScreen("order_confirm");
+    await sleep(600);
+    await captureAndLearn("order_confirm", progress);
+
+    setLearningScreen("payment");
+    await sleep(600);
+    await captureAndLearn("payment", progress);
+
+    setLearningScreen("payment_card");
+    await sleep(800);
+    await captureAndLearn("payment_card", progress);
+
+    setLearningScreen("payment_complete");
+    await sleep(1000);
+    await captureAndLearn("payment_complete", progress);
+
+    setLearningScreen(null);
+    clearCart();
     setMode("idle");
     setLearnProgress(0);
     setCurrentScreen("");
@@ -110,7 +153,53 @@ export const AssistantButton = () => {
   };
 
   return (
-    <div id="kio-assistant" className="fixed top-4 right-4 z-9999 flex flex-col items-end gap-2">
+    <div id="kio-assistant" className="fixed top-4 right-4 z-9999 flex flex-row items-start gap-3">
+
+      {/* 학습 진행 패널 */}
+      {mode === "learning" && (
+        <div className="bg-white rounded-xl shadow-lg p-3 text-xs w-48 mt-2">
+          <p className="font-bold text-gray-700 mb-1">화면 학습 중...</p>
+          <p className="text-gray-400 mb-2 truncate">{currentScreen}</p>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-pink-400 transition-all duration-300"
+              style={{ width: `${(learnProgress / TOTAL_SCREENS) * 100}%` }}
+            />
+          </div>
+          <p className="text-right text-gray-400 mt-1">
+            {learnProgress} / {TOTAL_SCREENS}
+          </p>
+        </div>
+      )}
+
+      {/* 음성 어시스턴트 채팅 패널 */}
+      {mode === "voice" && (
+        <div
+          className="bg-white rounded-2xl shadow-xl border border-pink-100 w-72 flex flex-col overflow-hidden shrink-0"
+          style={{ maxHeight: "calc(100vh - 120px)" }}
+        >
+          {/* 헤더 */}
+          <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-pink-400 inline-block" />
+              <span className="text-sm font-bold text-pink-700">KIO 어시스턴트</span>
+            </div>
+            <button
+              onClick={() => setMode("idle")}
+              className="text-pink-300 hover:text-pink-500 transition-colors text-base leading-none"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* SpeechInput이 남은 높이를 채움 */}
+          <div className="flex-1 min-h-0">
+            <SpeechInput />
+          </div>
+        </div>
+      )}
+
+      {/* KIO 버튼 */}
       <button
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
@@ -118,48 +207,17 @@ export const AssistantButton = () => {
         onTouchEnd={handleMouseUp}
         onClick={handleClick}
         disabled={mode === "learning"}
-        className={`w-20 h-20 rounded-full transition-all duration-200
+        className={`w-20 h-20 rounded-full shrink-0 transition-all duration-200
           ${mode === "learning"
             ? "animate-pulse ring-4 ring-yellow-400"
             : mode === "voice"
-            ? "ring-4 ring-amber-400"
-            : "ring-2 ring-pink-300 hover:ring-4 hover:ring-pink-400"}
+            ? "ring-4 ring-pink-400 scale-105"
+            : "ring-2 ring-pink-300 hover:ring-4 hover:ring-pink-400 hover:scale-105"}
         `}
-        title="클릭: 음성 입력 | 길게 누르기: 화면 학습"
+        title="클릭: 음성 어시스턴트 | 길게 누르기: 화면 학습"
       >
         <img src={logo} alt="KIO" className="w-full h-full rounded-full object-cover" />
       </button>
-
-      {mode === "learning" && (
-        <div className="bg-white rounded-xl shadow-lg p-3 text-xs w-52">
-          <p className="font-bold text-gray-700 mb-1">화면 학습 중...</p>
-          <p className="text-gray-400 mb-2 truncate">{currentScreen}</p>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-pink-400 transition-all duration-300"
-              style={{ width: `${(learnProgress / LEARN_SCREENS.length) * 100}%` }}
-            />
-          </div>
-          <p className="text-right text-gray-400 mt-1">
-            {learnProgress} / {LEARN_SCREENS.length}
-          </p>
-        </div>
-      )}
-
-      {mode === "voice" && (
-        <div className="bg-white rounded-2xl shadow-xl p-4 w-80">
-          <div className="flex justify-between items-center mb-3">
-            <p className="text-sm font-bold text-gray-700">무엇을 도와드릴까요?</p>
-            <button
-              onClick={() => setMode("idle")}
-              className="text-gray-400 hover:text-gray-600 text-lg leading-none"
-            >
-              ✕
-            </button>
-          </div>
-          <SpeechInput />
-        </div>
-      )}
     </div>
   );
 };

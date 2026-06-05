@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from ai.recommend import qa_chain, recommend_chain
 from ai.intent import classify_intent
 from ai.entity import extract_entity
+from ai.payment import get_payment_response
 from app.ocr.router import router as ocr_router
 from app.ocr.db import get_all_menu_texts
 from app.coupon.router import router as coupon_router
@@ -101,6 +102,14 @@ async def ask_intent(request: QueryRequest):
             "intent": intent,
             "answer": result.answer,
             "recommended_menus": result.menus,
+        }
+    elif intent == "payment":
+        answer, payment_method = get_payment_response(request.query)
+        return {
+            "question": request.query,
+            "intent": "payment",
+            "answer": answer,
+            "payment_method": payment_method,
         }
     else:
         answer = qa_chain.invoke(request.query)

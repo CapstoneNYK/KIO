@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
+import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
 import { PaymentModal } from "./PaymentModal";
 
@@ -11,10 +12,18 @@ interface OrderConfirmModalProps {
   onNext: () => void;
 }
 
+const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
+
 export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirmModalProps) => {
   const { items, updateQuantity } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
-  const [showPayment, setShowPayment] = useState(false);
+  const [userPayment, setUserPayment] = useState(false);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+
+  const showPayment = userPayment
+    || PAYMENT_SCREENS.includes(learningScreen ?? "")
+    || PAYMENT_SCREENS.includes(guideScreen ?? "");
 
   const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
@@ -143,7 +152,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
             이전
           </button>
           <button
-            onClick={() => setShowPayment(true)}
+            onClick={() => setUserPayment(true)}
             className="flex-1 py-3 rounded-xl text-white font-bold active:brightness-95 transition"
             style={{ backgroundColor: "#FFB900" }}
           >
@@ -154,9 +163,9 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
 
       {showPayment && (
         <PaymentModal
-          onClose={() => setShowPayment(false)}
+          onClose={() => setUserPayment(false)}
           onSelect={(_method) => {
-            setShowPayment(false);
+            setUserPayment(false);
             onNext();
           }}
         />
