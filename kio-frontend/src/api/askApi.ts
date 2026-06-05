@@ -11,7 +11,7 @@ export interface AskResponse {
   question: string;
   intent: Intent;
   answer: string;
-  order?: OrderInfo;
+  orders?: OrderInfo[];
   recommended_menus?: string[];
   payment_method?: string | null;
 }

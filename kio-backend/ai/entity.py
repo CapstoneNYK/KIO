@@ -46,12 +46,15 @@ def extract_menu(text: str, ocr_menus: list = None) -> Optional[str]:
             text_norm = text_norm.replace(normalize_text(key), normalize_text(MENU_KEYWORDS[key]))
             break
 
-    # 2단계: OCR DB 메뉴와 직접 매칭
+    # 2단계: OCR DB 메뉴와 직접 매칭 (가장 긴 매칭 우선)
     if ocr_menus:
+        best_match, best_len = None, 0
         for ocr in ocr_menus:
             ocr_norm = normalize_text(ocr)
-            if ocr_norm in text_norm or text_norm in ocr_norm:
-                return ocr
+            if (ocr_norm in text_norm or text_norm in ocr_norm) and len(ocr_norm) > best_len:
+                best_match, best_len = ocr, len(ocr_norm)
+        if best_match:
+            return best_match
 
     # 3단계: OCR 없으면 dictionary 결과 반환
     for key in sorted(MENU_KEYWORDS.keys(), key=len, reverse=True):
@@ -100,3 +103,22 @@ def extract_entity(text: str, ocr_menus: list = None) -> Dict:
         "matched_menu": menu,
         "confidence": 0.9 if ocr_menus else 0.7
     }
+
+
+MULTI_SPLIT_PATTERN = re.compile(r'\s*(?:이랑|랑|하고|그리고|과|와)\s*')
+
+
+def extract_multi_order(text: str, ocr_menus: list = None) -> list:
+    parts = MULTI_SPLIT_PATTERN.split(text)
+    results = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        entity = extract_entity(part, ocr_menus)
+        if entity["menu"]:
+            results.append(entity)
+
+    if not results:
+        return [extract_entity(text, ocr_menus)]
+    return results
