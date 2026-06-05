@@ -131,7 +131,7 @@ export const SpeechInput = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, transcript]);
 
   return (
     <div className="flex flex-col h-full">
@@ -190,7 +190,7 @@ export const SpeechInput = () => {
           className={`
             w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all duration-200
             ${listening
-              ? "bg-red-500 hover:bg-red-600 scale-110 ring-4 ring-red-300 animate-pulse"
+              ? "bg-red-500 hover:bg-red-600 ring-4 ring-red-300 animate-pulse"
               : "bg-pink-500 hover:bg-pink-600 hover:scale-105"}
           `}
         >
