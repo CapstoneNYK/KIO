@@ -215,20 +215,21 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
 };
 
 // 제휴멤버십 (CJ ONE 등)
-const MembershipPayment = ({
-  affiliateName,
-  onCancel,
-}: {
-  affiliateName: string;
-  onCancel: () => void;
-}) => {
+const MembershipPayment = ({ affiliateName }: { affiliateName: string }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleNumPress = (val: string) => {
     if (val === "clear") { setPhoneNumber(""); return; }
     if (val === "back") { setPhoneNumber((p) => p.slice(0, -1)); return; }
     setPhoneNumber((p) => p + val);
+  };
+
+  const handleQuery = () => {
+    if (!phoneNumber) {
+      setShowScanner(true);
+    }
   };
 
   return (
@@ -267,7 +268,7 @@ const MembershipPayment = ({
 
       <div className="flex gap-3 mb-4">
         <button
-          onClick={onCancel}
+          onClick={handleQuery}
           className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
@@ -286,6 +287,8 @@ const MembershipPayment = ({
       </p>
 
       <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain mt-4" />
+
+      {showScanner && <CouponScanner onClose={() => setShowScanner(false)} />}
     </>
   );
 };
@@ -445,12 +448,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       return <VoucherPayment onBack={onCancel} onComplete={handleApprove} />;
     }
     if (["cjone","kt","tmembership","uzu"].includes(method)) {
-      return (
-        <MembershipPayment
-          affiliateName={AFFILIATE_NAMES[method] ?? ""}
-          onCancel={onCancel}
-        />
-      );
+      return <MembershipPayment affiliateName={AFFILIATE_NAMES[method] ?? ""} />;
     }
     return <p className="text-gray-500 text-sm">준비 중입니다.</p>;
   };

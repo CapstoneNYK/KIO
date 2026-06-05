@@ -92,16 +92,31 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
           {/* 할인수단 */}
           <p className="font-bold text-gray-800 text-lg mb-4">할인수단</p>
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {DISCOUNT_METHODS.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => handleSelect(m.id)}
-                className="rounded-2xl border border-gray-200 py-5 px-4 flex items-center gap-3 active:brightness-95 transition"
-              >
-                <img src={m.icon} alt={m.label} className="w-10 h-10 object-contain shrink-0" />
-                <span className="text-sm font-semibold text-gray-700 text-left leading-tight">{m.label}</span>
-              </button>
-            ))}
+            {DISCOUNT_METHODS.map((m) => {
+              const isHighlighted = highlightPaymentMethod === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => handleSelect(m.id)}
+                  className={`relative rounded-2xl py-5 px-4 flex items-center gap-3 active:brightness-95 transition
+                    ${isHighlighted
+                      ? "border-2 border-pink-400 bg-pink-50 ring-2 ring-pink-300 ring-offset-1"
+                      : "border border-gray-200"
+                    }`}
+                >
+                  {isHighlighted && (
+                    <span className="absolute top-2 right-2 flex items-center gap-0.5 text-xs font-bold text-pink-500">
+                      <LuSparkles className="w-3 h-3" />
+                      추천
+                    </span>
+                  )}
+                  <img src={m.icon} alt={m.label} className={`${m.iconSize} object-contain shrink-0`} />
+                  <span className={`text-sm font-semibold text-left leading-tight ${isHighlighted ? "text-pink-600" : "text-gray-700"}`}>
+                    {m.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {/* 결제수단 */}
