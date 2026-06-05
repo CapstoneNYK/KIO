@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
@@ -117,7 +117,7 @@ const CardPayment = ({
 };
 
 // 모바일 상품권
-const VoucherPayment = () => {
+const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete: () => void }) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
@@ -126,6 +126,19 @@ const VoucherPayment = () => {
   const totalPrice = cartTotal - discount;
   const [coupon, setCoupon] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const initialCouponLen = useRef(coupons.length);
+
+  // 쿠폰이 새로 추가되면 잔액에 따라 차액 결제 or 완료 처리
+  useEffect(() => {
+    if (coupons.length > initialCouponLen.current) {
+      if (totalPrice <= 0) {
+        onComplete();
+      } else {
+        onBack();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coupons.length]);
 
   const handleNumPress = (val: string) => {
     if (val === "clear") { setCoupon(""); return; }
@@ -429,7 +442,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       );
     }
     if (method === "voucher" || method === "giftcard") {
-      return <VoucherPayment />;
+      return <VoucherPayment onBack={onCancel} onComplete={handleApprove} />;
     }
     if (["cjone","kt","tmembership","uzu"].includes(method)) {
       return (
