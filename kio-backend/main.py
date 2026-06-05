@@ -77,6 +77,7 @@ async def ask_intent(request: QueryRequest):
                 "menu": base_menu,
                 "temperature": temperature,
                 "quantity": entity["quantity"],
+                "options": entity.get("options", []),
                 "needs_recommendation": entity["needs_recommendation"],
             })
 
