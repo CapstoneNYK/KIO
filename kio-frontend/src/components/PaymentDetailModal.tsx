@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
+import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
 import { PaymentCompleteModal } from "./PaymentCompleteModal";
+import { CouponScanner } from "./CouponScanner";
 
 interface PaymentDetailModalProps {
   method: string;
@@ -54,14 +56,23 @@ const CardPayment = ({
   onCancel: () => void;
   onApprove: () => void;
 }) => {
-  const totalPrice = useCartStore((s) =>
-    s.items.reduce((sum, i) => sum + i.item.price * i.quantity, 0)
-  );
+  const items = useCartStore((s) => s.items);
+  const coupons = useCouponStore((s) => s.coupons);
+  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
+  const totalPrice = cartTotal - discount;
   const [cardNumber, setCardNumber] = useState("");
 
   return (
     <>
       <div className="flex flex-col mb-5 rounded-xl overflow-hidden border border-gray-100">
+        {discount > 0 && (
+          <div className="flex justify-between items-center py-3 px-4 bg-green-50">
+            <span className="text-green-700 text-sm">쿠폰 할인</span>
+            <span className="font-semibold text-green-600 text-sm">-{discount.toLocaleString()}원</span>
+          </div>
+        )}
         <div className="flex justify-between items-center py-3 px-4 bg-gray-50">
           <span className="text-gray-600">총 결제금액</span>
           <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
@@ -106,16 +117,26 @@ const CardPayment = ({
 };
 
 // 모바일 상품권
-const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
-  const totalPrice = useCartStore((s) =>
-    s.items.reduce((sum, i) => sum + i.item.price * i.quantity, 0)
-  );
+const VoucherPayment = () => {
+  const items = useCartStore((s) => s.items);
+  const coupons = useCouponStore((s) => s.coupons);
+  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
+  const totalPrice = cartTotal - discount;
   const [coupon, setCoupon] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleNumPress = (val: string) => {
     if (val === "clear") { setCoupon(""); return; }
     if (val === "back") { setCoupon((p) => p.slice(0, -1)); return; }
     setCoupon((p) => p + val);
+  };
+
+  const handleQuery = () => {
+    if (!coupon) {
+      setShowScanner(true);
+    }
   };
 
   return (
@@ -134,11 +155,17 @@ const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
           </div>
           <div className="flex justify-between items-center py-3 border-b border-gray-100">
             <span className="text-gray-600 text-sm">받음금액</span>
-            <span className="font-bold text-orange-500 text-sm">{totalPrice.toLocaleString()}원</span>
+            <span className="font-bold text-orange-500 text-sm">{cartTotal.toLocaleString()}원</span>
           </div>
+          {discount > 0 && (
+            <div className="flex justify-between items-center py-3 border-b border-gray-100">
+              <span className="text-green-700 text-sm">쿠폰 할인</span>
+              <span className="font-semibold text-green-600 text-sm">-{discount.toLocaleString()}원</span>
+            </div>
+          )}
           <div className="flex justify-between items-center py-3 border-b border-gray-100">
             <span className="text-gray-600 text-sm">결제금액</span>
-            <span className="text-gray-700 text-sm"></span>
+            <span className="font-bold text-orange-500 text-sm">{totalPrice.toLocaleString()}원</span>
           </div>
         </div>
         {/* 오른쪽 숫자패드 */}
@@ -149,7 +176,7 @@ const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
 
       <div className="flex gap-3 mb-4">
         <button
-          onClick={onCancel}
+          onClick={handleQuery}
           className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
@@ -168,6 +195,8 @@ const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
       </p>
 
       <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain" />
+
+      {showScanner && <CouponScanner onClose={() => setShowScanner(false)} />}
     </>
   );
 };
@@ -262,16 +291,19 @@ const AppBarcodePayment = ({
   logoIcon: string;
   onApprove: () => void;
 }) => {
-  const totalPrice = useCartStore((s) =>
-    s.items.reduce((sum, i) => sum + i.item.price * i.quantity, 0)
-  );
+  const items = useCartStore((s) => s.items);
+  const coupons = useCouponStore((s) => s.coupons);
+  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
+  const totalPrice = cartTotal - discount;
   const [remaining, setRemaining] = useState(5);
 
   useEffect(() => {
     if (remaining <= 0) { onApprove(); return; }
     const timer = setTimeout(() => setRemaining((r) => r - 1), 1000);
     return () => clearTimeout(timer);
-  }, [remaining]);
+  }, [remaining, onApprove]);
 
   return (
     <>
@@ -285,9 +317,17 @@ const AppBarcodePayment = ({
       </div>
 
       {/* 결제 금액 */}
-      <div className="flex justify-between items-center py-3 border-b border-gray-100 mb-5">
-        <span className="text-gray-600">총 결제금액</span>
-        <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
+      <div className="flex flex-col border-b border-gray-100 mb-5">
+        {discount > 0 && (
+          <div className="flex justify-between items-center py-2 px-1">
+            <span className="text-green-700 text-sm">쿠폰 할인</span>
+            <span className="font-semibold text-green-600 text-sm">-{discount.toLocaleString()}원</span>
+          </div>
+        )}
+        <div className="flex justify-between items-center py-3 px-1">
+          <span className="text-gray-600">총 결제금액</span>
+          <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
+        </div>
       </div>
 
       <p className="text-center text-sm text-gray-500 mb-2 leading-relaxed">
@@ -389,7 +429,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       );
     }
     if (method === "voucher" || method === "giftcard") {
-      return <VoucherPayment onCancel={onCancel} />;
+      return <VoucherPayment />;
     }
     if (["cjone","kt","tmembership","uzu"].includes(method)) {
       return (

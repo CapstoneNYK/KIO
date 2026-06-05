@@ -18,6 +18,13 @@ const COFFEE_OPTIONS: MenuOption[] = [
   { name: "캐리어 / 봉투 필요", count: 0 },
 ];
 
+const TEA_OPTIONS: MenuOption[] = [
+  { name: "텀블러 할인", count: 0 },
+  { name: "샷추가", count: 0 },
+  { name: "빨대 / 스틱 필요", count: 0 },
+  { name: "캐리어 / 봉투 필요", count: 0 },
+];
+
 const NON_COFFEE_OPTIONS: MenuOption[] = [
   { name: "텀블러 할인", count: 0 },
   { name: "빨대 / 스틱 필요", count: 0 },
@@ -25,13 +32,17 @@ const NON_COFFEE_OPTIONS: MenuOption[] = [
 ];
 
 const COFFEE_CATEGORIES = ["커피", "디카페인"];
+const TEA_CATEGORIES = ["티"];
 
 export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
   const isCoffee = COFFEE_CATEGORIES.includes(item.category ?? "");
+  const isTea = TEA_CATEGORIES.includes(item.category ?? "");
+  const hasTempSelect = (isCoffee && item.title !== "에스프레소") || isTea;
   const [quantity, setQuantity] = useState(1);
-  const [temperature, setTemperature] = useState<Temperature>("HOT");
+  const defaultTemp: Temperature = hasTempSelect || item.title === "에스프레소" ? "HOT" : "ICE";
+  const [temperature, setTemperature] = useState<Temperature>(defaultTemp);
   const [options, setOptions] = useState<MenuOption[]>(
-    (isCoffee ? COFFEE_OPTIONS : NON_COFFEE_OPTIONS).map((o) => ({ ...o }))
+    (isCoffee ? COFFEE_OPTIONS : isTea ? TEA_OPTIONS : NON_COFFEE_OPTIONS).map((o) => ({ ...o }))
   );
   const addItem = useCartStore((s) => s.addItem);
 
@@ -89,8 +100,8 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
             </p>
           </div>
 
-          {/* 온도 선택 (커피류만) */}
-          {isCoffee && <div className="flex gap-4 mb-14">
+          {/* 온도 선택 (커피/티) */}
+          {hasTempSelect && <div className="flex gap-4 mb-14">
             <button
               onClick={() => setTemperature("HOT")}
               className={`flex-1 py-5 rounded-lg border-2 text-xl font-bold transition
