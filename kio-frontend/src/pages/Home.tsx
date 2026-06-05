@@ -1,12 +1,14 @@
 import { NavBar } from "../components/NavBar";
 import { TopBar } from "../components/TopBar";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
 import { useLearningStore } from "../store/learningStore";
 import { useCartStore } from "../store/cartStore";
 import { Card } from "../components/Card";
 import { MenuModal } from "../components/MenuModal";
 import { CartBar } from "../components/CartBar";
+import { CouponScanner } from "../components/CouponScanner";
+import { useCouponStore } from "../store/couponStore";
 import { PaymentModal } from "../components/PaymentModal";
 import { MENUS, CATEGORIES } from "../data/menus";
 import type { MenuItem } from "../types/menu";
@@ -15,27 +17,25 @@ const PAYMENT_GUIDE_SCREENS = ["payment", "payment_card", "payment_complete"];
 
 export const Home = () => {
   const { activeCategory, setCategory: setActiveCategory } = useCategoryStore();
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [userSelectedItem, setUserSelectedItem] = useState<MenuItem | null>(null);
+  const { scanOpen, closeScan } = useCouponStore();
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const cartItems = useCartStore((s) => s.items);
 
-  // 장바구니가 비어있을 때 결제 안내용 독립 모달
   const showStandalonePayment =
     PAYMENT_GUIDE_SCREENS.includes(guideScreen ?? "") && cartItems.length === 0;
 
-  useEffect(() => {
-    if (learningScreen === "menu_modal") {
-      setSelectedItem(MENUS[0]);
-    } else if (learningScreen === null || learningScreen === "splash" || learningScreen.startsWith("home_")) {
-      setSelectedItem(null);
-    }
-  }, [learningScreen]);
+  const learningForcesReset =
+    learningScreen === null || learningScreen === "splash" || (learningScreen?.startsWith("home_") ?? false);
 
-  useEffect(() => {
-    if (guideScreen === "menu_modal") setSelectedItem(MENUS[0]);
-  }, [guideScreen]);
+  const selectedItem =
+    learningScreen === "menu_modal" || guideScreen === "menu_modal"
+      ? MENUS[0]
+      : learningForcesReset
+        ? null
+        : userSelectedItem;
 
   const filteredMenus = activeCategory === "전체"
     ? MENUS
@@ -56,7 +56,7 @@ export const Home = () => {
             img={menu.img}
             title={menu.title}
             price={menu.price}
-            onClick={() => setSelectedItem(menu)}
+            onClick={() => setUserSelectedItem(menu)}
           />
         ))}
       </div>
@@ -66,12 +66,13 @@ export const Home = () => {
       {selectedItem && (
         <MenuModal
           item={selectedItem}
-          onClose={() => setSelectedItem(null)}
-          onOrder={() => setSelectedItem(null)}
+          onClose={() => setUserSelectedItem(null)}
+          onOrder={() => setUserSelectedItem(null)}
         />
       )}
 
-      {/* 장바구니가 비어있을 때 결제 안내용 독립 PaymentModal */}
+      {scanOpen && <CouponScanner onClose={closeScan} />}
+
       {showStandalonePayment && (
         <PaymentModal
           onClose={() => setGuideScreen(null)}

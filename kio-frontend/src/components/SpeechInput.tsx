@@ -2,6 +2,7 @@ import { useSTT } from "../utils/sttUtil";
 import { useState, useEffect, useRef } from "react";
 import { askApi } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
+import { useCouponStore } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { MENUS } from "../data/menus";
 import type { MenuItem, Temperature } from "../types/menu";
@@ -30,6 +31,7 @@ export const SpeechInput = () => {
   const answerRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
+  const openScan = useCouponStore((s) => s.openScan);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
 
@@ -88,6 +90,10 @@ export const SpeechInput = () => {
             addItem(menuItem, res.order?.quantity ?? 1, temperature, [], false);
           }
         }
+      }
+
+      if (res.intent === "coupon") {
+        openScan();
       }
     } catch (error) {
       console.error(error);

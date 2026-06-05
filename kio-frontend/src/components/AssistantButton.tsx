@@ -29,6 +29,7 @@ function injectOklchOverride(): () => void {
           if (val.includes("oklch")) entries.push({ prop, val });
         }
       }
+    // eslint-disable-next-line no-empty
     } catch {}
   }
   if (entries.length === 0) return () => {};
@@ -142,7 +143,9 @@ export const AssistantButton = () => {
   const handleMouseDown = () => {
     pressTimer.current = setTimeout(() => startLearning(), 1500);
   };
-  const handleMouseUp = () => clearTimeout(pressTimer.current ?? undefined);
+  const handleMouseUp = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+  };
 
   const handleClick = () => {
     if (mode === "idle") setMode("voice");

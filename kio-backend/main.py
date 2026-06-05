@@ -11,6 +11,7 @@ from ai.entity import extract_entity
 from ai.payment import get_payment_response
 from app.ocr.router import router as ocr_router
 from app.ocr.db import get_all_menu_texts
+from app.coupon.router import router as coupon_router
 
 load_dotenv()
 
@@ -25,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(ocr_router)
+app.include_router(coupon_router)
 
 
 class QueryRequest(BaseModel):
@@ -86,6 +88,12 @@ async def ask_intent(request: QueryRequest):
                 "quantity": entity["quantity"],
                 "needs_recommendation": entity["needs_recommendation"],
             },
+        }
+    elif intent == "coupon":
+        return {
+            "question": request.query,
+            "intent": "coupon",
+            "answer": "쿠폰 바코드를 카메라로 스캔해볼게요!",
         }
     elif intent == "recommend":
         result = recommend_chain.invoke(request.query)

@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
+import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
 import { PaymentModal } from "./PaymentModal";
@@ -15,21 +16,19 @@ const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
 
 export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirmModalProps) => {
   const { items, updateQuantity } = useCartStore();
-  const [showPayment, setShowPayment] = useState(false);
+  const coupons = useCouponStore((s) => s.coupons);
+  const [userPayment, setUserPayment] = useState(false);
   const learningScreen = useLearningStore((s) => s.learningScreen);
-
   const guideScreen = useLearningStore((s) => s.guideScreen);
 
-  useEffect(() => {
-    setShowPayment(PAYMENT_SCREENS.includes(learningScreen ?? ""));
-  }, [learningScreen]);
-
-  useEffect(() => {
-    if (PAYMENT_SCREENS.includes(guideScreen ?? "")) setShowPayment(true);
-  }, [guideScreen]);
+  const showPayment = userPayment
+    || PAYMENT_SCREENS.includes(learningScreen ?? "")
+    || PAYMENT_SCREENS.includes(guideScreen ?? "");
 
   const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-  const discountPrice = 0;
+  const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
+  const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount);
+  const discountPrice = freeDiscount + couponDiscount;
 
   const getOptionSummary = (cartItem: typeof items[number]) => {
     const parts: string[] = [];
@@ -125,7 +124,9 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           </div>
           <div className="flex justify-between mb-2">
             <span className="text-gray-700">할인 금액</span>
-            <span className="font-semibold text-gray-900">{discountPrice.toLocaleString()}원</span>
+            <span className={`font-semibold ${discountPrice > 0 ? "text-green-600" : "text-gray-900"}`}>
+              {discountPrice > 0 ? "-" : ""}{discountPrice.toLocaleString()}원
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="font-bold text-gray-900">결제 금액</span>
@@ -151,7 +152,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
             이전
           </button>
           <button
-            onClick={() => setShowPayment(true)}
+            onClick={() => setUserPayment(true)}
             className="flex-1 py-3 rounded-xl text-white font-bold active:brightness-95 transition"
             style={{ backgroundColor: "#FFB900" }}
           >
@@ -162,9 +163,9 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
 
       {showPayment && (
         <PaymentModal
-          onClose={() => setShowPayment(false)}
+          onClose={() => setUserPayment(false)}
           onSelect={(_method) => {
-            setShowPayment(false);
+            setUserPayment(false);
             onNext();
           }}
         />
