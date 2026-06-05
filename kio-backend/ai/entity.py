@@ -46,12 +46,15 @@ def extract_menu(text: str, ocr_menus: list = None) -> Optional[str]:
             text_norm = text_norm.replace(normalize_text(key), normalize_text(MENU_KEYWORDS[key]))
             break
 
-    # 2단계: OCR DB 메뉴와 직접 매칭
+    # 2단계: OCR DB 메뉴와 직접 매칭 (가장 긴 매칭 우선)
     if ocr_menus:
+        best_match, best_len = None, 0
         for ocr in ocr_menus:
             ocr_norm = normalize_text(ocr)
-            if ocr_norm in text_norm or text_norm in ocr_norm:
-                return ocr
+            if (ocr_norm in text_norm or text_norm in ocr_norm) and len(ocr_norm) > best_len:
+                best_match, best_len = ocr, len(ocr_norm)
+        if best_match:
+            return best_match
 
     # 3단계: OCR 없으면 dictionary 결과 반환
     for key in sorted(MENU_KEYWORDS.keys(), key=len, reverse=True):
