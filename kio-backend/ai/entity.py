@@ -2,6 +2,19 @@ import re
 from typing import Dict, Optional
 from ai.dictionary import MENU_KEYWORDS, ATTRIBUTE_KEYWORDS
 
+OPTION_KEYWORDS = {
+    "샷추가": "샷추가",
+    "샷 추가": "샷추가",
+    "샷넣어": "샷추가",
+    "샷 넣어": "샷추가",
+    "더블샷": "샷추가",
+    "샤추가": "샷추가",
+    "셔츠가": "샷추가",
+    "연하게": "연하게",
+    "약하게": "연하게",
+    "연하게해줘": "연하게",
+}
+
 QUANTITY_MAP = {
     "한": 1, "하나": 1,
     "두": 2, "둘": 2,
@@ -64,6 +77,15 @@ def extract_menu(text: str, ocr_menus: list = None) -> Optional[str]:
     return None
 
 
+def extract_options_from_text(text: str) -> list:
+    text_norm = normalize_text(text)
+    found = []
+    for key, value in OPTION_KEYWORDS.items():
+        if normalize_text(key) in text_norm and value not in found:
+            found.append(value)
+    return found
+
+
 def extract_attributes(text: str):
     text = normalize_text(text)
     attrs = []
@@ -77,12 +99,14 @@ def extract_entity(text: str, ocr_menus: list = None) -> Dict:
     menu = extract_menu(text, ocr_menus)
     attrs = extract_attributes(text)
     quantity = extract_quantity(text)
+    options = extract_options_from_text(text)
 
     if not menu:
         return {
             "menu": None,
             "attributes": attrs,
             "quantity": quantity,
+            "options": options,
             "needs_recommendation": True,
             "matched_menu": None,
             "confidence": 0.0
@@ -99,6 +123,7 @@ def extract_entity(text: str, ocr_menus: list = None) -> Dict:
         "menu": menu,
         "attributes": attrs,
         "quantity": quantity,
+        "options": options,
         "needs_recommendation": False,
         "matched_menu": menu,
         "confidence": 0.9 if ocr_menus else 0.7
@@ -149,7 +174,7 @@ def extract_all_menus_from_text(text: str, ocr_menus: list = None) -> list:
             break
         norm, original = best
 
-        # 메뉴 이후 ~ 다음 메뉴 시작 전 구간에서 수량 추출
+        # 메뉴 이후 ~ 다음 메뉴 시작 전 구간에서 수량·옵션 추출
         after_menu = remaining[best_pos + len(norm):]
         next_menu_pos = len(after_menu)
         for n2, _ in unique:
@@ -158,8 +183,9 @@ def extract_all_menus_from_text(text: str, ocr_menus: list = None) -> list:
                 next_menu_pos = p
         qty_segment = after_menu[:next_menu_pos]
         qty = extract_quantity(qty_segment) if qty_segment else 1
+        options = extract_options_from_text(qty_segment) if qty_segment else []
 
-        found.append((original, qty))
+        found.append((original, qty, options))
         remaining = remaining[:best_pos] + remaining[best_pos + len(norm):]
 
     return found
@@ -185,11 +211,12 @@ def extract_multi_order(text: str, ocr_menus: list = None) -> list:
     if len(menu_qty_pairs) > 1:
         attrs = extract_attributes(text)
         results = []
-        for menu, qty in menu_qty_pairs:
+        for menu, qty, options in menu_qty_pairs:
             results.append({
                 "menu": menu,
                 "attributes": attrs,
                 "quantity": qty,
+                "options": options,
                 "needs_recommendation": False,
                 "matched_menu": menu,
                 "confidence": 0.7,
