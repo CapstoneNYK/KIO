@@ -18,10 +18,17 @@ const PAYMENT_GUIDE_SCREENS = ["payment", "payment_card", "payment_complete"];
 export const Home = () => {
   const { activeCategory, setCategory: setActiveCategory } = useCategoryStore();
   const [userSelectedItem, setUserSelectedItem] = useState<MenuItem | null>(null);
-  const { scanOpen, closeScan } = useCouponStore();
+  const { scanOpen, closeScan, scanSource } = useCouponStore();
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
+  const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
+
+  const handleGuideToVoucher = () => {
+    closeScan();
+    setHighlightPaymentMethod("voucher");
+    setGuideScreen("payment");
+  };
   const cartItems = useCartStore((s) => s.items);
 
   const showStandalonePayment =
@@ -71,7 +78,12 @@ export const Home = () => {
         />
       )}
 
-      {scanOpen && <CouponScanner onClose={closeScan} />}
+      {scanOpen && (
+        <CouponScanner
+          onClose={closeScan}
+          onGuideToVoucher={scanSource === "assistant" ? handleGuideToVoucher : undefined}
+        />
+      )}
 
       {showStandalonePayment && (
         <PaymentModal

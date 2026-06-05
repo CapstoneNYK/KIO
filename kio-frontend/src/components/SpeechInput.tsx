@@ -12,12 +12,19 @@ type Message = { role: "user" | "bot"; text: string };
 function findMenuItem(menuName: string | null): MenuItem | null {
   if (!menuName) return null;
   const normalized = menuName.replace(/\s/g, "").toLowerCase();
-  return (
-    MENUS.find((m) => {
-      const title = m.title.replace(/\s/g, "").toLowerCase();
-      return title.includes(normalized) || normalized.includes(title);
-    }) ?? null
-  );
+
+  // 정확히 일치하는 항목 우선
+  const exact = MENUS.find((m) => m.title.replace(/\s/g, "").toLowerCase() === normalized);
+  if (exact) return exact;
+
+  // 메뉴 타이틀이 쿼리를 포함하는 경우
+  const titleContains = MENUS.find((m) => m.title.replace(/\s/g, "").toLowerCase().includes(normalized));
+  if (titleContains) return titleContains;
+
+  // 쿼리가 메뉴 타이틀을 포함하는 경우 — 가장 긴 타이틀 우선 (아메리카노 < 디카페인 아메리카노)
+  const candidates = MENUS.filter((m) => normalized.includes(m.title.replace(/\s/g, "").toLowerCase()));
+  if (candidates.length === 0) return null;
+  return candidates.reduce((best, m) => (m.title.length > best.title.length ? m : best));
 }
 
 const NUMBER_REF: { pattern: RegExp; index: number }[] = [
@@ -111,7 +118,7 @@ export const SpeechInput = () => {
       }
 
       if (res.intent === "coupon") {
-        openScan();
+        openScan("assistant");
       }
 
       setMessages((prev) => [...prev, { role: "bot", text: botText }]);
