@@ -3,13 +3,22 @@ import { PiShoppingCartSimple } from "react-icons/pi";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
+import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
 import { OrderConfirmModal } from "./OrderConfirmModal";
+
+const CONFIRM_SCREENS = ["order_confirm", "payment", "payment_card", "payment_complete"];
 
 export const CartBar = () => {
   const { items, removeItem, updateQuantity, clear } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [userConfirm, setUserConfirm] = useState(false);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+
+  const showConfirm = userConfirm
+    || CONFIRM_SCREENS.includes(learningScreen ?? "")
+    || CONFIRM_SCREENS.includes(guideScreen ?? "");
 
   if (items.length === 0) return null;
 
@@ -91,7 +100,7 @@ export const CartBar = () => {
       </div>
 
       <button
-        onClick={() => setShowConfirm(true)}
+        onClick={() => setUserConfirm(true)}
         className="w-full py-4 rounded-xl text-white font-bold text-base active:brightness-95 transition"
         style={{ backgroundColor: "#FFB900" }}
       >
@@ -100,9 +109,9 @@ export const CartBar = () => {
 
       {showConfirm && (
         <OrderConfirmModal
-          onClose={() => setShowConfirm(false)}
-          onCancelAll={() => { clear(); setShowConfirm(false); }}
-          onNext={() => setShowConfirm(false)}
+          onClose={() => setUserConfirm(false)}
+          onCancelAll={() => { clear(); setUserConfirm(false); }}
+          onNext={() => setUserConfirm(false)}
         />
       )}
     </div>

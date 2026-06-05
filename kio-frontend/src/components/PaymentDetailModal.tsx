@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
+import { useLearningStore } from "../store/learningStore";
 import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
 import { PaymentCompleteModal } from "./PaymentCompleteModal";
 import { CouponScanner } from "./CouponScanner";
@@ -116,7 +117,7 @@ const CardPayment = ({
 };
 
 // 모바일 상품권
-const VoucherPayment = ({ onCancel }: { onCancel: () => void }) => {
+const VoucherPayment = () => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
@@ -302,7 +303,7 @@ const AppBarcodePayment = ({
     if (remaining <= 0) { onApprove(); return; }
     const timer = setTimeout(() => setRemaining((r) => r - 1), 1000);
     return () => clearTimeout(timer);
-  }, [remaining]);
+  }, [remaining, onApprove]);
 
   return (
     <>
@@ -364,6 +365,17 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
   const title = TITLES[method] ?? "결제";
   const [isProcessing, setIsProcessing] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+
+  useEffect(() => {
+    setShowComplete(learningScreen === "payment_complete");
+  }, [learningScreen]);
+
+  useEffect(() => {
+    if (guideScreen === "payment_complete") setShowComplete(true);
+  }, [guideScreen]);
 
   const handleApprove = () => {
     setIsProcessing(true);
@@ -417,7 +429,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       );
     }
     if (method === "voucher" || method === "giftcard") {
-      return <VoucherPayment onCancel={onCancel} />;
+      return <VoucherPayment />;
     }
     if (["cjone","kt","tmembership","uzu"].includes(method)) {
       return (

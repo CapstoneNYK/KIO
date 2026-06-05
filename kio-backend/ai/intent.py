@@ -12,7 +12,7 @@ llm = ChatOpenAI(
 )
 
 # 의도 종류
-INTENTS = ["recommend", "qa", "order", "coupon"]
+INTENTS = ["recommend", "qa", "order", "coupon", "payment"]
 
 # 의도 분류 프롬프트
 intent_prompt = ChatPromptTemplate.from_template("""
@@ -32,12 +32,16 @@ intent_prompt = ChatPromptTemplate.from_template("""
 4. coupon → 쿠폰/상품권 사용 요청 또는 질문
    - 예: "이 쿠폰 어떻게 써?", "쿠폰 사용하고 싶어", "상품권 쓰는 방법 알려줘", "이거 쿠폰인데 어떻게 해?"
 
+5. payment → 결제 또는 주문 확정 요청
+   - 예: "결제할게", "주문할게요", "이거로 할게", "결제해줘", "주문 완료", "계산해줘"
+
+
 규칙:
 - 반드시 아래 넷 중 하나만 출력하세요
 - 다른 말 절대 하지 마세요
 
 출력:
-recommend / qa / order / coupon
+recommend / qa / order / coupon / payment
 
 사용자 입력: {question}
 """)

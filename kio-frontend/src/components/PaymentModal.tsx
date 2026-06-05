@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket } from "react-icons/lu";
+import { useState, useEffect } from "react";
+import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket, LuSparkles } from "react-icons/lu";
 import { PaymentDetailModal } from "./PaymentDetailModal";
 import { iconKT, iconCJONE, iconTMembership, iconTUzu, iconKakao, iconNaver } from "../assets";
+import { useLearningStore } from "../store/learningStore";
 
 interface PaymentModalProps {
   onClose: () => void;
@@ -24,10 +25,25 @@ const PAYMENT_METHODS = [
   { id: "naver", label: "네이버페이", icon: null, imgIcon: iconNaver },
 ];
 
+const DETAIL_SCREENS = ["payment_card", "payment_complete"];
+
 export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const learningScreen = useLearningStore((s) => s.learningScreen);
+  const guideScreen = useLearningStore((s) => s.guideScreen);
+  const highlightPaymentMethod = useLearningStore((s) => s.highlightPaymentMethod);
+  const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
+
+  useEffect(() => {
+    setSelectedMethod(DETAIL_SCREENS.includes(learningScreen ?? "") ? "card" : null);
+  }, [learningScreen]);
+
+  useEffect(() => {
+    if (DETAIL_SCREENS.includes(guideScreen ?? "")) setSelectedMethod("card");
+  }, [guideScreen]);
 
   const handleSelect = (id: string) => {
+    setHighlightPaymentMethod(null);
     setSelectedMethod(id);
   };
 
@@ -70,21 +86,36 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
           {/* 결제수단 */}
           <p className="font-bold text-gray-800 text-lg mb-4">결제수단</p>
           <div className="grid grid-cols-2 gap-4">
-            {PAYMENT_METHODS.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => handleSelect(m.id)}
-                className="rounded-2xl border border-gray-200 py-5 px-4 flex items-center gap-4 active:brightness-95 transition"
-              >
-                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
-                  {m.imgIcon
-                    ? <img src={m.imgIcon} alt={m.label} className="w-full h-full object-cover" />
-                    : <span className="text-gray-500">{m.icon}</span>
-                  }
-                </div>
-                <span className="text-base font-semibold text-gray-700">{m.label}</span>
-              </button>
-            ))}
+            {PAYMENT_METHODS.map((m) => {
+              const isHighlighted = highlightPaymentMethod === m.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => handleSelect(m.id)}
+                  className={`relative rounded-2xl py-5 px-4 flex items-center gap-4 active:brightness-95 transition
+                    ${isHighlighted
+                      ? "border-2 border-pink-400 bg-pink-50 ring-2 ring-pink-300 ring-offset-1"
+                      : "border border-gray-200"
+                    }`}
+                >
+                  {isHighlighted && (
+                    <span className="absolute top-2 right-2 flex items-center gap-0.5 text-xs font-bold text-pink-500">
+                      <LuSparkles className="w-3 h-3" />
+                      추천
+                    </span>
+                  )}
+                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
+                    {m.imgIcon
+                      ? <img src={m.imgIcon} alt={m.label} className="w-full h-full object-cover" />
+                      : <span className="text-gray-500">{m.icon}</span>
+                    }
+                  </div>
+                  <span className={`text-base font-semibold ${isHighlighted ? "text-pink-600" : "text-gray-700"}`}>
+                    {m.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
