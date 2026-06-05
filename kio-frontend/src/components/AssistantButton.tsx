@@ -5,6 +5,7 @@ import { logo } from "../assets";
 import { useCategoryStore } from "../store/categoryStore";
 import { useLearningStore } from "../store/learningStore";
 import { useCartStore } from "../store/cartStore";
+import { useCouponStore } from "../store/couponStore";
 import { MENUS } from "../data/menus";
 import { SpeechInput } from "./SpeechInput";
 
@@ -88,9 +89,14 @@ export const AssistantButton = () => {
   useEffect(() => {
     if (location.pathname === "/") setMode("idle");
   }, [location.pathname]);
+  const scanOpen = useCouponStore((s) => s.scanOpen);
   const setCategory = useCategoryStore((s) => s.setCategory);
   const setLearningScreen = useLearningStore((s) => s.setLearningScreen);
   const { addItem, clear: clearCart } = useCartStore();
+
+  useEffect(() => {
+    if (scanOpen) setMode("idle");
+  }, [scanOpen]);
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -197,31 +203,29 @@ export const AssistantButton = () => {
         </div>
       )}
 
-      {/* 음성 어시스턴트 채팅 패널 */}
-      {mode === "voice" && (
-        <div className="bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col shrink-0">
-          {/* 헤더 */}
-          <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0 rounded-t-2xl">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-pink-400 inline-block" />
-              <span className="text-sm font-bold text-pink-700">
-                KIO 어시스턴트
-              </span>
-            </div>
-            <button
-              onClick={() => setMode("idle")}
-              className="text-pink-300 hover:text-pink-500 transition-colors text-base leading-none"
-            >
-              ✕
-            </button>
+      {/* 음성 어시스턴트 채팅 패널 - 항상 마운트, 채팅 내역 유지 */}
+      <div className={`bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col shrink-0 ${mode !== "voice" ? "hidden" : ""}`}>
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0 rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-pink-400 inline-block" />
+            <span className="text-sm font-bold text-pink-700">
+              KIO 어시스턴트
+            </span>
           </div>
-
-          {/* SpeechInput이 남은 높이를 채움 */}
-          <div className="flex-1 min-h-0">
-            <SpeechInput />
-          </div>
+          <button
+            onClick={() => setMode("idle")}
+            className="text-pink-300 hover:text-pink-500 transition-colors text-base leading-none"
+          >
+            ✕
+          </button>
         </div>
-      )}
+
+        {/* SpeechInput이 남은 높이를 채움 */}
+        <div className="flex-1 min-h-0">
+          <SpeechInput isOpen={mode === "voice"} />
+        </div>
+      </div>
 
       {/* KIO 버튼 */}
       <button

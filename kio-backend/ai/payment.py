@@ -22,7 +22,7 @@ _METHOD_LABELS: dict[str, str] = {
 
 
 def extract_payment_method(query: str) -> str | None:
-    for keyword, method in _METHOD_KEYWORDS.items():
+    for keyword, method in sorted(_METHOD_KEYWORDS.items(), key=lambda x: -len(x[0])):
         if keyword in query:
             return method
     return None

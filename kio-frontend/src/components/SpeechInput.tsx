@@ -32,7 +32,7 @@ const NUMBER_REF: { pattern: RegExp; index: number }[] = [
   { pattern: /2번|두\s*번째|둘째/, index: 1 },
 ];
 
-export const SpeechInput = () => {
+export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const { transcript, listening, startListening, stopListening, resetTranscript } = useSTT("ko-KR");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -130,6 +130,16 @@ export const SpeechInput = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      resetTranscript();
+      startListening();
+    } else {
+      stopListening();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   useEffect(() => {
     if (!listening && transcript) {
