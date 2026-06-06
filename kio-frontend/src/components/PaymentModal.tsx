@@ -51,7 +51,7 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
 
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => (i.isFree ? sum + i.item.price : sum), 0);
-  const couponDiscount = calcDiscount(coupons, cartTotal - freeDiscount);
+  const couponDiscount = calcDiscount(coupons, cartTotal - freeDiscount, items);
   const remainingPrice = cartTotal - freeDiscount - couponDiscount;
   const hasAmountCoupon = coupons.some((c) => c.type === "amount");
 

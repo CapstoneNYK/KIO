@@ -8,9 +8,10 @@ import type { AppliedCoupon } from "../store/couponStore";
 
 interface CouponResult {
   code: string;
-  type: "product" | "amount";
+  type: "product" | "amount" | "discount";
   menu?: string;
   balance?: number;
+  rate?: number;
   description: string;
 }
 
@@ -41,30 +42,28 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
         }
         const data: CouponResult = await resp.json();
         setResult(data);
-
-        if (data.type === "product" && data.menu) {
-          const menuItem = MENUS.find((m) => m.title === data.menu);
-          if (menuItem) {
-            addItem(menuItem, 1, "ICE", [], true, true);
-          }
-          onClose();
-          return;
-        }
       } catch {
         setError("스캔 처리 중 오류가 발생했습니다.");
       }
     },
   });
 
+  const handleUseProductCoupon = () => {
+    if (!result || result.type !== "product" || !result.menu) return;
+    const menuItem = MENUS.find((m) => m.title === result.menu);
+    if (menuItem) addItem(menuItem, 1, "ICE", [], true, true);
+    onClose();
+  };
+
   const handleUseAmountCoupon = () => {
     if (!result || result.type !== "amount") return;
-    const coupon: AppliedCoupon = {
-      code: result.code,
-      type: "amount",
-      balance: result.balance!,
-      description: result.description,
-    };
-    addCoupon(coupon);
+    addCoupon({ code: result.code, type: "amount", balance: result.balance!, description: result.description });
+    onClose();
+  };
+
+  const handleUseDiscountCoupon = () => {
+    if (!result || result.type !== "discount") return;
+    addCoupon({ code: result.code, type: "discount", menu: result.menu!, rate: result.rate!, description: result.description });
     onClose();
   };
 
@@ -106,15 +105,53 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-3xl">🎉</div>
             <div className="text-center">
               <p className="font-bold text-gray-800 text-base">{result.description}</p>
-              <p className="text-sm text-gray-500 mt-1">{result.menu}이(가) 장바구니에 담겼어요!</p>
+              <p className="text-sm text-gray-500 mt-1">{result.menu}을(를) 무료로 받을 수 있어요!</p>
             </div>
-            <button
-              onClick={onClose}
-              className="w-full py-3 rounded-xl font-bold text-white text-sm"
-              style={{ backgroundColor: "#FFB900" }}
-            >
-              확인
-            </button>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 rounded-xl font-semibold text-gray-600 border border-gray-200 text-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleUseProductCoupon}
+                className="flex-1 py-3 rounded-xl font-bold text-white text-sm"
+                style={{ backgroundColor: "#FFB900" }}
+              >
+                장바구니에 담기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 멤버십 % 할인 결과 */}
+        {result?.type === "discount" && (
+          <div className="px-5 py-6 flex flex-col gap-4">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">할인 종류</p>
+              <p className="font-bold text-gray-800 text-base">{result.description}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">할인율</p>
+              <p className="font-bold text-orange-500 text-base">{result.menu} {Math.round((result.rate ?? 0) * 100)}% 할인</p>
+            </div>
+            <p className="text-xs text-gray-400">장바구니에 {result.menu}가 있을 때만 할인이 적용됩니다</p>
+            <div className="flex gap-2 w-full">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 rounded-xl font-semibold text-gray-600 border border-gray-200 text-sm"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleUseDiscountCoupon}
+                className="flex-1 py-3 rounded-xl font-bold text-white text-sm"
+                style={{ backgroundColor: "#FFB900" }}
+              >
+                할인 적용
+              </button>
+            </div>
           </div>
         )}
 
