@@ -9,8 +9,9 @@ from ai.recommend import qa_chain, recommend_chain
 from ai.intent import classify_intent
 from ai.entity import extract_multi_order
 from ai.payment import get_payment_response
+from ai.discount import get_discount_tip
 from app.ocr.router import router as ocr_router
-from app.ocr.db import get_all_menu_texts
+from app.ocr.db import get_all_menu_texts, get_all_discount_texts
 from app.coupon.router import router as coupon_router
 
 load_dotenv()
@@ -31,6 +32,7 @@ app.include_router(coupon_router)
 
 class QueryRequest(BaseModel):
     query: str
+    cart_items: list[str] = []
 
 
 @app.get("/")
@@ -57,6 +59,31 @@ async def ask_intent(request: QueryRequest):
     if intent == "order":
         ocr_menus = get_all_menu_texts()
         entities = extract_multi_order(request.query, ocr_menus)
+
+        # 할인 수단 언급 + 메뉴 미추출(또는 단음절 오인식) 시 할인 대상 메뉴로 보완
+        _DISCOUNT_MENU_MAP = {
+            "T멤버십": ("아메리카노", None),   # None = 온도 그대로 (ICE/HOT 무관)
+            "tmembership": ("아메리카노", None),
+        }
+        def _is_noise_menu(menu: str | None) -> bool:
+            if not menu:
+                return True
+            cleaned = menu.strip()
+            # 단음절이거나 할인 키워드 앞글자(T, KT 등) 오인식
+            if len(cleaned) <= 2:
+                return True
+            if cleaned.upper() in ("T", "KT", "CJ", "SKT"):
+                return True
+            return False
+
+        if all(_is_noise_menu(e.get("menu")) for e in entities):
+            q_norm = request.query.replace(" ", "")
+            for keyword, (menu, temp) in _DISCOUNT_MENU_MAP.items():
+                if keyword.replace(" ", "") in q_norm:
+                    resolved_temp = temp if temp else "ICE"
+                    entities = [{"menu": menu, "quantity": 1, "temperature": resolved_temp,
+                                 "options": [], "attributes": [], "needs_recommendation": False}]
+                    break
 
         orders = []
         for entity in entities:
@@ -91,11 +118,17 @@ async def ask_intent(request: QueryRequest):
         else:
             answer = "어떤 메뉴를 주문하시겠어요?"
 
+        discount_tip: str | None = None
+        if named:
+            discount_texts = get_all_discount_texts()
+            discount_tip = get_discount_tip(discount_texts)
+
         return {
             "question": request.query,
             "intent": "order",
             "answer": answer,
             "orders": orders,
+            "discount_tip": discount_tip,
         }
     elif intent == "coupon":
         return {
@@ -120,5 +153,5 @@ async def ask_intent(request: QueryRequest):
             "payment_method": payment_method,
         }
     else:
-        answer = qa_chain.invoke(request.query)
+        answer = qa_chain.invoke({"question": request.query, "cart_items": request.cart_items})
         return {"question": request.query, "intent": intent, "answer": answer}

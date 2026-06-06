@@ -20,6 +20,12 @@ _ACTION_KEYWORDS: dict[str, str] = {
     "홈": "home",
 }
 
+_DISCOUNT_KEYWORDS = [
+    "할인", "적립", "혜택", "멤버십", "VIP", "포인트",
+    "T멤버십", "CJ ONE", "T우주", "PASS", "통신사", "KT",
+    "무료",
+]
+
 _PRICE_PATTERN = re.compile(r"^\d[\d,\.]*원?$")
 
 def _classify_text(text: str) -> dict:
@@ -29,6 +35,9 @@ def _classify_text(text: str) -> dict:
             return {"label": "action_button", "subtype": subtype}
     if _PRICE_PATTERN.match(stripped.replace(" ", "")):
         return {"label": "price"}
+    upper = stripped.upper()
+    if any(kw.upper() in upper for kw in _DISCOUNT_KEYWORDS):
+        return {"label": "discount"}
     if stripped:
         return {"label": "menu_item"}
     return {"label": "unknown"}

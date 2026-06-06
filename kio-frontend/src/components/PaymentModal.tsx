@@ -18,6 +18,16 @@ const DISCOUNT_METHODS = [
   { id: "uzu", label: "T우주 우주패스", icon: iconTUzu, iconSize: "w-14 h-14" },
 ];
 
+// 할인 적용 불가 시 안내 문구 (null = 모든 메뉴 적용 가능)
+const DISCOUNT_INELIGIBLE_MSG: Record<string, string | null> = {
+  tmembership: "T멤버십은 아이스 아메리카노만 30% 할인 적용됩니다.",
+  kt: null,
+  uzu: null,
+  cjone: null,
+};
+
+const TMEMBERSHIP_ELIGIBLE = ["아메리카노"];
+
 const PAYMENT_METHODS = [
   { id: "card", label: "카드결제", icon: <LuCreditCard className="w-7 h-7" />, imgIcon: null },
   { id: "appcard", label: "앱카드", icon: <LuSmartphone className="w-7 h-7" />, imgIcon: null },
@@ -31,6 +41,7 @@ const DETAIL_SCREENS = ["payment_card", "payment_complete"];
 
 export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [discountWarning, setDiscountWarning] = useState<string | null>(null);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const highlightPaymentMethod = useLearningStore((s) => s.highlightPaymentMethod);
@@ -54,6 +65,20 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
 
   const handleSelect = (id: string) => {
     setHighlightPaymentMethod(null);
+    setDiscountWarning(null);
+
+    if (id === "tmembership") {
+      const hasEligible = items.some((i) =>
+        TMEMBERSHIP_ELIGIBLE.some((name) =>
+          i.item.title.replace(/\s/g, "").includes(name.replace(/\s/g, ""))
+        )
+      );
+      if (!hasEligible) {
+        setDiscountWarning(DISCOUNT_INELIGIBLE_MSG["tmembership"]);
+        return;
+      }
+    }
+
     setSelectedMethod(id);
   };
 
@@ -86,6 +111,14 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
                 남은 결제금액{" "}
                 <span className="font-bold">{remainingPrice.toLocaleString()}원</span>을 결제해주세요
               </p>
+            </div>
+          )}
+
+          {/* 할인 비대상 경고 */}
+          {discountWarning && (
+            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2">
+              <span className="text-red-500 mt-0.5 shrink-0">✕</span>
+              <p className="text-sm text-red-600">{discountWarning}</p>
             </div>
           )}
 
