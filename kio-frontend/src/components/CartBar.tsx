@@ -1,4 +1,4 @@
-import { useState } from "react";
+// no useState needed — overlay state managed by learningStore
 import { PiShoppingCartSimple } from "react-icons/pi";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
@@ -12,12 +12,13 @@ const CONFIRM_SCREENS = ["order_confirm", "payment", "payment_card", "payment_co
 export const CartBar = () => {
   const { items, removeItem, updateQuantity, clear } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
-  const [userConfirm, setUserConfirm] = useState(false);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
+  const orderOverlayOpen = useLearningStore((s) => s.orderOverlayOpen);
+  const setOrderOverlayOpen = useLearningStore((s) => s.setOrderOverlayOpen);
 
-  const showConfirm = userConfirm
+  const showConfirm = orderOverlayOpen
     || CONFIRM_SCREENS.includes(learningScreen ?? "")
     || CONFIRM_SCREENS.includes(guideScreen ?? "");
 
@@ -101,7 +102,7 @@ export const CartBar = () => {
       </div>
 
       <button
-        onClick={() => setUserConfirm(true)}
+        onClick={() => setOrderOverlayOpen(true)}
         className="w-full py-4 rounded-xl text-white font-bold text-base active:brightness-95 transition"
         style={{ backgroundColor: "#FFB900" }}
       >
@@ -110,9 +111,9 @@ export const CartBar = () => {
 
       {showConfirm && (
         <OrderConfirmModal
-          onClose={() => { setUserConfirm(false); setGuideScreen(null); }}
-          onCancelAll={() => { clear(); setUserConfirm(false); setGuideScreen(null); }}
-          onNext={() => { setUserConfirm(false); setGuideScreen(null); }}
+          onClose={() => { setOrderOverlayOpen(false); setGuideScreen(null); }}
+          onCancelAll={() => { clear(); setOrderOverlayOpen(false); setGuideScreen(null); }}
+          onNext={() => { setOrderOverlayOpen(false); setGuideScreen(null); }}
         />
       )}
     </div>
