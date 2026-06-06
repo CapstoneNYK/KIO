@@ -34,7 +34,8 @@ const POSTER_ASSETS = [
   { url: tPoster, name: "poster_t" },
   { url: tpassPoster, name: "poster_tpass" },
 ];
-const TOTAL_SCREENS = 1 + HOME_CATEGORIES.length + MODAL_SCREENS.length + POSTER_ASSETS.length;
+const TOTAL_SCREENS =
+  1 + HOME_CATEGORIES.length + MODAL_SCREENS.length + POSTER_ASSETS.length;
 
 const API = `${import.meta.env.VITE_API_URL}/ocr`;
 
@@ -93,15 +94,19 @@ export const AssistantButton = () => {
   const [showGreeting, setShowGreeting] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setShowGreeting(false), 6000);
+    if (!showGreeting) return;
+    const t = setTimeout(() => setShowGreeting(false), 5000);
     return () => clearTimeout(t);
-  }, []);
+  }, [showGreeting]);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname === "/") setMode("idle");
+    if (location.pathname === "/") {
+      setMode("idle");
+      setShowGreeting(true);
+    }
   }, [location.pathname]);
   const scanOpen = useCouponStore((s) => s.scanOpen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
@@ -137,7 +142,11 @@ export const AssistantButton = () => {
     setLearnProgress(++progress.count);
   };
 
-  const learnPoster = async (url: string, screenName: string, progress: { count: number }) => {
+  const learnPoster = async (
+    url: string,
+    screenName: string,
+    progress: { count: number }
+  ) => {
     setCurrentScreen(screenName);
     const res = await fetch(url);
     const blob = await res.blob();
@@ -239,7 +248,11 @@ export const AssistantButton = () => {
       )}
 
       {/* 음성 어시스턴트 채팅 패널 - 항상 마운트, 채팅 내역 유지 */}
-      <div className={`bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col shrink-0 ${mode !== "voice" ? "hidden" : ""}`}>
+      <div
+        className={`bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col shrink-0 ${
+          mode !== "voice" ? "hidden" : ""
+        }`}
+      >
         {/* 헤더 */}
         <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-2">
@@ -267,7 +280,9 @@ export const AssistantButton = () => {
         {showGreeting && mode === "idle" && (
           <div className="absolute right-full top-0 mr-3 w-56 bg-white rounded-2xl shadow-lg px-4 py-3 text-sm text-gray-700 leading-relaxed border border-pink-100">
             <p className="font-semibold text-pink-600 mb-1">안녕하세요!</p>
-            <p className="break-keep">저는 AI 키오스크 도우미 키오예요. 도움이 필요하면 저를 눌러주세요!</p>
+            <p className="break-keep">
+              저는 AI 키오스크 도우미 키오예요. 도움이 필요하면 저를 눌러주세요!
+            </p>
             <div className="absolute -right-2 top-6 w-4 h-4 bg-white border-t border-r border-pink-100 rotate-45" />
           </div>
         )}
