@@ -1,4 +1,4 @@
-import { useState } from "react";
+// no useState needed — overlay state managed by learningStore
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
@@ -17,12 +17,13 @@ const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
 export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirmModalProps) => {
   const { items, updateQuantity } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
-  const [userPayment, setUserPayment] = useState(false);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
+  const paymentDetailOverlayOpen = useLearningStore((s) => s.paymentDetailOverlayOpen);
+  const setPaymentDetailOverlayOpen = useLearningStore((s) => s.setPaymentDetailOverlayOpen);
 
-  const showPayment = userPayment
+  const showPayment = paymentDetailOverlayOpen
     || PAYMENT_SCREENS.includes(learningScreen ?? "")
     || PAYMENT_SCREENS.includes(guideScreen ?? "");
 
@@ -153,7 +154,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
             이전
           </button>
           <button
-            onClick={() => setUserPayment(true)}
+            onClick={() => setPaymentDetailOverlayOpen(true)}
             className="flex-1 py-3 rounded-xl text-white font-bold active:brightness-95 transition"
             style={{ backgroundColor: "#FFB900" }}
           >
@@ -164,9 +165,9 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
 
       {showPayment && (
         <PaymentModal
-          onClose={() => { setUserPayment(false); setGuideScreen(null); }}
+          onClose={() => { setPaymentDetailOverlayOpen(false); setGuideScreen(null); }}
           onSelect={(_method) => {
-            setUserPayment(false);
+            setPaymentDetailOverlayOpen(false);
             setGuideScreen(null);
             onNext();
           }}
