@@ -13,6 +13,8 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[];
+  isPackaging: boolean;
+  setIsPackaging: (v: boolean) => void;
   addItem: (item: MenuItem, quantity: number, temperature: Temperature, options: MenuOption[], isPackaging: boolean, isFree?: boolean) => void;
   removeItem: (cartId: number) => void;
   updateQuantity: (cartId: number, quantity: number) => void;
@@ -23,6 +25,8 @@ let nextId = 1;
 
 export const useCartStore = create<CartStore>((set) => ({
   items: [],
+  isPackaging: false,
+  setIsPackaging: (v) => set({ isPackaging: v }),
   addItem: (item, quantity, temperature, options, isPackaging, isFree = false) =>
     set((state) => {
       const isSameOptions = (a: MenuOption[], b: MenuOption[]) => {
