@@ -144,6 +144,58 @@ async def ask_intent(request: QueryRequest):
             "answer": result.answer,
             "recommended_menus": result.menus,
         }
+    elif intent == "order_and_pay":
+        ocr_menus = get_all_menu_texts()
+        entities = extract_multi_order(request.query, ocr_menus)
+
+        orders = []
+        for entity in entities:
+            base_menu = None
+            temperature = "ICE"
+            if entity["menu"]:
+                raw = entity["menu"]
+                if raw.startswith("아이스 "):
+                    base_menu = raw[4:]
+                    temperature = "ICE"
+                elif raw.startswith("핫 "):
+                    base_menu = raw[2:]
+                    temperature = "HOT"
+                else:
+                    base_menu = raw
+                    temperature = "HOT" if "hot" in entity["attributes"] else "ICE"
+            orders.append({
+                "menu": base_menu,
+                "temperature": temperature,
+                "quantity": entity["quantity"],
+                "options": entity.get("options", []),
+                "needs_recommendation": entity["needs_recommendation"],
+            })
+
+        named = [o for o in orders if o["menu"]]
+        _, payment_method = get_payment_response(request.query)
+
+        if named:
+            items_str = ", ".join(
+                f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
+                for o in named
+            )
+            method_label = {
+                "card": "카드", "kakao": "카카오페이", "naver": "네이버페이",
+                "appcard": "앱카드", "voucher": "모바일상품권", "giftcard": "기프트카드",
+                "kt": "KT VIP", "tmembership": "T멤버십", "cjone": "CJ ONE", "uzu": "T우주",
+            }.get(payment_method or "", "")
+            suffix = f" {method_label}로 결제 화면으로 이동합니다." if method_label else " 결제 화면으로 이동합니다."
+            answer = f"{items_str}을(를) 장바구니에 담고{suffix}"
+        else:
+            answer = "어떤 메뉴를 주문하시겠어요?"
+
+        return {
+            "question": request.query,
+            "intent": "order_and_pay",
+            "answer": answer,
+            "orders": orders,
+            "payment_method": payment_method,
+        }
     elif intent == "payment":
         answer, payment_method = get_payment_response(request.query)
         return {
