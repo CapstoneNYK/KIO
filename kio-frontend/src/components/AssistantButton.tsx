@@ -82,6 +82,12 @@ export const AssistantButton = () => {
   const [mode, setMode] = useState<Mode>("idle");
   const [learnProgress, setLearnProgress] = useState(0);
   const [currentScreen, setCurrentScreen] = useState("");
+  const [showGreeting, setShowGreeting] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowGreeting(false), 6000);
+    return () => clearTimeout(t);
+  }, []);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -182,6 +188,7 @@ export const AssistantButton = () => {
   };
 
   const handleClick = () => {
+    setShowGreeting(false);
     if (mode === "idle") setMode("voice");
     else if (mode === "voice") setMode("idle");
   };
@@ -232,31 +239,41 @@ export const AssistantButton = () => {
         </div>
       </div>
 
-      {/* KIO 버튼 */}
-      <button
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onTouchStart={handleMouseDown}
-        onTouchEnd={handleMouseUp}
-        onClick={handleClick}
-        disabled={mode === "learning"}
-        className={`w-20 h-20 rounded-full shrink-0 transition-all duration-200
-          ${
-            mode === "learning"
-              ? "animate-pulse ring-4 ring-yellow-400"
-              : mode === "voice"
-              ? "ring-4 ring-pink-400 scale-105"
-              : "ring-2 ring-pink-300 hover:ring-4 hover:ring-pink-400 hover:scale-105"
-          }
-        `}
-        title="클릭: 음성 어시스턴트 | 길게 누르기: 화면 학습"
-      >
-        <img
-          src={logo}
-          alt="KIO"
-          className="w-full h-full rounded-full object-cover"
-        />
-      </button>
+      {/* KIO 버튼 + 말풍선 */}
+      <div className="relative flex flex-col items-end shrink-0">
+        {showGreeting && mode === "idle" && (
+          <div className="absolute right-full top-0 mr-3 w-56 bg-white rounded-2xl shadow-lg px-4 py-3 text-sm text-gray-700 leading-relaxed border border-pink-100">
+            <p className="font-semibold text-pink-600 mb-1">안녕하세요!</p>
+            <p className="break-keep">저는 AI 키오스크 도우미 키오예요. 도움이 필요하면 저를 눌러주세요!</p>
+            <div className="absolute -right-2 top-6 w-4 h-4 bg-white border-t border-r border-pink-100 rotate-45" />
+          </div>
+        )}
+        <button
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchEnd={handleMouseUp}
+          onClick={handleClick}
+          disabled={mode === "learning"}
+          className={`w-20 h-20 rounded-full transition-all duration-200
+            ${
+              mode === "learning"
+                ? "animate-pulse ring-4 ring-yellow-400"
+                : mode === "voice"
+                ? "ring-4 ring-pink-400 scale-105"
+                : "hover:ring-4 hover:ring-pink-400 hover:scale-105"
+            }
+            ${showGreeting && mode === "idle" ? "animate-kio-bounce" : ""}
+          `}
+          title="클릭: 음성 어시스턴트 | 길게 누르기: 화면 학습"
+        >
+          <img
+            src={logo}
+            alt="KIO"
+            className="w-full h-full rounded-full object-cover"
+          />
+        </button>
+      </div>
     </div>
   );
 };

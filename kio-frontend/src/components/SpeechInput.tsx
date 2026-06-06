@@ -40,6 +40,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
+  const isPackaging = useCartStore((s) => s.isPackaging);
   const openScan = useCouponStore((s) => s.openScan);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);

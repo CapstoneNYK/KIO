@@ -35,6 +35,7 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
     (isCoffee ? COFFEE_OPTIONS : isTea ? TEA_OPTIONS : NON_COFFEE_OPTIONS).map((o) => ({ ...o }))
   );
   const addItem = useCartStore((s) => s.addItem);
+  const isPackaging = useCartStore((s) => s.isPackaging);
 
   const updateOption = (index: number, delta: number) => {
     setOptions((prev) =>
@@ -45,8 +46,8 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
   };
 
   const handleOrder = () => {
-    addItem(item, quantity, temperature, options, false);
-    onOrder(item, quantity, temperature, options, false);
+    addItem(item, quantity, temperature, options, isPackaging);
+    onOrder(item, quantity, temperature, options, isPackaging);
     onClose();
   };
 

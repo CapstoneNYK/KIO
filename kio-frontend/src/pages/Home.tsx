@@ -1,6 +1,7 @@
 import { NavBar } from "../components/NavBar";
 import { TopBar } from "../components/TopBar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useCategoryStore } from "../store/categoryStore";
 import { useLearningStore } from "../store/learningStore";
 import { useCartStore } from "../store/cartStore";
@@ -19,6 +20,13 @@ export const Home = () => {
   const { activeCategory, setCategory: setActiveCategory } = useCategoryStore();
   const [userSelectedItem, setUserSelectedItem] = useState<MenuItem | null>(null);
   const { scanOpen, closeScan, scanSource } = useCouponStore();
+  const location = useLocation();
+  const setIsPackaging = useCartStore((s) => s.setIsPackaging);
+
+  useEffect(() => {
+    const orderType = (location.state as { orderType?: string } | null)?.orderType;
+    setIsPackaging(orderType === "take-out");
+  }, [location.state, setIsPackaging]);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
