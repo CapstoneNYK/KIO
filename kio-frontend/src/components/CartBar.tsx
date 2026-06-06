@@ -1,4 +1,4 @@
-// no useState needed — overlay state managed by learningStore
+import { useEffect } from "react";
 import { PiShoppingCartSimple } from "react-icons/pi";
 import { LuX } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
@@ -12,7 +12,13 @@ const CONFIRM_SCREENS = ["order_confirm", "payment", "payment_card", "payment_co
 export const CartBar = () => {
   const { items, removeItem, updateQuantity, clear } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
+  const clearCoupons = useCouponStore((s) => s.clearCoupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
+
+  useEffect(() => {
+    if (items.length === 0) clearCoupons();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const orderOverlayOpen = useLearningStore((s) => s.orderOverlayOpen);
@@ -27,7 +33,7 @@ export const CartBar = () => {
   const totalQty = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
-  const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount);
+  const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount, items);
   const totalDiscount = freeDiscount + couponDiscount;
   const finalPrice = totalPrice - totalDiscount;
 

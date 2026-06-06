@@ -9,4 +9,10 @@ COUPONS = {
         "balance": 5000,
         "description": "5,000원 금액 상품권",
     },
+    "T MEMBERSHIP": {
+        "type": "discount",
+        "menu": "아메리카노",
+        "rate": 0.3,
+        "description": "T멤버십 아메리카노 30% 할인",
+    },
 }
