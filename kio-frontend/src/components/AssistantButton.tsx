@@ -2,6 +2,9 @@ import { useRef, useState, useEffect } from "react";
 import { toBlob } from "html-to-image";
 import { useNavigate, useLocation } from "react-router-dom";
 import { logo } from "../assets";
+import ktPoster from "../assets/images/poster/kt_poster.png";
+import tPoster from "../assets/images/poster/t_poster.png";
+import tpassPoster from "../assets/images/poster/tpass_poster.png";
 import { useCategoryStore } from "../store/categoryStore";
 import { useLearningStore } from "../store/learningStore";
 import { useCartStore } from "../store/cartStore";
@@ -26,7 +29,12 @@ const MODAL_SCREENS = [
   "payment_card",
   "payment_complete",
 ];
-const TOTAL_SCREENS = 1 + HOME_CATEGORIES.length + MODAL_SCREENS.length;
+const POSTER_ASSETS = [
+  { url: ktPoster, name: "poster_kt" },
+  { url: tPoster, name: "poster_t" },
+  { url: tpassPoster, name: "poster_tpass" },
+];
+const TOTAL_SCREENS = 1 + HOME_CATEGORIES.length + MODAL_SCREENS.length + POSTER_ASSETS.length;
 
 const API = `${import.meta.env.VITE_API_URL}/ocr`;
 
@@ -129,6 +137,17 @@ export const AssistantButton = () => {
     setLearnProgress(++progress.count);
   };
 
+  const learnPoster = async (url: string, screenName: string, progress: { count: number }) => {
+    setCurrentScreen(screenName);
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const formData = new FormData();
+    formData.append("file", blob, "poster.png");
+    formData.append("screen_name", screenName);
+    await fetch(`${API}/learn`, { method: "POST", body: formData });
+    setLearnProgress(++progress.count);
+  };
+
   const startLearning = async () => {
     setMode("learning");
     setLearnProgress(0);
@@ -137,6 +156,10 @@ export const AssistantButton = () => {
     navigate("/");
     await sleep(800);
     await captureAndLearn("splash", progress);
+
+    for (const { url, name } of POSTER_ASSETS) {
+      await learnPoster(url, name, progress);
+    }
 
     navigate("/home");
     await sleep(800);

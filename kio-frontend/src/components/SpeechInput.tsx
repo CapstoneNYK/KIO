@@ -71,7 +71,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", text: query }]);
     try {
-      const res = await askApi(query);
+      const cartItemNames = cartItems.map((i) =>
+        `${i.temperature === "ICE" ? "아이스" : "따뜻한"} ${i.item.title}`
+      );
+      const res = await askApi(query, cartItemNames);
       let botText = res.answer;
 
       if (res.intent === "recommend" && res.recommended_menus) {
@@ -125,7 +128,11 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         openScan("assistant");
       }
 
-      setMessages((prev) => [...prev, { role: "bot", text: botText }]);
+      const newMessages: Message[] = [{ role: "bot", text: botText }];
+      if (res.intent === "order" && res.discount_tip) {
+        newMessages.push({ role: "bot", text: res.discount_tip });
+      }
+      setMessages((prev) => [...prev, ...newMessages]);
     } catch (error) {
       console.error(error);
       setMessages((prev) => [...prev, { role: "bot", text: "질문 처리 중 오류가 발생했습니다." }]);
