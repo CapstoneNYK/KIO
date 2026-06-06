@@ -15,17 +15,25 @@ function findMenuItem(menuName: string | null): MenuItem | null {
   const normalized = menuName.replace(/\s/g, "").toLowerCase();
 
   // 정확히 일치하는 항목 우선
-  const exact = MENUS.find((m) => m.title.replace(/\s/g, "").toLowerCase() === normalized);
+  const exact = MENUS.find(
+    (m) => m.title.replace(/\s/g, "").toLowerCase() === normalized
+  );
   if (exact) return exact;
 
   // 메뉴 타이틀이 쿼리를 포함하는 경우
-  const titleContains = MENUS.find((m) => m.title.replace(/\s/g, "").toLowerCase().includes(normalized));
+  const titleContains = MENUS.find((m) =>
+    m.title.replace(/\s/g, "").toLowerCase().includes(normalized)
+  );
   if (titleContains) return titleContains;
 
   // 쿼리가 메뉴 타이틀을 포함하는 경우 — 가장 긴 타이틀 우선 (아메리카노 < 디카페인 아메리카노)
-  const candidates = MENUS.filter((m) => normalized.includes(m.title.replace(/\s/g, "").toLowerCase()));
+  const candidates = MENUS.filter((m) =>
+    normalized.includes(m.title.replace(/\s/g, "").toLowerCase())
+  );
   if (candidates.length === 0) return null;
-  return candidates.reduce((best, m) => (m.title.length > best.title.length ? m : best));
+  return candidates.reduce((best, m) =>
+    m.title.length > best.title.length ? m : best
+  );
 }
 
 const NUMBER_REF: { pattern: RegExp; index: number }[] = [
@@ -34,7 +42,13 @@ const NUMBER_REF: { pattern: RegExp; index: number }[] = [
 ];
 
 export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
-  const { transcript, listening, startListening, stopListening, resetTranscript } = useSTT("ko-KR");
+  const {
+    transcript,
+    listening,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSTT("ko-KR");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
@@ -45,8 +59,12 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const isPackaging = useCartStore((s) => s.isPackaging);
   const openScan = useCouponStore((s) => s.openScan);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
-  const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
-  const dismissPaymentOverlay = useLearningStore((s) => s.dismissPaymentOverlay);
+  const setHighlightPaymentMethod = useLearningStore(
+    (s) => s.setHighlightPaymentMethod
+  );
+  const dismissPaymentOverlay = useLearningStore(
+    (s) => s.dismissPaymentOverlay
+  );
 
   const resolveMenusFromRef = (query: string): string[] => {
     const resolved: string[] = [];
@@ -73,8 +91,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", text: query }]);
     try {
-      const cartItemNames = cartItems.map((i) =>
-        `${i.temperature === "ICE" ? "아이스" : "따뜻한"} ${i.item.title}`
+      const cartItemNames = cartItems.map(
+        (i) =>
+          `${i.temperature === "ICE" ? "아이스" : "따뜻한"} ${i.item.title}`
       );
       const res = await askApi(query, cartItemNames);
       let botText = res.answer;
@@ -95,16 +114,22 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         return;
       }
 
-      if (res.intent === "order") {
+      if (res.intent === "order" || res.intent === "order_and_pay") {
         dismissPaymentOverlay();
         const ordersToProcess = res.orders ?? [];
 
-        if (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu)) {
+        if (
+          ordersToProcess.length === 0 ||
+          ordersToProcess.every((o) => !o.menu)
+        ) {
           const refMenus = resolveMenusFromRef(query);
           const quantity = ordersToProcess[0]?.quantity ?? 1;
           const added: string[] = [];
           for (const refMenu of refMenus) {
-            const temperature: Temperature = refMenu.startsWith("핫") || refMenu.startsWith("따뜻") ? "HOT" : "ICE";
+            const temperature: Temperature =
+              refMenu.startsWith("핫") || refMenu.startsWith("따뜻")
+                ? "HOT"
+                : "ICE";
             const menuItem = findMenuItem(refMenu);
             if (menuItem) {
               addItem(menuItem, quantity, temperature, [], false);
@@ -113,16 +138,36 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           }
           if (added.length > 0) {
             const qtyText = quantity > 1 ? ` ${quantity}개` : "";
-            botText = `${added.join(", ")}${qtyText}을(를) 장바구니에 담았습니다.`;
+            botText = `${added.join(
+              ", "
+            )}${qtyText}을(를) 장바구니에 담았습니다.`;
           }
         } else {
           for (const orderInfo of ordersToProcess) {
             if (!orderInfo.menu) continue;
-            const temperature = orderInfo.temperature as Temperature ?? "ICE";
+            const temperature = (orderInfo.temperature as Temperature) ?? "ICE";
             const menuItem = findMenuItem(orderInfo.menu);
-            const menuOptions: MenuOption[] = (orderInfo.options ?? []).map((name) => ({ name, count: 1 }));
-            if (menuItem) addItem(menuItem, orderInfo.quantity ?? 1, temperature, menuOptions, false);
+            const menuOptions: MenuOption[] = (orderInfo.options ?? []).map(
+              (name) => ({ name, count: 1 })
+            );
+            if (menuItem)
+              addItem(
+                menuItem,
+                orderInfo.quantity ?? 1,
+                temperature,
+                menuOptions,
+                false
+              );
           }
+        }
+
+        if (res.intent === "order_and_pay") {
+          setMessages((prev) => [...prev, { role: "bot", text: botText }]);
+          setTimeout(() => {
+            setHighlightPaymentMethod(res.payment_method ?? null);
+            setGuideScreen(res.payment_method ? "payment" : "order_confirm");
+          }, 1000);
+          return;
         }
       }
 
@@ -137,7 +182,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       setMessages((prev) => [...prev, ...newMessages]);
     } catch (error) {
       console.error(error);
-      setMessages((prev) => [...prev, { role: "bot", text: "질문 처리 중 오류가 발생했습니다." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: "질문 처리 중 오류가 발생했습니다." },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -157,7 +205,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     } else {
       stopListening();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
@@ -190,7 +238,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           ) : (
             <div key={i} className="flex justify-start">
               <div className="bg-white border border-pink-100 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
-                <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>
+                <p className="text-sm text-gray-800 leading-relaxed">
+                  {msg.text}
+                </p>
               </div>
             </div>
           )
@@ -226,22 +276,36 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           onClick={handleButtonClick}
           className={`
             w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all duration-200
-            ${listening
-              ? "bg-red-500 hover:bg-red-600 ring-4 ring-red-300 animate-pulse"
-              : "bg-pink-500 hover:bg-pink-600 hover:scale-105"}
+            ${
+              listening
+                ? "bg-red-500 hover:bg-red-600 ring-4 ring-red-300 animate-pulse"
+                : "bg-pink-500 hover:bg-pink-600 hover:scale-105"
+            }
           `}
         >
           {listening ? (
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-6 h-6 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <rect x="6" y="6" width="12" height="12" rx="2" />
             </svg>
           ) : (
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-6 h-6 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm-1 17.93A8.001 8.001 0 0 1 4 11H6a6 6 0 0 0 12 0h2a8.001 8.001 0 0 1-7 7.93V22h2v2H9v-2h2v-2.07z" />
             </svg>
           )}
         </button>
-        <p className={`text-xs font-medium ${listening ? "text-red-500" : "text-pink-500"}`}>
+        <p
+          className={`text-xs font-medium ${
+            listening ? "text-red-500" : "text-pink-500"
+          }`}
+        >
           {listening ? "듣는 중... 탭하면 중지" : "탭하면 음성 주문 시작"}
         </p>
       </div>

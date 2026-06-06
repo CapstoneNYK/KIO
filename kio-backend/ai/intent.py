@@ -11,13 +11,13 @@ llm = ChatOpenAI(
 )
 
 # 의도 종류
-INTENTS = ["recommend", "qa", "order", "coupon", "payment"]
+INTENTS = ["recommend", "qa", "order", "coupon", "payment", "order_and_pay"]
 
 # 의도 분류 프롬프트
 intent_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음성 주문 시스템의 AI입니다.
 
-사용자의 입력을 아래 4가지 의도 중 하나로 분류하세요.
+사용자의 입력을 아래 6가지 의도 중 하나로 분류하세요.
 
 1. recommend → 메뉴 추천 요청
    - 예: "당 떨어지는데 음료 추천해줘", "달달한 거 뭐 있어?"
@@ -25,7 +25,7 @@ intent_prompt = ChatPromptTemplate.from_template("""
 2. qa → 메뉴 정보 질문
    - 예: "아메리카노 얼마야?", "카페라떼 칼로리 뭐야?"
 
-3. order → 주문 또는 행동 요청
+3. order → 주문 또는 행동 요청 (결제수단 언급 없음)
    - 예: "아메리카노 하나 줘", "라떼 주문할게", "이거 담아줘"
    - 예: "T멤버십 할인되는 거 담아줘", "KT 할인 메뉴 줘" (할인 대상 메뉴를 주문하는 경우)
 
@@ -33,18 +33,23 @@ intent_prompt = ChatPromptTemplate.from_template("""
    - 예: "쿠폰 있어요", "쿠폰 사용하고 싶어", "상품권 쓸게요", "바코드 쿠폰 있는데"
    - 주의: T멤버십, KT VIP, CJ ONE, T우주, 카드, 카카오페이 등은 coupon이 아니라 payment
 
-5. payment → 결제 수단을 선택하거나 결제를 진행하려는 요청
+5. payment → 결제 수단을 선택하거나 결제를 진행하려는 요청 (메뉴 언급 없음)
    - 예: "결제할게", "카드로 결제할게", "카카오페이 쓸게", "계산해줘"
    - 예: "KT VIP로 결제할게", "T멤버십 쓸게", "CJ ONE으로 할게", "T우주 우주패스로 결제"
    - 주의: "KT 할인 뭐야?", "T멤버십 혜택이 뭐야?", "할인 정보 알려줘" 처럼 정보를 묻는 질문은 qa
 
+6. order_and_pay → 메뉴 주문과 결제수단을 동시에 언급하는 요청
+   - 예: "아메리카노 한 잔 신용카드로 결제할게", "라떼 하나 카카오페이로 결제할게"
+   - 예: "카페라떼 두 잔 카드 결제", "아이스 아메리카노 네이버페이로 계산해줘"
+   - 메뉴명 + 결제수단이 동시에 포함된 경우 반드시 order_and_pay
+
 
 규칙:
-- 반드시 아래 넷 중 하나만 출력하세요
+- 반드시 아래 여섯 중 하나만 출력하세요
 - 다른 말 절대 하지 마세요
 
 출력:
-recommend / qa / order / coupon / payment
+recommend / qa / order / coupon / payment / order_and_pay
 
 사용자 입력: {question}
 """)
