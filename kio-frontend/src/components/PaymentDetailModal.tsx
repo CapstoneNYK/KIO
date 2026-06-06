@@ -60,7 +60,7 @@ const CardPayment = ({
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
-  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount, items);
   const totalPrice = cartTotal - discount;
   const [cardNumber, setCardNumber] = useState("");
 
@@ -125,7 +125,7 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
-  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount, items);
   const totalPrice = cartTotal - discount;
   const [coupon, setCoupon] = useState("");
   const [showScanner, setShowScanner] = useState(false);
@@ -221,10 +221,17 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
 };
 
 // 제휴멤버십 (CJ ONE 등)
-const MembershipPayment = ({ affiliateName }: { affiliateName: string }) => {
+const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; onBack?: () => void }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [showScanner, setShowScanner] = useState(false);
+  const coupons = useCouponStore((s) => s.coupons);
+  const initialCouponLen = useRef(coupons.length);
+
+  useEffect(() => {
+    if (coupons.length > initialCouponLen.current) onBack?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coupons.length]);
 
   const handleNumPress = (val: string) => {
     if (val === "clear") { setPhoneNumber(""); return; }
@@ -317,7 +324,7 @@ const AppBarcodePayment = ({
   const coupons = useCouponStore((s) => s.coupons);
   const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
-  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount);
+  const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount, items);
   const totalPrice = cartTotal - discount;
   const [remaining, setRemaining] = useState(5);
 
@@ -457,7 +464,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       return <VoucherPayment onBack={onCancel} onComplete={handleApprove} />;
     }
     if (["cjone","kt","tmembership","uzu"].includes(method)) {
-      return <MembershipPayment affiliateName={AFFILIATE_NAMES[method] ?? ""} />;
+      return <MembershipPayment affiliateName={AFFILIATE_NAMES[method] ?? ""} onBack={onCancel} />;
     }
     return <p className="text-gray-500 text-sm">준비 중입니다.</p>;
   };
