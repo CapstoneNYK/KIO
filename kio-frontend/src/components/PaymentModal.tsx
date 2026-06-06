@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket, LuSparkles } from "react-icons/lu";
+import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket, LuSparkles, LuInfo } from "react-icons/lu";
 import { PaymentDetailModal } from "./PaymentDetailModal";
 import { iconKT, iconCJONE, iconTMembership, iconTUzu, iconKakao, iconNaver } from "../assets";
 import { useLearningStore } from "../store/learningStore";
@@ -105,20 +105,27 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           {/* 상품권 차액 결제 안내 */}
           {hasAmountCoupon && remainingPrice > 0 && (
-            <div className="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200">
-              <p className="text-sm font-semibold text-amber-700">상품권이 적용됐어요</p>
-              <p className="text-sm text-amber-600">
-                남은 결제금액{" "}
-                <span className="font-bold">{remainingPrice.toLocaleString()}원</span>을 결제해주세요
-              </p>
+            <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-100">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <LuTicket className="w-4 h-4 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-700">상품권 적용됨</p>
+                <p className="text-xs text-amber-500 mt-0.5">
+                  남은 결제금액{" "}
+                  <span className="font-semibold text-amber-700">{remainingPrice.toLocaleString()}원</span>을 결제해주세요
+                </p>
+              </div>
             </div>
           )}
 
           {/* 할인 비대상 경고 */}
           {discountWarning && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2">
-              <span className="text-red-500 mt-0.5 shrink-0">✕</span>
-              <p className="text-sm text-red-600">{discountWarning}</p>
+            <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded-2xl bg-red-50 border border-red-100">
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                <LuInfo className="w-4 h-4 text-red-400" />
+              </div>
+              <p className="text-sm text-red-500 leading-snug pt-1.5">{discountWarning}</p>
             </div>
           )}
 
