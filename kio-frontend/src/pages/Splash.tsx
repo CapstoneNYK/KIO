@@ -3,18 +3,41 @@ import { useNavigate } from "react-router-dom";
 import { tpass_poster, t_poster, kt_poster, cafe_logo } from "../assets";
 
 const POSTERS = [tpass_poster, t_poster, kt_poster];
-const SLIDE_INTERVAL = 3000;
+const SLIDE_INTERVAL = 3500;
+const EXTENDED_POSTERS = [...POSTERS, POSTERS[0]];
 
 export const Splash = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % POSTERS.length);
+      setCurrentIndex((prev) => prev + 1);
     }, SLIDE_INTERVAL);
     return () => clearInterval(timer);
   }, []);
+
+  // 복제 슬라이드(index 3)에 도달하면 애니메이션 후 조용히 0으로 초기화
+  useEffect(() => {
+    if (currentIndex === POSTERS.length) {
+      const timeout = setTimeout(() => {
+        setTransitionEnabled(false);
+        setCurrentIndex(0);
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex]);
+
+  // transition 비활성화 후 다음 틱에 다시 활성화
+  useEffect(() => {
+    if (!transitionEnabled) {
+      const timeout = setTimeout(() => setTransitionEnabled(true), 50);
+      return () => clearTimeout(timeout);
+    }
+  }, [transitionEnabled]);
+
+  const dotIndex = currentIndex % POSTERS.length;
 
   return (
     <div
@@ -29,14 +52,19 @@ export const Splash = () => {
       <div className="relative z-10 flex flex-1 min-h-0 flex-col items-center justify-center px-8 py-2">
         <div className="w-full max-w-lg overflow-hidden rounded-3xl shadow-2xl">
           <div
-            className="flex transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            className="flex"
+            style={{
+              transform: `translateX(-${currentIndex * 100}%)`,
+              transition: transitionEnabled
+                ? "transform 500ms ease-in-out"
+                : "none",
+            }}
           >
-            {POSTERS.map((poster, index) => (
+            {EXTENDED_POSTERS.map((poster, index) => (
               <img
                 key={index}
                 src={poster}
-                alt={`포스터 ${index + 1}`}
+                alt={`포스터 ${(index % POSTERS.length) + 1}`}
                 className="w-full shrink-0 object-cover"
                 draggable={false}
               />
@@ -51,7 +79,7 @@ export const Splash = () => {
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`h-2.5 rounded-full transition-all duration-300 ${
-                index === currentIndex
+                index === dotIndex
                   ? "w-7 bg-yellow-400"
                   : "w-2.5 bg-[#D4A64A] opacity-60"
               }`}
