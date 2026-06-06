@@ -1,5 +1,6 @@
 import { useSTT } from "../utils/sttUtil";
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { askApi } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
@@ -38,6 +39,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
   const addItem = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
   const isPackaging = useCartStore((s) => s.isPackaging);
@@ -140,6 +142,13 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (location.pathname === "/") {
+      setMessages([]);
+      setLastRecommended([]);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (isOpen) {
