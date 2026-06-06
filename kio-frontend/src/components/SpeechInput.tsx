@@ -44,6 +44,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const openScan = useCouponStore((s) => s.openScan);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
+  const dismissPaymentOverlay = useLearningStore((s) => s.dismissPaymentOverlay);
 
   const resolveMenusFromRef = (query: string): string[] => {
     const resolved: string[] = [];
@@ -90,6 +91,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       }
 
       if (res.intent === "order") {
+        dismissPaymentOverlay();
         const ordersToProcess = res.orders ?? [];
 
         if (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu)) {
