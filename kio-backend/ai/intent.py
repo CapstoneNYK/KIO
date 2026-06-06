@@ -1,4 +1,3 @@
-import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -28,15 +27,16 @@ intent_prompt = ChatPromptTemplate.from_template("""
 
 3. order → 주문 또는 행동 요청
    - 예: "아메리카노 하나 줘", "라떼 주문할게", "이거 담아줘"
+   - 예: "T멤버십 할인되는 거 담아줘", "KT 할인 메뉴 줘" (할인 대상 메뉴를 주문하는 경우)
 
 4. coupon → 바코드 쿠폰 또는 모바일 상품권(금액권/음료권) 사용 요청
    - 예: "쿠폰 있어요", "쿠폰 사용하고 싶어", "상품권 쓸게요", "바코드 쿠폰 있는데"
    - 주의: T멤버십, KT VIP, CJ ONE, T우주, 카드, 카카오페이 등은 coupon이 아니라 payment
 
-5. payment → 결제 수단 선택·문의 또는 주문 확정 요청
+5. payment → 결제 수단을 선택하거나 결제를 진행하려는 요청
    - 예: "결제할게", "카드로 결제할게", "카카오페이 쓸게", "계산해줘"
-   - 예: "T멤버십 어떻게 써?", "KT VIP 사용할게", "CJ ONE 쓰고 싶어", "T우주 우주패스 있어"
-   - 예: "T멤버십으로 할인 받고 싶어", "KT 할인 되나요?", "제휴 멤버십 쓰는 방법"
+   - 예: "KT VIP로 결제할게", "T멤버십 쓸게", "CJ ONE으로 할게", "T우주 우주패스로 결제"
+   - 주의: "KT 할인 뭐야?", "T멤버십 혜택이 뭐야?", "할인 정보 알려줘" 처럼 정보를 묻는 질문은 qa
 
 
 규칙:
