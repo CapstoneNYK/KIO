@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket, LuSparkles } from "react-icons/lu";
+import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket, LuSparkles, LuInfo } from "react-icons/lu";
 import { PaymentDetailModal } from "./PaymentDetailModal";
 import { iconKT, iconCJONE, iconTMembership, iconTUzu, iconKakao, iconNaver } from "../assets";
 import { useLearningStore } from "../store/learningStore";
@@ -18,6 +18,16 @@ const DISCOUNT_METHODS = [
   { id: "uzu", label: "T우주 우주패스", icon: iconTUzu, iconSize: "w-14 h-14" },
 ];
 
+// 할인 적용 불가 시 안내 문구 (null = 모든 메뉴 적용 가능)
+const DISCOUNT_INELIGIBLE_MSG: Record<string, string | null> = {
+  tmembership: "T멤버십은 아이스 아메리카노만 30% 할인 적용됩니다.",
+  kt: null,
+  uzu: null,
+  cjone: null,
+};
+
+const TMEMBERSHIP_ELIGIBLE = ["아메리카노"];
+
 const PAYMENT_METHODS = [
   { id: "card", label: "카드결제", icon: <LuCreditCard className="w-7 h-7" />, imgIcon: null },
   { id: "appcard", label: "앱카드", icon: <LuSmartphone className="w-7 h-7" />, imgIcon: null },
@@ -31,6 +41,7 @@ const DETAIL_SCREENS = ["payment_card", "payment_complete"];
 
 export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+  const [discountWarning, setDiscountWarning] = useState<string | null>(null);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const highlightPaymentMethod = useLearningStore((s) => s.highlightPaymentMethod);
@@ -54,6 +65,20 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
 
   const handleSelect = (id: string) => {
     setHighlightPaymentMethod(null);
+    setDiscountWarning(null);
+
+    if (id === "tmembership") {
+      const hasEligible = items.some((i) =>
+        TMEMBERSHIP_ELIGIBLE.some((name) =>
+          i.item.title.replace(/\s/g, "").includes(name.replace(/\s/g, ""))
+        )
+      );
+      if (!hasEligible) {
+        setDiscountWarning(DISCOUNT_INELIGIBLE_MSG["tmembership"]);
+        return;
+      }
+    }
+
     setSelectedMethod(id);
   };
 
@@ -80,12 +105,27 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
         <div className="flex-1 overflow-y-auto px-6 pb-6">
           {/* 상품권 차액 결제 안내 */}
           {hasAmountCoupon && remainingPrice > 0 && (
-            <div className="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200">
-              <p className="text-sm font-semibold text-amber-700">상품권이 적용됐어요</p>
-              <p className="text-sm text-amber-600">
-                남은 결제금액{" "}
-                <span className="font-bold">{remainingPrice.toLocaleString()}원</span>을 결제해주세요
-              </p>
+            <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-100">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <LuTicket className="w-4 h-4 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-700">상품권 적용됨</p>
+                <p className="text-xs text-amber-500 mt-0.5">
+                  남은 결제금액{" "}
+                  <span className="font-semibold text-amber-700">{remainingPrice.toLocaleString()}원</span>을 결제해주세요
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* 할인 비대상 경고 */}
+          {discountWarning && (
+            <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded-2xl bg-red-50 border border-red-100">
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                <LuInfo className="w-4 h-4 text-red-400" />
+              </div>
+              <p className="text-sm text-red-500 leading-snug pt-1.5">{discountWarning}</p>
             </div>
           )}
 

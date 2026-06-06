@@ -77,3 +77,18 @@ def get_all_menu_texts() -> list[str]:
             "SELECT DISTINCT text FROM elements WHERE label = 'menu_item' ORDER BY text"
         ).fetchall()
         return [r[0] for r in rows]
+
+
+def get_all_discount_texts() -> dict[str, list[str]]:
+    with sqlite3.connect(DB_PATH) as conn:
+        rows = conn.execute(
+            """SELECT s.screen_name, e.text
+               FROM elements e
+               JOIN screens s ON e.screen_id = s.id
+               WHERE e.label = 'discount' AND s.screen_name LIKE 'poster_%'
+               ORDER BY s.screen_name, e.confidence DESC"""
+        ).fetchall()
+        result: dict[str, list[str]] = {}
+        for screen_name, text in rows:
+            result.setdefault(screen_name, []).append(text)
+        return result

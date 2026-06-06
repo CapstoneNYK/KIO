@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { LuX } from "react-icons/lu";
+import { LuX, LuTag } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
@@ -68,9 +68,12 @@ const CardPayment = ({
     <>
       <div className="flex flex-col mb-5 rounded-xl overflow-hidden border border-gray-100">
         {discount > 0 && (
-          <div className="flex justify-between items-center py-3 px-4 bg-green-50">
-            <span className="text-green-700 text-sm">쿠폰 할인</span>
-            <span className="font-semibold text-green-600 text-sm">-{discount.toLocaleString()}원</span>
+          <div className="flex justify-between items-center py-2.5 px-4 bg-emerald-50">
+            <div className="flex items-center gap-1.5">
+              <LuTag className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-emerald-700 text-sm font-medium">할인 적용</span>
+            </div>
+            <span className="font-bold text-emerald-600 text-sm">-{discount.toLocaleString()}원</span>
           </div>
         )}
         <div className="flex justify-between items-center py-3 px-4 bg-gray-50">
@@ -171,9 +174,12 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
             <span className="font-bold text-orange-500 text-sm">{cartTotal.toLocaleString()}원</span>
           </div>
           {discount > 0 && (
-            <div className="flex justify-between items-center py-3 border-b border-gray-100">
-              <span className="text-green-700 text-sm">쿠폰 할인</span>
-              <span className="font-semibold text-green-600 text-sm">-{discount.toLocaleString()}원</span>
+            <div className="flex justify-between items-center py-2.5 border-b border-gray-100">
+              <div className="flex items-center gap-1.5">
+                <LuTag className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-emerald-700 text-sm font-medium">할인 적용</span>
+              </div>
+              <span className="font-bold text-emerald-600 text-sm">-{discount.toLocaleString()}원</span>
             </div>
           )}
           <div className="flex justify-between items-center py-3 border-b border-gray-100">
@@ -336,8 +342,11 @@ const AppBarcodePayment = ({
       <div className="flex flex-col border-b border-gray-100 mb-5">
         {discount > 0 && (
           <div className="flex justify-between items-center py-2 px-1">
-            <span className="text-green-700 text-sm">쿠폰 할인</span>
-            <span className="font-semibold text-green-600 text-sm">-{discount.toLocaleString()}원</span>
+            <div className="flex items-center gap-1.5">
+              <LuTag className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-emerald-700 text-sm font-medium">할인 적용</span>
+            </div>
+            <span className="font-bold text-emerald-600 text-sm">-{discount.toLocaleString()}원</span>
           </div>
         )}
         <div className="flex justify-between items-center py-3 px-1">
