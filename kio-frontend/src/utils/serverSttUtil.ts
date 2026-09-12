@@ -30,6 +30,11 @@ interface SttResponse {
 export const useServerSTT = (language: string = "ko") => {
   const [transcript, setTranscript] = useState("");
   const [listening, setListening] = useState(false);
+  // 녹음은 이미 끝났고 서버에 보내서 인식 결과를 기다리는 중인지 여부.
+  // listening과 분리해두지 않으면, 정지 버튼을 눌러도 서버 응답이 올 때까지
+  // (특히 STT 모델을 medium 등으로 바꿔서 느려졌을 때) 화면이 계속 "듣는 중"
+  // 상태로 보여서 마치 정지가 안 되는 것처럼 느껴지는 문제가 있었다.
+  const [processing, setProcessing] = useState(false);
 
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -62,6 +67,7 @@ export const useServerSTT = (language: string = "ko") => {
 
   const sendForTranscription = useCallback(
     async (blob: Blob) => {
+      setProcessing(true);
       try {
         const formData = new FormData();
         formData.append("file", blob, "speech.webm");
@@ -74,7 +80,7 @@ export const useServerSTT = (language: string = "ko") => {
         console.error("STT 요청 실패:", error);
         setTranscript("");
       } finally {
-        setListening(false);
+        setProcessing(false);
       }
     },
     [language]
@@ -148,12 +154,13 @@ export const useServerSTT = (language: string = "ko") => {
       recorder.onstop = () => {
         cleanupAudioGraph();
         releaseStream();
+        // 녹음 자체는 여기서 이미 끝났으므로, 서버 응답을 기다리기 전에
+        // listening을 바로 꺼서 "정지" 동작이 즉시 반영되도록 한다.
+        setListening(false);
         const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
         chunksRef.current = [];
         if (blob.size > 0) {
           sendForTranscription(blob);
-        } else {
-          setListening(false);
         }
       };
 
@@ -195,6 +202,7 @@ export const useServerSTT = (language: string = "ko") => {
   return {
     transcript,
     listening,
+    processing,
     startListening,
     stopListening,
     resetTranscript,

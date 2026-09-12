@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 
 from dotenv import load_dotenv
@@ -49,6 +50,12 @@ app.include_router(coupon_router)
 # 이용하므로 세션 관리 없이 전역 변수로 "방금 추천받은 목록"만 기억해두고,
 # "그 중 1번으로 담아줘" 같은 후속 주문 발화를 해석하는 데 사용한다.
 _last_recommended_menus: list[str] = []
+
+# "T멤버십 할인되나요?"처럼 할인 관련 "질문"이 order로 잘못 분류됐을 때,
+# 무작정 메뉴를 장바구니에 담아버리지 않고 안내 답변으로 처리하기 위한 패턴.
+_DISCOUNT_QUESTION_PATTERN = re.compile(
+    r"(\?|되나요|되나|돼요|되나여|가능해|가능한가|뭐야|뭐예요|뭔가요|얼마|무엇|알려줘)"
+)
 
 
 def _resolve_ordinal_order(query: str) -> dict | None:
@@ -147,6 +154,11 @@ async def ask_intent(request: QueryRequest):
             ordinal_entity = _resolve_ordinal_order(request.query)
             if ordinal_entity:
                 entities = [ordinal_entity]
+            elif _DISCOUNT_QUESTION_PATTERN.search(request.query):
+                # 의도 분류가 "order"로 잘못 나왔더라도, 문장이 질문형이면
+                # (예: "T멤버십 할인되나요?") 장바구니에 담지 말고 정보로 답변한다.
+                answer = qa_chain.invoke({"question": request.query, "cart_items": request.cart_items})
+                return {"question": request.query, "intent": "qa", "answer": answer}
             else:
                 q_norm = request.query.replace(" ", "")
                 for keyword, (menu, temp) in _DISCOUNT_MENU_MAP.items():
@@ -250,6 +262,32 @@ async def ask_intent(request: QueryRequest):
 
         named = [o for o in orders if o["menu"]]
         _, payment_method = get_payment_response(request.query)
+
+        if not payment_method:
+            # 결제수단이 실제로 언급되지 않았는데도 로컬 LLM이 order_and_pay로
+            # 잘못 분류하는 경우가 있다("결제수단 언급 없음"이 order_and_pay가 될
+            # 조건이 아닌데도 종종 발생). 결제 화면으로 강제 이동시키지 않고
+            # 그냥 주문(order)처럼 장바구니에만 담는다.
+            if named:
+                items_str = ", ".join(
+                    f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
+                    for o in named
+                )
+                answer = f"{items_str}을(를) 장바구니에 담았습니다."
+            else:
+                answer = "어떤 메뉴를 주문하시겠어요?"
+
+            discount_tip: str | None = None
+            if named:
+                discount_tip = get_discount_tip(get_all_discount_texts())
+
+            return {
+                "question": request.query,
+                "intent": "order",
+                "answer": answer,
+                "orders": orders,
+                "discount_tip": discount_tip,
+            }
 
         if named:
             items_str = ", ".join(

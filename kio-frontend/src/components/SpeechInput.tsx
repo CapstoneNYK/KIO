@@ -45,6 +45,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const {
     transcript,
     listening,
+    processing,
     startListening,
     stopListening,
     resetTranscript,
@@ -80,7 +81,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const handleButtonClick = () => {
     if (listening) {
       stopListening();
-    } else {
+    } else if (!processing) {
+      // 인식 결과를 기다리는 중에는 새 녹음을 또 시작하지 않도록 막는다.
       resetTranscript();
       startListening();
     }
@@ -274,11 +276,14 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       <div className="flex flex-col items-center gap-2 p-3 border-t border-pink-50">
         <button
           onClick={handleButtonClick}
+          disabled={processing}
           className={`
             w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all duration-200
             ${
               listening
                 ? "bg-red-500 hover:bg-red-600 ring-4 ring-red-300 animate-pulse"
+                : processing
+                ? "bg-pink-300 cursor-not-allowed"
                 : "bg-pink-500 hover:bg-pink-600 hover:scale-105"
             }
           `}
@@ -291,6 +296,12 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
             >
               <rect x="6" y="6" width="12" height="12" rx="2" />
             </svg>
+          ) : processing ? (
+            <div className="flex gap-1 items-center">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:0ms]" />
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:300ms]" />
+            </div>
           ) : (
             <svg
               className="w-6 h-6 text-white"
@@ -306,7 +317,11 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
             listening ? "text-red-500" : "text-pink-500"
           }`}
         >
-          {listening ? "듣는 중... 탭하면 중지" : "탭하면 음성 주문 시작"}
+          {listening
+            ? "듣는 중... 탭하면 중지"
+            : processing
+            ? "인식 처리 중..."
+            : "탭하면 음성 주문 시작"}
         </p>
       </div>
     </div>

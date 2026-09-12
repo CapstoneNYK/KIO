@@ -99,14 +99,22 @@ def extract_menu(text: str, ocr_menus: list = None) -> Optional[str]:
     text_norm = normalize_text(text)
 
     # 1단계: 축약어 → 정식 메뉴명으로 변환 ("아아" → "아메리카노")
+    dict_match_len = 0
     for key in sorted(MENU_KEYWORDS.keys(), key=len, reverse=True):
         if normalize_text(key) in text_norm:
-            text_norm = text_norm.replace(normalize_text(key), normalize_text(MENU_KEYWORDS[key]))
+            value_norm = normalize_text(MENU_KEYWORDS[key])
+            text_norm = text_norm.replace(normalize_text(key), value_norm)
+            dict_match_len = len(value_norm)
             break
 
     # 2단계: OCR DB 메뉴와 직접 매칭 (가장 긴 매칭 우선)
+    # 주의: OCR로 스캔한 메뉴판에는 "스무디" 같은 짧은 분류 텍스트가 실제 메뉴명과
+    # 섞여 들어있을 수 있다. 예전 로직은 OCR에서 아무 매칭이든 발견되면 무조건
+    # 그걸로 덮어써서, 1단계에서 이미 "블루베리 스무디"로 정확히 확정된 걸 짧은
+    # "스무디"로 되돌려버리는 버그가 있었다. 이제는 1단계 매칭보다 더 길고
+    # 구체적인 OCR 매칭이 있을 때만 덮어쓴다.
     if ocr_menus:
-        best_match, best_len = None, 0
+        best_match, best_len = None, dict_match_len
         for ocr in ocr_menus:
             ocr_norm = normalize_text(ocr)
             if (ocr_norm in text_norm or text_norm in ocr_norm) and len(ocr_norm) > best_len:
