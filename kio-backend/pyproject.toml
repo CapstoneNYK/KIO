@@ -7,8 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "easyocr>=1.7.2",
     "fastapi[standard]>=0.135.2",
+    "faster-whisper>=1.0.3",
     "langchain-core>=1.2.28",
-    "langchain-openai>=1.1.12",
+    "langchain-ollama>=0.3.0",
     "langchain-pinecone>=0.2.13",
     "numpy<2",
     "opencv-python-headless==4.8.1.78",

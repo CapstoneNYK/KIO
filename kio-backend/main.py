@@ -1,7 +1,8 @@
 import os
+import tempfile
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -10,6 +11,7 @@ from ai.intent import classify_intent
 from ai.entity import extract_multi_order
 from ai.payment import get_payment_response
 from ai.discount import get_discount_tip
+from ai.stt import transcribe as transcribe_audio
 from app.ocr.router import router as ocr_router
 from app.ocr.db import get_all_menu_texts, get_all_discount_texts
 from app.coupon.router import router as coupon_router
@@ -38,6 +40,33 @@ class QueryRequest(BaseModel):
 @app.get("/")
 def root():
     return {"msg": "hello"}
+
+
+@app.post("/api/stt")
+async def speech_to_text(file: UploadFile = File(...)):
+    """녹음된 오디오를 받아 자체 호스팅 Whisper 모델로 텍스트를 반환한다.
+
+    기존 브라우저 Web Speech API를 대체하는 엔드포인트로, 노이즈에 더 강인한
+    인식을 위해 서버에서 VAD 필터가 적용된 faster-whisper로 인식한다.
+    """
+    audio_bytes = await file.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="오디오 데이터가 비어있습니다.")
+
+    suffix = os.path.splitext(file.filename or "audio.webm")[1] or ".webm"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(audio_bytes)
+        tmp_path = tmp.name
+
+    try:
+        text = transcribe_audio(tmp_path, language="ko")
+    finally:
+        os.unlink(tmp_path)
+
+    if not text:
+        raise HTTPException(status_code=422, detail="음성을 인식하지 못했습니다. 다시 말씀해 주세요.")
+
+    return {"text": text}
 
 
 @app.post("/api/recommend")

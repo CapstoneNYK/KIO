@@ -1,4 +1,4 @@
-import { useSTT } from "../utils/sttUtil";
+import { useServerSTT } from "../utils/serverSttUtil";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { askApi } from "../api/askApi";
@@ -48,7 +48,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     startListening,
     stopListening,
     resetTranscript,
-  } = useSTT("ko-KR");
+  } = useServerSTT("ko");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
