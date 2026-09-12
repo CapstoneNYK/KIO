@@ -29,9 +29,34 @@ QUANTITY_MAP = {
 }
 
 
+def _unify_ae_e(ch: str) -> str:
+    """한글 음절 하나를 받아 애/에(ㅐ/ㅔ), 얘/예(ㅒ/ㅖ) 모음 차이를 하나로 합친다.
+
+    한국어는 ㅐ와 ㅔ 발음이 실제로 거의 구분되지 않아서, STT가 "카페라떼"를
+    "카페라 때"처럼 다른 철자로 옮겨 적는 경우가 흔하다. 이 때문에 정확한
+    철자로만 매칭하던 메뉴 사전이 오인식된 텍스트를 못 찾는 문제가 있었다.
+    음절을 초성/중성/종성으로 분해해서 중성이 ㅐ/ㅒ면 각각 ㅔ/ㅖ로 바꾼 뒤
+    다시 조합하면, "때"와 "떼" 같은 쌍이 정규화 후 동일한 문자가 되어
+    메뉴 매칭이 발음 기준으로 관대해진다.
+    """
+    code = ord(ch)
+    if 0xAC00 <= code <= 0xD7A3:
+        offset = code - 0xAC00
+        initial = offset // (21 * 28)
+        medial = (offset % (21 * 28)) // 28
+        final = offset % 28
+        if medial == 1:      # ㅐ -> ㅔ
+            medial = 5
+        elif medial == 3:    # ㅒ -> ㅖ
+            medial = 7
+        return chr(0xAC00 + (initial * 21 + medial) * 28 + final)
+    return ch
+
+
 def normalize_text(text: str) -> str:
     text = text.lower()
     text = re.sub(r"\s+", "", text)
+    text = "".join(_unify_ae_e(ch) for ch in text)
     return text
 
 
