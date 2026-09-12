@@ -74,6 +74,78 @@ def _resolve_ordinal_order(query: str) -> dict | None:
     return None
 
 
+# 할인 수단 언급 + 메뉴 미추출(또는 단음절 오인식) 시 할인 대상 메뉴로 보완할 때 쓰는 표.
+# (요청마다 새로 만들 필요 없는 고정 데이터라 모듈 레벨로 뺐다.)
+_DISCOUNT_MENU_MAP = {
+    "T멤버십": ("아메리카노", None),   # None = 온도 그대로 (ICE/HOT 무관)
+    "tmembership": ("아메리카노", None),
+}
+
+
+def _is_noise_menu(menu: str | None) -> bool:
+    """메뉴명이 비어있거나, 할인 키워드 앞글자(T/KT 등)를 잘못 메뉴로 인식한 노이즈인지 판단."""
+    if not menu:
+        return True
+    cleaned = menu.strip()
+    if len(cleaned) <= 2:
+        return True
+    if cleaned.upper() in ("T", "KT", "CJ", "SKT"):
+        return True
+    return False
+
+
+def _entities_to_orders(entities: list[dict]) -> list[dict]:
+    """entity 추출 결과(menu/attributes/quantity/options/needs_recommendation)를
+    프론트에 내려줄 orders 형식으로 변환한다. "아이스 "/"핫 " 접두어가 붙어 있으면
+    분리해서 temperature 필드로 뺀다. order/order_and_pay 두 분기에서 동일하게 써서
+    하나로 뽑았다."""
+    orders = []
+    for entity in entities:
+        base_menu = None
+        temperature = "ICE"
+        if entity["menu"]:
+            raw = entity["menu"]
+            if raw.startswith("아이스 "):
+                base_menu = raw[4:]
+                temperature = "ICE"
+            elif raw.startswith("핫 "):
+                base_menu = raw[2:]
+                temperature = "HOT"
+            else:
+                base_menu = raw
+                temperature = "HOT" if "hot" in entity["attributes"] else "ICE"
+        orders.append({
+            "menu": base_menu,
+            "temperature": temperature,
+            "quantity": entity["quantity"],
+            "options": entity.get("options", []),
+            "needs_recommendation": entity["needs_recommendation"],
+        })
+    return orders
+
+
+def _format_items(named: list[dict]) -> str:
+    return ", ".join(
+        f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
+        for o in named
+    )
+
+
+def _order_response(question: str, orders: list[dict], named: list[dict]) -> dict:
+    """"장바구니에 담았습니다" 형태의 일반 주문 응답을 만든다.
+    order 분기와, order_and_pay인데 실제로는 결제수단이 없어서 order로 강등되는
+    경우에서 공용으로 쓴다."""
+    answer = f"{_format_items(named)}을(를) 장바구니에 담았습니다." if named else "어떤 메뉴를 주문하시겠어요?"
+    discount_tip = get_discount_tip(get_all_discount_texts()) if named else None
+    return {
+        "question": question,
+        "intent": "order",
+        "answer": answer,
+        "orders": orders,
+        "discount_tip": discount_tip,
+    }
+
+
 class QueryRequest(BaseModel):
     query: str
     cart_items: list[str] = []
@@ -134,22 +206,6 @@ async def ask_intent(request: QueryRequest):
         ocr_menus = get_all_menu_texts()
         entities = extract_multi_order(request.query, ocr_menus)
 
-        # 할인 수단 언급 + 메뉴 미추출(또는 단음절 오인식) 시 할인 대상 메뉴로 보완
-        _DISCOUNT_MENU_MAP = {
-            "T멤버십": ("아메리카노", None),   # None = 온도 그대로 (ICE/HOT 무관)
-            "tmembership": ("아메리카노", None),
-        }
-        def _is_noise_menu(menu: str | None) -> bool:
-            if not menu:
-                return True
-            cleaned = menu.strip()
-            # 단음절이거나 할인 키워드 앞글자(T, KT 등) 오인식
-            if len(cleaned) <= 2:
-                return True
-            if cleaned.upper() in ("T", "KT", "CJ", "SKT"):
-                return True
-            return False
-
         if all(_is_noise_menu(e.get("menu")) for e in entities):
             ordinal_entity = _resolve_ordinal_order(request.query)
             if ordinal_entity:
@@ -168,51 +224,9 @@ async def ask_intent(request: QueryRequest):
                                      "options": [], "attributes": [], "needs_recommendation": False}]
                         break
 
-        orders = []
-        for entity in entities:
-            base_menu = None
-            temperature = "ICE"
-            if entity["menu"]:
-                raw = entity["menu"]
-                if raw.startswith("아이스 "):
-                    base_menu = raw[4:]
-                    temperature = "ICE"
-                elif raw.startswith("핫 "):
-                    base_menu = raw[2:]
-                    temperature = "HOT"
-                else:
-                    base_menu = raw
-                    temperature = "HOT" if "hot" in entity["attributes"] else "ICE"
-            orders.append({
-                "menu": base_menu,
-                "temperature": temperature,
-                "quantity": entity["quantity"],
-                "options": entity.get("options", []),
-                "needs_recommendation": entity["needs_recommendation"],
-            })
-
+        orders = _entities_to_orders(entities)
         named = [o for o in orders if o["menu"]]
-        if named:
-            items_str = ", ".join(
-                f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
-                for o in named
-            )
-            answer = f"{items_str}을(를) 장바구니에 담았습니다."
-        else:
-            answer = "어떤 메뉴를 주문하시겠어요?"
-
-        discount_tip: str | None = None
-        if named:
-            discount_texts = get_all_discount_texts()
-            discount_tip = get_discount_tip(discount_texts)
-
-        return {
-            "question": request.query,
-            "intent": "order",
-            "answer": answer,
-            "orders": orders,
-            "discount_tip": discount_tip,
-        }
+        return _order_response(request.query, orders, named)
     elif intent == "coupon":
         return {
             "question": request.query,
@@ -237,29 +251,7 @@ async def ask_intent(request: QueryRequest):
             if ordinal_entity:
                 entities = [ordinal_entity]
 
-        orders = []
-        for entity in entities:
-            base_menu = None
-            temperature = "ICE"
-            if entity["menu"]:
-                raw = entity["menu"]
-                if raw.startswith("아이스 "):
-                    base_menu = raw[4:]
-                    temperature = "ICE"
-                elif raw.startswith("핫 "):
-                    base_menu = raw[2:]
-                    temperature = "HOT"
-                else:
-                    base_menu = raw
-                    temperature = "HOT" if "hot" in entity["attributes"] else "ICE"
-            orders.append({
-                "menu": base_menu,
-                "temperature": temperature,
-                "quantity": entity["quantity"],
-                "options": entity.get("options", []),
-                "needs_recommendation": entity["needs_recommendation"],
-            })
-
+        orders = _entities_to_orders(entities)
         named = [o for o in orders if o["menu"]]
         _, payment_method = get_payment_response(request.query)
 
@@ -268,39 +260,16 @@ async def ask_intent(request: QueryRequest):
             # 잘못 분류하는 경우가 있다("결제수단 언급 없음"이 order_and_pay가 될
             # 조건이 아닌데도 종종 발생). 결제 화면으로 강제 이동시키지 않고
             # 그냥 주문(order)처럼 장바구니에만 담는다.
-            if named:
-                items_str = ", ".join(
-                    f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
-                    for o in named
-                )
-                answer = f"{items_str}을(를) 장바구니에 담았습니다."
-            else:
-                answer = "어떤 메뉴를 주문하시겠어요?"
-
-            discount_tip: str | None = None
-            if named:
-                discount_tip = get_discount_tip(get_all_discount_texts())
-
-            return {
-                "question": request.query,
-                "intent": "order",
-                "answer": answer,
-                "orders": orders,
-                "discount_tip": discount_tip,
-            }
+            return _order_response(request.query, orders, named)
 
         if named:
-            items_str = ", ".join(
-                f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
-                for o in named
-            )
             method_label = {
                 "card": "카드", "kakao": "카카오페이", "naver": "네이버페이",
                 "appcard": "앱카드", "voucher": "모바일상품권", "giftcard": "기프트카드",
                 "kt": "KT VIP", "tmembership": "T멤버십", "cjone": "CJ ONE", "uzu": "T우주",
             }.get(payment_method or "", "")
             suffix = f" {method_label}로 결제 화면으로 이동합니다." if method_label else " 결제 화면으로 이동합니다."
-            answer = f"{items_str}을(를) 장바구니에 담고{suffix}"
+            answer = f"{_format_items(named)}을(를) 장바구니에 담고{suffix}"
         else:
             answer = "어떤 메뉴를 주문하시겠어요?"
 
