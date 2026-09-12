@@ -8,7 +8,13 @@ from pydantic import BaseModel
 
 from ai.recommend import qa_chain, recommend_chain
 from ai.intent import classify_intent
-from ai.entity import extract_multi_order
+from ai.entity import (
+    extract_multi_order,
+    extract_ordinal,
+    extract_quantity,
+    extract_attributes,
+    extract_options_from_text,
+)
 from ai.payment import get_payment_response
 from ai.discount import get_discount_tip
 from ai.stt import transcribe as transcribe_audio
@@ -30,7 +36,7 @@ _frontend_urls = [u.strip() for u in os.getenv("FRONTEND_URL", "http://localhost
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_frontend_urls,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3}):5173",
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3}):5173",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,6 +44,27 @@ app.add_middleware(
 
 app.include_router(ocr_router)
 app.include_router(coupon_router)
+
+# 직전에 추천했던 메뉴 목록(순서 그대로). 카페 키오스크는 보통 한 번에 한 사람만
+# 이용하므로 세션 관리 없이 전역 변수로 "방금 추천받은 목록"만 기억해두고,
+# "그 중 1번으로 담아줘" 같은 후속 주문 발화를 해석하는 데 사용한다.
+_last_recommended_menus: list[str] = []
+
+
+def _resolve_ordinal_order(query: str) -> dict | None:
+    """"1번으로 담아줘"처럼 직전 추천 목록을 순서로 가리키는 발화를 주문 엔티티로 변환한다.
+    해당 안 되면 None."""
+    ordinal = extract_ordinal(query)
+    if ordinal and 1 <= ordinal <= len(_last_recommended_menus):
+        chosen_menu = _last_recommended_menus[ordinal - 1]
+        return {
+            "menu": chosen_menu,
+            "quantity": extract_quantity(query),
+            "attributes": extract_attributes(query),
+            "options": extract_options_from_text(query),
+            "needs_recommendation": False,
+        }
+    return None
 
 
 class QueryRequest(BaseModel):
@@ -83,6 +110,7 @@ async def ask_menu(request: QueryRequest):
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
     result = recommend_chain.invoke(request.query)
+    _last_recommended_menus[:] = result.menus
     return {"question": request.query, "answer": result.answer, "recommended_menus": result.menus}
 
 
@@ -116,13 +144,17 @@ async def ask_intent(request: QueryRequest):
             return False
 
         if all(_is_noise_menu(e.get("menu")) for e in entities):
-            q_norm = request.query.replace(" ", "")
-            for keyword, (menu, temp) in _DISCOUNT_MENU_MAP.items():
-                if keyword.replace(" ", "") in q_norm:
-                    resolved_temp = temp if temp else "ICE"
-                    entities = [{"menu": menu, "quantity": 1, "temperature": resolved_temp,
-                                 "options": [], "attributes": [], "needs_recommendation": False}]
-                    break
+            ordinal_entity = _resolve_ordinal_order(request.query)
+            if ordinal_entity:
+                entities = [ordinal_entity]
+            else:
+                q_norm = request.query.replace(" ", "")
+                for keyword, (menu, temp) in _DISCOUNT_MENU_MAP.items():
+                    if keyword.replace(" ", "") in q_norm:
+                        resolved_temp = temp if temp else "ICE"
+                        entities = [{"menu": menu, "quantity": 1, "temperature": resolved_temp,
+                                     "options": [], "attributes": [], "needs_recommendation": False}]
+                        break
 
         orders = []
         for entity in entities:
@@ -177,6 +209,7 @@ async def ask_intent(request: QueryRequest):
         }
     elif intent == "recommend":
         result = recommend_chain.invoke(request.query)
+        _last_recommended_menus[:] = result.menus
         return {
             "question": request.query,
             "intent": intent,
@@ -186,6 +219,11 @@ async def ask_intent(request: QueryRequest):
     elif intent == "order_and_pay":
         ocr_menus = get_all_menu_texts()
         entities = extract_multi_order(request.query, ocr_menus)
+
+        if all(not e.get("menu") for e in entities):
+            ordinal_entity = _resolve_ordinal_order(request.query)
+            if ordinal_entity:
+                entities = [ordinal_entity]
 
         orders = []
         for entity in entities:

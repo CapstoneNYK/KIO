@@ -28,6 +28,16 @@ QUANTITY_MAP = {
     "열": 10,
 }
 
+# 추천 목록에서 "1번/첫번째로 담아줘"처럼 순서로 메뉴를 고르는 발화를 해석하기 위한 매핑.
+# recommend 응답으로 받은 메뉴 리스트의 인덱스(1부터 시작)를 가리킨다.
+ORDINAL_KEYWORDS: dict[str, int] = {
+    "첫번째": 1, "첫 번째": 1, "1번째": 1, "1번": 1, "일번": 1,
+    "두번째": 2, "두 번째": 2, "2번째": 2, "2번": 2,
+    "세번째": 3, "세 번째": 3, "3번째": 3, "3번": 3,
+    "네번째": 4, "네 번째": 4, "4번째": 4, "4번": 4,
+    "다섯번째": 5, "다섯 번째": 5, "5번째": 5, "5번": 5,
+}
+
 
 def _unify_ae_e(ch: str) -> str:
     """한글 음절 하나를 받아 애/에(ㅐ/ㅔ), 얘/예(ㅒ/ㅖ) 모음 차이를 하나로 합친다.
@@ -73,6 +83,16 @@ def extract_quantity(text: str) -> int:
             return num
 
     return 1
+
+
+def extract_ordinal(text: str) -> Optional[int]:
+    """"1번으로 담아줘", "두번째로 줘" 같은 순서 참조 표현에서 순번을 추출한다.
+    직전에 추천받은 메뉴 목록 중 몇 번째를 고르려는 건지 알아낼 때 쓴다."""
+    text_norm = normalize_text(text)
+    for key in sorted(ORDINAL_KEYWORDS.keys(), key=len, reverse=True):
+        if normalize_text(key) in text_norm:
+            return ORDINAL_KEYWORDS[key]
+    return None
 
 
 def extract_menu(text: str, ocr_menus: list = None) -> Optional[str]:

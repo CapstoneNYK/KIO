@@ -21,6 +21,8 @@ intent_prompt = ChatPromptTemplate.from_template("""
 
 1. recommend → 메뉴 추천 요청
    - 예: "당 떨어지는데 음료 추천해줘", "달달한 거 뭐 있어?"
+   - 주의: 문장이 잡음/오인식처럼 불분명하거나 무슨 의미인지 판단하기 어려우면
+     recommend로 추측하지 말고 qa로 분류하세요.
 
 2. qa → 메뉴 정보 질문
    - 예: "아메리카노 얼마야?", "카페라떼 칼로리 뭐야?"
