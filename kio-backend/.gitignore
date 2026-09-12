@@ -1,3 +1,7 @@
 .env
 __pycache__
 venv
+
+# 실사용 로그(개인 대화 내용 포함 가능) - 초기 시드 데이터(data/intent_seed.jsonl)는 커밋하되
+# 여기서 계속 쌓이는 실제 로그는 커밋하지 않음
+data/intent_logs.jsonl

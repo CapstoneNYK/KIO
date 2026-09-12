@@ -12,6 +12,7 @@ from ai.entity import extract_multi_order
 from ai.payment import get_payment_response
 from ai.discount import get_discount_tip
 from ai.stt import transcribe as transcribe_audio
+from ai.logging_utils import log_intent_query
 from app.ocr.router import router as ocr_router
 from app.ocr.db import get_all_menu_texts, get_all_discount_texts
 from app.coupon.router import router as coupon_router
@@ -20,9 +21,16 @@ load_dotenv()
 
 app = FastAPI()
 
+# FRONTEND_URL에 콤마로 여러 주소를 넣을 수 있게 하고(.env: FRONTEND_URL=http://localhost:5173,http://192.168.0.17:5173),
+# 추가로 같은 와이파이(192.168.x.x)나 Tailscale(100.x.x.x)로 접속하는 흔한 케이스는
+# 정규식으로 한 번에 허용한다. PC를 서버로 쓰면서 다른 기기(노트북 등)로 접속할 때마다
+# IP가 바뀌어서 매번 .env를 고쳐야 하는 번거로움을 줄이기 위함.
+_frontend_urls = [u.strip() for u in os.getenv("FRONTEND_URL", "http://localhost:5173").split(",") if u.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:5173")],
+    allow_origins=_frontend_urls,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3}):5173",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,6 +92,8 @@ async def ask_intent(request: QueryRequest):
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
     intent = classify_intent(request.query)
+    # 실사용 발화+예측 의도를 누적 기록 -> 나중에 검토 후 파인튜닝 데이터로 활용
+    log_intent_query(request.query, intent)
 
     if intent == "order":
         ocr_menus = get_all_menu_texts()

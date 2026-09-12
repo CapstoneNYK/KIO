@@ -1,0 +1,184 @@
+{"text": "아메리카노 얼마야?", "intent": "qa"}
+{"text": "메뉴에 어떤 게 있어요?", "intent": "qa"}
+{"text": "화장실 어디 있어요?", "intent": "qa"}
+{"text": "망고 주스 하나 담고 네이버페이로 계산해줘", "intent": "order_and_pay"}
+{"text": "이 음료 카페인 얼마나 들어있어요?", "intent": "qa"}
+{"text": "차가운 바닐라라떼 네 잔 주문할게요", "intent": "order"}
+{"text": "얼음 빼는 것도 가능해요?", "intent": "qa"}
+{"text": "핫 블루베리 스무디 두 잔 주세요", "intent": "order"}
+{"text": "따뜻한 바닐라라떼 셋 담아줘", "intent": "order"}
+{"text": "CJ ONE으로 할게요", "intent": "payment"}
+{"text": "아이스 망고 주스 두 잔 주문할게요", "intent": "order"}
+{"text": "핫 레몬 에이드 세 잔 부탁해요", "intent": "order"}
+{"text": "따뜻한 카페라떼 한 잔 주세요", "intent": "order"}
+{"text": "KT 할인 뭐야?", "intent": "qa"}
+{"text": "디카페인 아메리카노 두 잔 주세요", "intent": "order"}
+{"text": "피곤할 때 마시면 좋은 거 있어?", "intent": "recommend"}
+{"text": "페퍼민트 둘 주문하고 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "히비스커스 셋 부탁해요", "intent": "order"}
+{"text": "얼음 많이 넣어서 아이스 아메리카노 주세요", "intent": "order"}
+{"text": "아이스 자몽 에이드 한 잔 담아줘", "intent": "order"}
+{"text": "딸기 스무디 셋 주세요", "intent": "order"}
+{"text": "따뜻한 디카페인 아메리카노 한 잔 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "차가운 레몬 에이드 한 잔 담고 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "쿠폰 스캔해주세요", "intent": "coupon"}
+{"text": "T멤버십 할인되는 거 담아줘", "intent": "order"}
+{"text": "기프티콘 사용할게요", "intent": "coupon"}
+{"text": "카드로 결제할게요", "intent": "payment"}
+{"text": "그냥 카드로 해주세요", "intent": "payment"}
+{"text": "라떼 하나 텀블러에 담아주세요", "intent": "order"}
+{"text": "커피 처음인데 뭐가 좋을까?", "intent": "recommend"}
+{"text": "차가운 오렌지 주스 두 잔 주문이요", "intent": "order"}
+{"text": "KT VIP로 결제할게요", "intent": "payment"}
+{"text": "따뜻한 레몬 에이드 하나 CJ ONE으로 결제해주세요", "intent": "order_and_pay"}
+{"text": "여름에 어울리는 음료 있어?", "intent": "recommend"}
+{"text": "당 떨어지는데 음료 추천해줘", "intent": "recommend"}
+{"text": "핫 망고 주스 두 잔 담아줘", "intent": "order"}
+{"text": "와이파이 비밀번호 뭐예요?", "intent": "qa"}
+{"text": "아이스 히비스커스 세 잔 주문할게요", "intent": "order"}
+{"text": "사이즈업 되나요?", "intent": "qa"}
+{"text": "핫 청포도 에이드 한 잔 주문이요", "intent": "order"}
+{"text": "핫 자몽 에이드 둘 부탁해요", "intent": "order"}
+{"text": "핫 페퍼민트 둘 부탁해요", "intent": "order"}
+{"text": "핫 디카페인 라떼 네 잔 주문이요", "intent": "order"}
+{"text": "포장 가능한가요?", "intent": "qa"}
+{"text": "차가운 히비스커스 둘 주문하고 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "얼그레이 둘이랑 망고 요거트 스무디 셋 주세요", "intent": "order"}
+{"text": "따뜻한 캐모마일 한 잔 줘", "intent": "order"}
+{"text": "디카페인 중에 뭐가 맛있어?", "intent": "recommend"}
+{"text": "따뜻한 망고 요거트 스무디 둘 주문하고 카카오페이로 결제할게요", "intent": "order_and_pay"}
+{"text": "따뜻한 디카페인 아메리카노 네 잔 주문이요", "intent": "order"}
+{"text": "연하게 카페라떼 한 잔이요", "intent": "order"}
+{"text": "상품권 쓸게요", "intent": "coupon"}
+{"text": "카페라떼 세 잔 담아줘", "intent": "order"}
+{"text": "현금 말고 카드로 할게요", "intent": "payment"}
+{"text": "시럽 추가하면 얼마예요?", "intent": "qa"}
+{"text": "아이스 아메리카노 네 잔 앱카드로 결제할게요", "intent": "order_and_pay"}
+{"text": "아메리카노 한 잔 담고 CJ ONE으로 결제해주세요", "intent": "order_and_pay"}
+{"text": "CJ ONE 할인은 어떻게 받아요?", "intent": "qa"}
+{"text": "아이스 얼그레이 두 잔 주문하고 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "따뜻한 자몽 에이드 둘 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "이 메뉴 알레르기 유발 성분 있어요?", "intent": "qa"}
+{"text": "아이스 딸기 스무디 세 잔 주문이요", "intent": "order"}
+{"text": "아메리카노 네 잔 네이버페이로 계산해줘", "intent": "order_and_pay"}
+{"text": "따뜻한 레몬 에이드 세 잔 네이버페이로 계산해줘", "intent": "order_and_pay"}
+{"text": "커피 말고 다른 거 추천해줘", "intent": "recommend"}
+{"text": "T우주 우주패스로 결제할게요", "intent": "payment"}
+{"text": "KT 할인 메뉴 줘", "intent": "order"}
+{"text": "바닐라라떼 네 잔 담고 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "핫 레몬 에이드 셋 담고 T멤버십 할인 받고 결제할게요", "intent": "order_and_pay"}
+{"text": "바코드 쿠폰 있는데", "intent": "coupon"}
+{"text": "아이스 딸기 바나나 주스 한 잔 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "블루베리 스무디 두 잔 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "새로운 메뉴 추천해줘", "intent": "recommend"}
+{"text": "앱카드로 계산할게요", "intent": "payment"}
+{"text": "차가운 캐모마일 한 잔 줘", "intent": "order"}
+{"text": "카푸치노 하나 주문이요", "intent": "order"}
+{"text": "따뜻한 바닐라라떼 하나 주세요", "intent": "order"}
+{"text": "망고 주스 네 잔 주문할게요", "intent": "order"}
+{"text": "아이스 페퍼민트 하나 주문할게요", "intent": "order"}
+{"text": "페퍼민트 세 잔이랑 딸기 바나나 주스 세 잔 주세요", "intent": "order"}
+{"text": "아이스 카페라떼 둘 줘", "intent": "order"}
+{"text": "오렌지 주스 두 잔 담고 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "차가운 딸기 바나나 주스 네 잔 줘", "intent": "order"}
+{"text": "카카오페이 쓸게요", "intent": "payment"}
+{"text": "잠 안 오는 음료로 추천해줘", "intent": "recommend"}
+{"text": "쿠폰 여기 있어요 찍어주세요", "intent": "coupon"}
+{"text": "너무 달지 않은 걸로 추천해줘", "intent": "recommend"}
+{"text": "SKT 할인 뭐 있어요?", "intent": "qa"}
+{"text": "핫 딸기 바나나 주스 한 잔 줘", "intent": "order"}
+{"text": "차가운 아메리카노 한 잔 주문하고 네이버페이로 계산해줘", "intent": "order_and_pay"}
+{"text": "캐모마일 셋 부탁해요", "intent": "order"}
+{"text": "샷 추가해서 아메리카노 주세요", "intent": "order"}
+{"text": "따뜻한 오렌지 주스 세 잔 주문하고 T멤버십 할인 받고 결제할게요", "intent": "order_and_pay"}
+{"text": "따뜻한 카페라떼 셋 카카오페이로 결제할게요", "intent": "order_and_pay"}
+{"text": "쿠폰 있어요", "intent": "coupon"}
+{"text": "바닐라라떼 가격이 어떻게 되나요?", "intent": "qa"}
+{"text": "아이스 레몬 에이드 네 잔 T멤버십 할인 받고 결제할게요", "intent": "order_and_pay"}
+{"text": "디카페인 바닐라라떼 네 잔 줘", "intent": "order"}
+{"text": "결제할게요", "intent": "payment"}
+{"text": "든든한 거 마시고 싶은데 뭐 있어?", "intent": "recommend"}
+{"text": "스무디 중에 뭐가 인기 많아?", "intent": "recommend"}
+{"text": "논커피 메뉴 추천해줘", "intent": "recommend"}
+{"text": "T멤버십 혜택이 뭐야?", "intent": "qa"}
+{"text": "망고 주스 두 잔 담아줘", "intent": "order"}
+{"text": "핫 에스프레소 세 잔 주세요", "intent": "order"}
+{"text": "따뜻한 캐모마일 하나 담아줘", "intent": "order"}
+{"text": "따뜻한 카푸치노 둘 주문하고 네이버페이로 계산해줘", "intent": "order_and_pay"}
+{"text": "아이스 히비스커스 하나 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "지금 장바구니에 담은 거 할인 되나요?", "intent": "qa"}
+{"text": "음료 교환권 있어요", "intent": "coupon"}
+{"text": "적립 쿠폰 쓸게요", "intent": "coupon"}
+{"text": "히비스커스 둘 주세요", "intent": "order"}
+{"text": "따뜻한 거 뭐가 좋을까요?", "intent": "recommend"}
+{"text": "차가운 얼그레이 둘 주문하고 카카오페이로 결제할게요", "intent": "order_and_pay"}
+{"text": "차가운 망고 주스 두 잔 줘", "intent": "order"}
+{"text": "카페라떼 칼로리 뭐야?", "intent": "qa"}
+{"text": "제일 잘 나가는 메뉴가 뭐예요?", "intent": "recommend"}
+{"text": "디카페인 바닐라라떼 셋 주문하고 신용카드로 결제할게요", "intent": "order_and_pay"}
+{"text": "무난한 거로 추천해줘", "intent": "recommend"}
+{"text": "아이스 블루베리 스무디 하나 주문이요", "intent": "order"}
+{"text": "차가운 망고 주스 셋 부탁해요", "intent": "order"}
+{"text": "히비스커스 두 잔 주세요", "intent": "order"}
+{"text": "달달한 거 뭐 있어?", "intent": "recommend"}
+{"text": "핫 카페라떼 네 잔 주문이요", "intent": "order"}
+{"text": "차가운 레몬 에이드 하나 담고 앱카드로 결제할게요", "intent": "order_and_pay"}
+{"text": "따뜻한 카페라떼 네 잔 카카오페이로 결제할게요", "intent": "order_and_pay"}
+{"text": "핫 카라멜마키아토 네 잔 부탁해요", "intent": "order"}
+{"text": "T우주 우주패스 혜택이 뭐예요?", "intent": "qa"}
+{"text": "저당 음료 뭐 있어?", "intent": "recommend"}
+{"text": "계산해주세요", "intent": "payment"}
+{"text": "새콤한 거 마시고 싶은데 추천해줄래?", "intent": "recommend"}
+{"text": "차가운 오렌지 주스 둘 주문할게요", "intent": "order"}
+{"text": "페퍼민트 둘 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "핫 바닐라라떼 두 잔 주문하고 네이버페이로 계산해줘", "intent": "order_and_pay"}
+{"text": "핫 오렌지 주스 네 잔 신용카드로 결제할게요", "intent": "order_and_pay"}
+{"text": "매장에서 먹고 갈 수 있나요?", "intent": "qa"}
+{"text": "향긋한 차 추천해줘", "intent": "recommend"}
+{"text": "아이스 딸기 스무디 셋 주문이요", "intent": "order"}
+{"text": "핫 에스프레소 두 잔 주문하고 CJ ONE으로 결제해주세요", "intent": "order_and_pay"}
+{"text": "T멤버십 쓸게요", "intent": "payment"}
+{"text": "디카페인 라떼 셋 부탁해요", "intent": "order"}
+{"text": "카라멜마키아토 두 잔 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "얼그레이 네 잔 담아줘", "intent": "order"}
+{"text": "디카페인으로 바닐라라떼 한 잔 줘", "intent": "order"}
+{"text": "아이스 카푸치노 한 잔 주세요", "intent": "order"}
+{"text": "디카페인 메뉴 있어요?", "intent": "qa"}
+{"text": "차가운 캐모마일 한 잔 주문하고 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "아이스 얼그레이 한 잔 주문하고 KT VIP로 결제할게요", "intent": "order_and_pay"}
+{"text": "아이스 에스프레소 한 잔 T멤버십 할인 받고 결제할게요", "intent": "order_and_pay"}
+{"text": "제로 시럽 음료 추천해줘", "intent": "recommend"}
+{"text": "부드러운 라떼 종류 추천해줘", "intent": "recommend"}
+{"text": "영업시간이 어떻게 되나요?", "intent": "qa"}
+{"text": "따뜻한 에스프레소 세 잔 주문하고 앱카드로 결제할게요", "intent": "order_and_pay"}
+{"text": "아이스 카푸치노 셋 주세요", "intent": "order"}
+{"text": "아이스 망고 주스 세 잔 주문하고 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "아메리카노 세 잔 포장이요", "intent": "order"}
+{"text": "차가운 자몽 에이드 네 잔 카드로 계산해주세요", "intent": "order_and_pay"}
+{"text": "카페라떼 네 잔이랑 카라멜마키아토 한 잔 주세요", "intent": "order"}
+{"text": "이거 장바구니에 담아줘", "intent": "order"}
+{"text": "따뜻한 딸기 스무디 세 잔 담아줘", "intent": "order"}
+{"text": "따뜻한 망고 주스 하나 주문이요", "intent": "order"}
+{"text": "아이스 블루베리 스무디 둘 KT VIP로 결제할게요", "intent": "order_and_pay"}
+{"text": "결제 수단 바꿀게요", "intent": "payment"}
+{"text": "핫 히비스커스 셋 주문하고 T우주 우주패스로 결제할게요", "intent": "order_and_pay"}
+{"text": "네이버페이로 할게요", "intent": "payment"}
+{"text": "차가운 카페라떼 두 잔 앱카드로 결제할게요", "intent": "order_and_pay"}
+{"text": "핫 딸기 스무디 한 잔 KT VIP로 결제할게요", "intent": "order_and_pay"}
+{"text": "차가운 딸기 바나나 주스 셋 주문하고 카카오페이로 결제할게요", "intent": "order_and_pay"}
+{"text": "디카페인 아메리카노 네 잔이랑 바닐라라떼 네 잔 주세요", "intent": "order"}
+{"text": "시원한 음료 추천해주세요", "intent": "recommend"}
+{"text": "상큼한 에이드 추천해줘", "intent": "recommend"}
+{"text": "할인 정보 알려줘", "intent": "qa"}
+{"text": "따뜻한 디카페인 아메리카노 네 잔 주세요", "intent": "order"}
+{"text": "아이스 히비스커스 한 잔 앱카드로 결제할게요", "intent": "order_and_pay"}
+{"text": "아이스 페퍼민트 셋 주문이요", "intent": "order"}
+{"text": "아이스 카푸치노 두 잔 주문이요", "intent": "order"}
+{"text": "페퍼민트 한 잔 주세요", "intent": "order"}
+{"text": "오늘 날씨에 어울리는 음료 추천해줘", "intent": "recommend"}
+{"text": "차 종류 중에 추천해줄 만한 거 있어?", "intent": "recommend"}
+{"text": "쿠폰 사용하고 싶어", "intent": "coupon"}
+{"text": "차가운 레몬 에이드 세 잔 담아줘", "intent": "order"}
+{"text": "핫 디카페인 라떼 둘 주세요", "intent": "order"}
+{"text": "모바일 상품권 쓸 수 있나요", "intent": "coupon"}
+{"text": "오렌지 주스 세 잔이랑 바닐라라떼 두 잔 주세요", "intent": "order"}
