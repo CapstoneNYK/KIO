@@ -1,9 +1,35 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.admin import db
+from app.admin.auth import (
+    LoginRequest,
+    SignupRequest,
+    TokenResponse,
+    create_access_token,
+    get_current_admin,
+    register_admin,
+    verify_admin_credentials,
+)
 
-router = APIRouter(prefix="/api/admin", tags=["admin"])
+router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
+
+auth_router = APIRouter(prefix="/api/admin", tags=["admin-auth"])
+
+
+# ── Auth ───────────────────────────────────────────────────────────────────
+
+@auth_router.post("/login", response_model=TokenResponse)
+def login(body: LoginRequest):
+    if not verify_admin_credentials(body.username, body.password):
+        raise HTTPException(status_code=401, detail="아이디 또는 비밀번호가 올바르지 않습니다.")
+    return TokenResponse(access_token=create_access_token(body.username))
+
+
+@auth_router.post("/signup", status_code=201, response_model=TokenResponse)
+def signup(body: SignupRequest):
+    register_admin(body)
+    return TokenResponse(access_token=create_access_token(body.username))
 
 
 # ── Menus ──────────────────────────────────────────────────────────────────

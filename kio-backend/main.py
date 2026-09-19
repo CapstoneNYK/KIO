@@ -13,7 +13,7 @@ from ai.discount import get_discount_tip
 from app.ocr.router import router as ocr_router
 from app.ocr.db import get_all_menu_texts, get_all_discount_texts
 from app.coupon.router import router as coupon_router
-from app.admin.router import router as admin_router, orders_router
+from app.admin.router import router as admin_router, auth_router as admin_auth_router, orders_router
 
 load_dotenv()
 
@@ -34,6 +34,7 @@ app.add_middleware(
 
 app.include_router(ocr_router)
 app.include_router(coupon_router)
+app.include_router(admin_auth_router)
 app.include_router(admin_router)
 app.include_router(orders_router)
 

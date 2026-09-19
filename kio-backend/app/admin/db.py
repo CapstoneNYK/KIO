@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -70,6 +71,13 @@ def init_db() -> None:
                 unit_price  INTEGER NOT NULL,
                 is_free     INTEGER NOT NULL DEFAULT 0
             );
+
+            CREATE TABLE IF NOT EXISTS admins (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                username       TEXT    NOT NULL UNIQUE,
+                password_hash  TEXT    NOT NULL,
+                created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+            );
         """)
 
         count = conn.execute("SELECT COUNT(*) FROM menus").fetchone()[0]
@@ -78,6 +86,16 @@ def init_db() -> None:
                 "INSERT INTO menus (id, name, price, category, temps, sold_out) VALUES (?,?,?,?,?,?)",
                 INITIAL_MENUS,
             )
+
+        admin_count = conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0]
+        if admin_count == 0:
+            bootstrap_username = os.getenv("ADMIN_USERNAME")
+            bootstrap_hash = os.getenv("ADMIN_PASSWORD_HASH")
+            if bootstrap_username and bootstrap_hash:
+                conn.execute(
+                    "INSERT INTO admins (username, password_hash) VALUES (?,?)",
+                    (bootstrap_username, bootstrap_hash),
+                )
 
 
 # ── Menus ──────────────────────────────────────────────────────────────────
@@ -126,6 +144,24 @@ def _menu_row(row: sqlite3.Row) -> dict:
     d["temps"] = json.loads(d["temps"])
     d["sold_out"] = bool(d["sold_out"])
     return d
+
+
+# ── Admins ─────────────────────────────────────────────────────────────────
+
+def get_admin_by_username(username: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM admins WHERE username=?", (username,)).fetchone()
+    return dict(row) if row else None
+
+
+def create_admin(username: str, password_hash: str) -> dict:
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO admins (username, password_hash) VALUES (?,?)",
+            (username, password_hash),
+        )
+        row = conn.execute("SELECT * FROM admins WHERE id=?", (cur.lastrowid,)).fetchone()
+    return dict(row)
 
 
 # ── Orders ─────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FiEdit2, FiTrash2, FiUpload } from "react-icons/fi";
 import { PiToggleRightFill, PiToggleLeftFill, PiPlusBold } from "react-icons/pi";
-import { apiFetch, API } from "../api";
+import { apiFetch, API, authHeaders } from "../api";
 
 const CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
 
@@ -44,7 +44,7 @@ export const MenuManagement = () => {
   };
 
   const handleDelete = async (id: number) => {
-    await fetch(`${API}/api/admin/menus/${id}`, { method: "DELETE" });
+    await fetch(`${API}/api/admin/menus/${id}`, { method: "DELETE", headers: authHeaders() });
     setMenus((prev) => prev.filter((m) => m.id !== id));
   };
 
