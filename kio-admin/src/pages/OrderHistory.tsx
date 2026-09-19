@@ -62,7 +62,7 @@ export const OrderHistory = () => {
   return (
     <div className="flex flex-col gap-5">
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "총 주문", value: `${filtered.length}건` },
           { label: "쿠폰 할인 사용", value: `${couponCount}건` },
@@ -78,8 +78,8 @@ export const OrderHistory = () => {
       {/* Table card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* Search bar */}
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-          <div className="flex-1 flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
+        <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[220px] flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
             <PiMagnifyingGlassBold size={14} className="text-gray-400 shrink-0" />
             <input
               type="text"
@@ -89,47 +89,52 @@ export const OrderHistory = () => {
               className="flex-1 text-sm text-gray-700 outline-none placeholder:text-gray-400"
             />
           </div>
-          <button className="flex items-center gap-2 border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+          <button className="flex items-center gap-2 border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors shrink-0">
             <PiDownloadSimpleBold size={14} />
             내보내기
           </button>
-          <span className="text-xs text-gray-400">총 {filtered.length}건 | 매출 ₩{totalRevenue.toLocaleString()}</span>
+          <span className="text-xs text-gray-400 shrink-0">총 {filtered.length}건 | 매출 ₩{totalRevenue.toLocaleString()}</span>
         </div>
 
-        {/* Table header */}
-        <div className="grid bg-gray-50 border-b border-gray-100 px-5 py-3" style={{ gridTemplateColumns: "90px 1fr 120px 110px 90px" }}>
-          {["주문시각", "메뉴", "결제수단", "할인 금액", "결제 금액"].map((h) => (
-            <span key={h} className="text-xs font-bold text-gray-500">{h}</span>
-          ))}
+        {/* Table (가로 스크롤) */}
+        <div className="overflow-x-auto">
+          <div className="min-w-[600px]">
+            {/* Table header */}
+            <div className="grid bg-gray-50 border-b border-gray-100 px-5 py-3" style={{ gridTemplateColumns: "90px 1fr 120px 110px 90px" }}>
+              {["주문시각", "메뉴", "결제수단", "할인 금액", "결제 금액"].map((h) => (
+                <span key={h} className="text-xs font-bold text-gray-500">{h}</span>
+              ))}
+            </div>
+
+            {/* Loading */}
+            {loading && (
+              <div className="py-16 text-center text-gray-400 text-sm">불러오는 중...</div>
+            )}
+
+            {/* Table rows */}
+            {!loading && filtered.map((order) => (
+              <div
+                key={order.id}
+                className="grid px-5 py-3.5 border-b border-gray-50 last:border-0 items-center hover:bg-gray-50 transition-colors"
+                style={{ gridTemplateColumns: "90px 1fr 120px 110px 90px" }}
+              >
+                <span className="text-sm text-gray-500 tabular-nums">{formatTime(order.created_at)}</span>
+                <span className="text-sm font-medium text-gray-800 pr-4 truncate">{menuSummary(order.items)}</span>
+                <span className="text-sm text-gray-500">{order.payment_method}</span>
+                <span className="text-sm font-semibold" style={{ color: order.discount_amount > 0 ? "#16A34A" : "#D1D5DB" }}>
+                  {order.discount_amount > 0 ? `-₩${order.discount_amount.toLocaleString()}` : "—"}
+                </span>
+                <span className="text-sm font-bold text-gray-800 tabular-nums">₩{order.final_amount.toLocaleString()}</span>
+              </div>
+            ))}
+
+            {!loading && filtered.length === 0 && (
+              <div className="py-16 text-center text-gray-400 text-sm">
+                {orders.length === 0 ? "아직 주문 내역이 없습니다." : "검색 결과가 없습니다."}
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Loading */}
-        {loading && (
-          <div className="py-16 text-center text-gray-400 text-sm">불러오는 중...</div>
-        )}
-
-        {/* Table rows */}
-        {!loading && filtered.map((order) => (
-          <div
-            key={order.id}
-            className="grid px-5 py-3.5 border-b border-gray-50 last:border-0 items-center hover:bg-gray-50 transition-colors"
-            style={{ gridTemplateColumns: "90px 1fr 120px 110px 90px" }}
-          >
-            <span className="text-sm text-gray-500 tabular-nums">{formatTime(order.created_at)}</span>
-            <span className="text-sm font-medium text-gray-800 pr-4 truncate">{menuSummary(order.items)}</span>
-            <span className="text-sm text-gray-500">{order.payment_method}</span>
-            <span className="text-sm font-semibold" style={{ color: order.discount_amount > 0 ? "#16A34A" : "#D1D5DB" }}>
-              {order.discount_amount > 0 ? `-₩${order.discount_amount.toLocaleString()}` : "—"}
-            </span>
-            <span className="text-sm font-bold text-gray-800 tabular-nums">₩{order.final_amount.toLocaleString()}</span>
-          </div>
-        ))}
-
-        {!loading && filtered.length === 0 && (
-          <div className="py-16 text-center text-gray-400 text-sm">
-            {orders.length === 0 ? "아직 주문 내역이 없습니다." : "검색 결과가 없습니다."}
-          </div>
-        )}
       </div>
     </div>
   );

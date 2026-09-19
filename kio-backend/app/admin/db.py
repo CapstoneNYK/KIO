@@ -6,6 +6,9 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "kio_admin.db"
 
+UPLOAD_DIR = Path(__file__).parent / "uploads" / "menu_images"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 INITIAL_MENUS = [
     (1,  "아메리카노",          2000, "커피",    '["HOT","ICE"]', 0),
     (2,  "카페라떼",            3000, "커피",    '["HOT","ICE"]', 0),
@@ -49,6 +52,7 @@ def init_db() -> None:
                 category    TEXT    NOT NULL,
                 temps       TEXT    NOT NULL DEFAULT '[]',
                 sold_out    INTEGER NOT NULL DEFAULT 0,
+                image_url   TEXT,
                 created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
@@ -80,6 +84,10 @@ def init_db() -> None:
             );
         """)
 
+        existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(menus)")}
+        if "image_url" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN image_url TEXT")
+
         count = conn.execute("SELECT COUNT(*) FROM menus").fetchone()[0]
         if count == 0:
             conn.executemany(
@@ -106,18 +114,18 @@ def get_menus() -> list[dict]:
     return [_menu_row(r) for r in rows]
 
 
-def create_menu(name: str, price: int, category: str, temps: list[str]) -> dict:
+def create_menu(name: str, price: int, category: str, temps: list[str], image_url: str | None = None) -> dict:
     with get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO menus (name, price, category, temps) VALUES (?,?,?,?)",
-            (name, price, category, json.dumps(temps, ensure_ascii=False)),
+            "INSERT INTO menus (name, price, category, temps, image_url) VALUES (?,?,?,?,?)",
+            (name, price, category, json.dumps(temps, ensure_ascii=False), image_url),
         )
         row = conn.execute("SELECT * FROM menus WHERE id=?", (cur.lastrowid,)).fetchone()
     return _menu_row(row)
 
 
 def update_menu(menu_id: int, **fields) -> dict | None:
-    allowed = {"name", "price", "category", "temps", "sold_out"}
+    allowed = {"name", "price", "category", "temps", "sold_out", "image_url"}
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
     if not updates:
         return None
@@ -129,6 +137,12 @@ def update_menu(menu_id: int, **fields) -> dict | None:
             f"UPDATE menus SET {set_clause} WHERE id=?",
             (*updates.values(), menu_id),
         )
+        row = conn.execute("SELECT * FROM menus WHERE id=?", (menu_id,)).fetchone()
+    return _menu_row(row) if row else None
+
+
+def get_menu(menu_id: int) -> dict | None:
+    with get_conn() as conn:
         row = conn.execute("SELECT * FROM menus WHERE id=?", (menu_id,)).fetchone()
     return _menu_row(row) if row else None
 
@@ -251,7 +265,7 @@ def _aggregate(conn: sqlite3.Connection, start: str, end: str) -> dict:
                COUNT(*)                   AS orders,
                COALESCE(SUM(final_amount),0) AS sales,
                COALESCE(AVG(final_amount),0) AS avg,
-               SUM(CASE WHEN discount_amount > 0 THEN 1 ELSE 0 END) AS coupons
+               COALESCE(SUM(CASE WHEN discount_amount > 0 THEN 1 ELSE 0 END),0) AS coupons
            FROM orders WHERE created_at >= ? AND created_at <= ?""",
         (start, end),
     ).fetchone()

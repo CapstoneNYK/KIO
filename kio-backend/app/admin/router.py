@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app.admin import db
+from app.admin.db import UPLOAD_DIR
 from app.admin.auth import (
     LoginRequest,
     SignupRequest,
@@ -39,6 +43,7 @@ class MenuCreate(BaseModel):
     price: int
     category: str
     temps: list[str] = []
+    image_url: str | None = None
 
 
 class MenuUpdate(BaseModel):
@@ -47,6 +52,31 @@ class MenuUpdate(BaseModel):
     category: str | None = None
     temps: list[str] | None = None
     sold_out: bool | None = None
+    image_url: str | None = None
+
+
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+
+
+def _delete_image_file(image_url: str | None) -> None:
+    if not image_url or not image_url.startswith("/uploads/menu-images/"):
+        return
+    path = UPLOAD_DIR / image_url.rsplit("/", 1)[-1]
+    path.unlink(missing_ok=True)
+
+
+@router.post("/uploads/menu-image")
+async def upload_menu_image(file: UploadFile = File(...)):
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="jpg/png/webp/gif 이미지만 업로드할 수 있습니다.")
+    contents = await file.read()
+    if len(contents) > MAX_IMAGE_SIZE:
+        raise HTTPException(status_code=400, detail="이미지 용량은 5MB 이하여야 합니다.")
+    filename = f"{uuid.uuid4().hex}{ext}"
+    (UPLOAD_DIR / filename).write_bytes(contents)
+    return {"image_url": f"/uploads/menu-images/{filename}"}
 
 
 @router.get("/menus")
@@ -56,21 +86,27 @@ def list_menus():
 
 @router.post("/menus", status_code=201)
 def create_menu(body: MenuCreate):
-    return db.create_menu(body.name, body.price, body.category, body.temps)
+    return db.create_menu(body.name, body.price, body.category, body.temps, body.image_url)
 
 
 @router.put("/menus/{menu_id}")
 def update_menu(menu_id: int, body: MenuUpdate):
-    result = db.update_menu(menu_id, **body.model_dump(exclude_none=True))
-    if result is None:
+    existing = db.get_menu(menu_id)
+    if existing is None:
         raise HTTPException(status_code=404, detail="메뉴를 찾을 수 없습니다.")
+    result = db.update_menu(menu_id, **body.model_dump(exclude_none=True)) or existing
+    if body.image_url is not None and existing["image_url"] != body.image_url:
+        _delete_image_file(existing["image_url"])
     return result
 
 
 @router.delete("/menus/{menu_id}", status_code=204)
 def delete_menu(menu_id: int):
-    if not db.delete_menu(menu_id):
+    existing = db.get_menu(menu_id)
+    if existing is None:
         raise HTTPException(status_code=404, detail="메뉴를 찾을 수 없습니다.")
+    db.delete_menu(menu_id)
+    _delete_image_file(existing["image_url"])
 
 
 # ── Orders ─────────────────────────────────────────────────────────────────
@@ -92,8 +128,14 @@ class OrderCreate(BaseModel):
     items: list[OrderItem]
 
 
-# kio-frontend가 호출하는 엔드포인트 (prefix 없이 /api/orders)
+# kio-frontend가 호출하는 엔드포인트 (prefix 없이 /api/orders, /api/menus)
 orders_router = APIRouter(prefix="/api", tags=["orders"])
+menus_public_router = APIRouter(prefix="/api", tags=["menus"])
+
+
+@menus_public_router.get("/menus")
+def list_menus_public():
+    return db.get_menus()
 
 
 @orders_router.post("/orders", status_code=201)

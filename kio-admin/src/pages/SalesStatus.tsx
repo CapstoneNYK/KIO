@@ -73,7 +73,7 @@ export const SalesStatus = () => {
       ) : (
         <>
           {/* Stat cards */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="총 매출액" value={`₩${curr.sales.toLocaleString()}`} change={pct(curr.sales, prev.sales)} isPositive={curr.sales >= prev.sales} />
             <StatCard title="총 주문 건수" value={`${curr.orders.toLocaleString()}건`} change={pct(curr.orders, prev.orders)} isPositive={curr.orders >= prev.orders} />
             <StatCard title="평균 주문 금액" value={`₩${curr.avg.toLocaleString()}`} change={pct(curr.avg, prev.avg)} isPositive={curr.avg >= prev.avg} />

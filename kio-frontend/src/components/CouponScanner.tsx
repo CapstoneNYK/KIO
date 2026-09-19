@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useZxing } from "react-zxing";
 import { LuX } from "react-icons/lu";
-import { MENUS } from "../data/menus";
+import { useMenuStore } from "../store/menuStore";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
 import type { AppliedCoupon } from "../store/couponStore";
@@ -26,6 +26,7 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
   const [scanned, setScanned] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const addCoupon = useCouponStore((s) => s.addCoupon);
+  const menus = useMenuStore((s) => s.menus);
 
   const { ref } = useZxing({
     onDecodeResult: async (res) => {
@@ -50,7 +51,7 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
 
   const handleUseProductCoupon = () => {
     if (!result || result.type !== "product" || !result.menu) return;
-    const menuItem = MENUS.find((m) => m.title === result.menu);
+    const menuItem = menus.find((m) => m.title === result.menu);
     if (menuItem) addItem(menuItem, 1, "ICE", [], true, true);
     onClose();
   };

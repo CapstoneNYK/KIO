@@ -64,9 +64,9 @@ export const MenuAnalytics = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* TOP 5 + Pies side by side */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* TOP 5 */}
-        <div className="col-span-3 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="lg:col-span-3 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <p className="text-sm font-bold text-gray-800 mb-1">판매량 TOP 5</p>
           <p className="text-xs text-gray-400 mb-5">최근 7일 기준</p>
           <ResponsiveContainer width="100%" height={200}>
@@ -80,7 +80,7 @@ export const MenuAnalytics = () => {
         </div>
 
         {/* Pies */}
-        <div className="col-span-2 flex flex-col gap-4">
+        <div className="lg:col-span-2 flex flex-col gap-4">
           <div className="flex-1 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
             <p className="text-xs font-bold text-gray-800 mb-3">카테고리별 비율</p>
             <div className="flex items-center gap-4">
@@ -126,7 +126,7 @@ export const MenuAnalytics = () => {
       {/* Time-based */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <p className="text-sm font-bold text-gray-800 mb-4">시간대별 인기 메뉴</p>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {data.time_menus.map((t) => (
             <div key={t.time} className="p-4 rounded-xl" style={{ backgroundColor: "#FFFBEB" }}>
               <p className="text-xs text-gray-400 mb-2">{t.time}</p>

@@ -9,7 +9,7 @@ import { useCategoryStore } from "../store/categoryStore";
 import { useLearningStore } from "../store/learningStore";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
-import { MENUS } from "../data/menus";
+import { useMenuStore } from "../store/menuStore";
 import { SpeechInput } from "./SpeechInput";
 
 const HOME_CATEGORIES = [
@@ -113,6 +113,7 @@ export const AssistantButton = () => {
   const setCategory = useCategoryStore((s) => s.setCategory);
   const setLearningScreen = useLearningStore((s) => s.setLearningScreen);
   const { addItem, clear: clearCart } = useCartStore();
+  const menus = useMenuStore((s) => s.menus);
 
   useEffect(() => {
     if (scanOpen) setMode("idle");
@@ -185,7 +186,7 @@ export const AssistantButton = () => {
     setLearningScreen(null);
     await sleep(300);
 
-    addItem(MENUS[0], 1, "HOT", [], false);
+    if (menus[0]) addItem(menus[0], 1, "HOT", [], false);
     await sleep(600);
     await captureAndLearn("cart", progress);
 

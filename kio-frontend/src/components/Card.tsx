@@ -2,20 +2,28 @@ export interface CardProps {
   img: string;
   title: string;
   price: number;
+  soldOut?: boolean;
   onClick?: () => void;
 }
 
-export const Card = ({ img, title, price, onClick }: CardProps) => {
+export const Card = ({ img, title, price, soldOut, onClick }: CardProps) => {
   return (
     <button
-      onClick={onClick}
+      onClick={soldOut ? undefined : onClick}
+      disabled={soldOut}
       className="
-          w-full rounded-2xl bg-white p-4
+          relative w-full rounded-2xl bg-white p-4
           shadow-sm transition
           active:scale-95
           focus:outline-none
+          disabled:opacity-60
         "
     >
+      {soldOut && (
+        <span className="absolute top-3 right-3 z-10 rounded-full bg-gray-500 px-2.5 py-1 text-xs font-bold text-white">
+          품절
+        </span>
+      )}
       <img
         src={img}
         alt={title}

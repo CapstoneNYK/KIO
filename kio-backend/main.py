@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ai.recommend import qa_chain, recommend_chain
@@ -13,7 +14,13 @@ from ai.discount import get_discount_tip
 from app.ocr.router import router as ocr_router
 from app.ocr.db import get_all_menu_texts, get_all_discount_texts
 from app.coupon.router import router as coupon_router
-from app.admin.router import router as admin_router, auth_router as admin_auth_router, orders_router
+from app.admin.db import UPLOAD_DIR
+from app.admin.router import (
+    router as admin_router,
+    auth_router as admin_auth_router,
+    menus_public_router,
+    orders_router,
+)
 
 load_dotenv()
 
@@ -37,6 +44,9 @@ app.include_router(coupon_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_router)
 app.include_router(orders_router)
+app.include_router(menus_public_router)
+
+app.mount("/uploads/menu-images", StaticFiles(directory=UPLOAD_DIR), name="menu-images")
 
 
 class QueryRequest(BaseModel):
