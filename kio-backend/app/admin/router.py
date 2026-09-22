@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.admin import db
 from app.admin.db import UPLOAD_DIR
@@ -121,6 +121,81 @@ def delete_menu(menu_id: int):
     _delete_image_file(existing["image_url"])
 
 
+# ── Discounts ──────────────────────────────────────────────────────────────
+
+_ALLOWED_METHOD_CODES = set(db.DISCOUNT_METHODS.keys())
+
+
+class DiscountCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=50)
+    method_code: str
+    description: str = Field(default="", max_length=2000)
+    active: bool = True
+    image_url: str | None = None
+
+    @field_validator("method_code")
+    @classmethod
+    def validate_method_code(cls, v: str) -> str:
+        if v not in _ALLOWED_METHOD_CODES:
+            raise ValueError(f"method_code는 {sorted(_ALLOWED_METHOD_CODES)} 중 하나여야 합니다.")
+        return v
+
+
+class DiscountUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    method_code: str | None = None
+    description: str | None = Field(default=None, max_length=2000)
+    active: bool | None = None
+    image_url: str | None = None
+
+    @field_validator("method_code")
+    @classmethod
+    def validate_method_code(cls, v: str | None) -> str | None:
+        if v is not None and v not in _ALLOWED_METHOD_CODES:
+            raise ValueError(f"method_code는 {sorted(_ALLOWED_METHOD_CODES)} 중 하나여야 합니다.")
+        return v
+
+
+@router.get("/discounts")
+def list_discounts():
+    return db.get_discounts()
+
+
+@router.post("/discounts", status_code=201)
+def create_discount(body: DiscountCreate):
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="할인 이름을 입력해주세요.")
+    return db.create_discount(name, body.method_code, body.description.strip(), body.active, body.image_url)
+
+
+@router.put("/discounts/{discount_id}")
+def update_discount(discount_id: int, body: DiscountUpdate):
+    existing = db.get_discount(discount_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail="할인 혜택을 찾을 수 없습니다.")
+    fields = body.model_dump(exclude_none=True)
+    if "name" in fields:
+        fields["name"] = fields["name"].strip()
+        if not fields["name"]:
+            raise HTTPException(status_code=422, detail="할인 이름을 입력해주세요.")
+    if "description" in fields:
+        fields["description"] = fields["description"].strip()
+    result = db.update_discount(discount_id, **fields) or existing
+    if body.image_url is not None and existing["image_url"] != body.image_url:
+        _delete_image_file(existing["image_url"])
+    return result
+
+
+@router.delete("/discounts/{discount_id}", status_code=204)
+def delete_discount(discount_id: int):
+    existing = db.get_discount(discount_id)
+    if existing is None:
+        raise HTTPException(status_code=404, detail="할인 혜택을 찾을 수 없습니다.")
+    db.delete_discount(discount_id)
+    _delete_image_file(existing["image_url"])
+
+
 # ── Orders ─────────────────────────────────────────────────────────────────
 
 class OrderItem(BaseModel):
@@ -140,14 +215,20 @@ class OrderCreate(BaseModel):
     items: list[OrderItem]
 
 
-# kio-frontend가 호출하는 엔드포인트 (prefix 없이 /api/orders, /api/menus)
+# kio-frontend가 호출하는 엔드포인트 (prefix 없이 /api/orders, /api/menus, /api/discounts)
 orders_router = APIRouter(prefix="/api", tags=["orders"])
 menus_public_router = APIRouter(prefix="/api", tags=["menus"])
+discounts_public_router = APIRouter(prefix="/api", tags=["discounts"])
 
 
 @menus_public_router.get("/menus")
 def list_menus_public():
     return db.get_menus()
+
+
+@discounts_public_router.get("/discounts")
+def list_discounts_public():
+    return db.get_discounts(active_only=True)
 
 
 @orders_router.post("/orders", status_code=201)

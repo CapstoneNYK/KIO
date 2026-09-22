@@ -5,7 +5,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from ai.dictionary import MENU_DICTIONARY
-from app.ocr.db import get_all_discount_texts
 from app.admin import db as admin_db
 
 load_dotenv()
@@ -42,25 +41,18 @@ def _build_menu_context(include_sold_out: bool = True) -> str:
     return "\n".join(lines)
 
 
-_POSTER_LABEL = {
-    "poster_kt": "KT 멤버십",
-    "poster_t": "T 멤버십 (SKT 계열)",
-    "poster_tpass": "T우주패스 (SKT 계열)",
-}
-
 def _build_discount_context() -> str:
-    grouped = get_all_discount_texts()
-    if not grouped:
+    discounts = admin_db.get_discounts(active_only=True)
+    if not discounts:
         return "등록된 할인 정보가 없습니다."
     sections: list[str] = []
-    for screen_name, texts in sorted(grouped.items()):
-        label = _POSTER_LABEL.get(screen_name, screen_name)
-        body = "\n".join(f"  - {t}" for t in texts)
-        sections.append(f"[{label}]\n{body}")
+    for d in discounts:
+        body = "\n".join(f"  - {line}" for line in d["description"].splitlines() if line.strip())
+        sections.append(f"[{d['name']}]\n{body}")
     return "\n\n".join(sections)
 
 
-# ── QA 체인 (OCR DB 기반) ────────────────────────────────────────────────────
+# ── QA 체인 (관리자 메뉴 + 할인 혜택 기반) ──────────────────────────────────
 
 _qa_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 안내 전문가입니다.
@@ -68,13 +60,9 @@ _qa_prompt = ChatPromptTemplate.from_template("""
 
 메뉴 목록의 형식은 "메뉴명 (카테고리, 가격, 제공 온도)"이며, [품절] 표시가 있는 메뉴는 현재 주문할 수 없다고 안내하세요.
 
-주의: 할인 혜택 정보는 포스터 이미지를 OCR로 추출한 텍스트라 오타나 깨진 글자가 있을 수 있습니다.
-예를 들어 "멈버십"은 "멤버십", "3096"은 "30%", "5096"은 "50%", "스랜"은 "스캔"을 의미합니다.
-오타가 있더라도 최대한 해석하여 답변해주세요.
 정보가 전혀 없을 때만 "해당 정보를 알 수 없습니다."라고 답하세요.
-T멤버십과 T우주패스는 모두 SKT 계열사입니다. "SKT 할인"처럼 SKT를 언급하는 질문에는 두 가지 혜택을 모두 간단히 안내하세요.
-할인 적용 가능 여부를 묻는 질문이라면, 현재 장바구니 메뉴와 대조하여 할인 대상 여부를 명확히 안내하세요.
-T멤버십 할인은 아메리카노(핫/아이스 온도 무관)에 적용됩니다. 장바구니에 아메리카노가 있다면 할인 가능합니다.
+할인 혜택 정보에 없는 결제수단이나 메뉴는 언급하지 마세요 — 관리자가 비활성화한 할인은 목록에서 빠져 있습니다.
+할인 적용 가능 여부를 묻는 질문이라면, 할인 혜택 정보와 현재 장바구니 메뉴를 대조하여 할인 대상 여부를 명확히 안내하세요.
 답변은 간결하게 해주세요.
 
 메뉴 목록:

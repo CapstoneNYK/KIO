@@ -5,6 +5,7 @@ import {
   PiClipboardTextBold,
   PiForkKnifeBold,
   PiStorefrontBold,
+  PiTicketBold,
 } from "react-icons/pi";
 
 const NAV_ITEMS: { id: PageId; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
@@ -12,6 +13,7 @@ const NAV_ITEMS: { id: PageId; label: string; icon: React.ComponentType<{ size?:
   { id: "analytics", label: "메뉴 분석", icon: PiChartPieBold },
   { id: "orders", label: "주문 내역", icon: PiClipboardTextBold },
   { id: "menus", label: "메뉴 관리", icon: PiForkKnifeBold },
+  { id: "discounts", label: "할인 혜택 관리", icon: PiTicketBold },
 ];
 
 interface SidebarProps {

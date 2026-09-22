@@ -9,6 +9,42 @@ DB_PATH = Path(__file__).parent / "kio_admin.db"
 UPLOAD_DIR = Path(__file__).parent / "uploads" / "menu_images"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+# 결제 모달(PaymentModal.tsx)에 이미 버튼/아이콘으로 존재하는 할인수단만 관리 가능.
+# 새 결제수단 자체를 추가하려면 프론트에 버튼을 먼저 만들어야 한다.
+DISCOUNT_METHODS: dict[str, str] = {
+    "kt": "KT VIP",
+    "tmembership": "T멤버십",
+    "uzu": "T우주",
+    "cjone": "CJ ONE",
+}
+
+INITIAL_DISCOUNTS = [
+    (
+        "KT 멤버십 (VIP/VVIP 전용)",
+        "kt",
+        "바코드 스캔 시 구매 음료 1종 50% 할인\n"
+        "이용 대상: KT 멤버십 VIP, VVIP 등급 고객에 한함\n"
+        "단품 1잔에 한함, 당일 방문 시 적용\n"
+        "매장 직원에게 KT 멤버십 바코드를 제시하여 스캔\n"
+        "일부 특수 매장 및 배달 주문 제외, 타 할인/적립 중복 불가",
+    ),
+    (
+        "T멤버십 T Day",
+        "tmembership",
+        "매월 지정된 T Day(월 1회)에 아이스 아메리카노 구매 시 30% 할인 (단품 1잔에 한함)\n"
+        "T멤버십 매직 바코드 제시 시 할인 적용\n"
+        "할인을 선택한 T멤버십 회원만 이용 가능\n"
+        "월 1회 한정, 중복 할인 불가",
+    ),
+    (
+        "T우주패스",
+        "uzu",
+        "우주패스 바코드 스캔 시 음료 1종 무료\n"
+        "이용 방법: 매장 방문 → 바코드 제시 → 스캔 후 무료 음료 수령\n"
+        "일부 품목 제외 및 매장별로 상이할 수 있음",
+    ),
+]
+
 INITIAL_MENUS = [
     (1,  "아메리카노",          2000, "커피",    '["HOT","ICE"]', 0),
     (2,  "카페라떼",            3000, "커피",    '["HOT","ICE"]', 0),
@@ -83,7 +119,21 @@ def init_db() -> None:
                 password_hash  TEXT    NOT NULL,
                 created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
+
+            CREATE TABLE IF NOT EXISTS discounts (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                name           TEXT    NOT NULL,
+                method_code    TEXT    NOT NULL,
+                description    TEXT    NOT NULL DEFAULT '',
+                active         INTEGER NOT NULL DEFAULT 1,
+                image_url      TEXT,
+                created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+            );
         """)
+
+        discount_columns = {row["name"] for row in conn.execute("PRAGMA table_info(discounts)")}
+        if "image_url" not in discount_columns:
+            conn.execute("ALTER TABLE discounts ADD COLUMN image_url TEXT")
 
         existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(menus)")}
         if "image_url" not in existing_columns:
@@ -115,6 +165,13 @@ def init_db() -> None:
                     "INSERT INTO admins (username, password_hash) VALUES (?,?)",
                     (bootstrap_username, bootstrap_hash),
                 )
+
+        discount_count = conn.execute("SELECT COUNT(*) FROM discounts").fetchone()[0]
+        if discount_count == 0:
+            conn.executemany(
+                "INSERT INTO discounts (name, method_code, description) VALUES (?,?,?)",
+                INITIAL_DISCOUNTS,
+            )
 
 
 # ── Menus ──────────────────────────────────────────────────────────────────
@@ -178,6 +235,65 @@ def _menu_row(row: sqlite3.Row) -> dict:
     d = dict(row)
     d["temps"] = json.loads(d["temps"])
     d["sold_out"] = bool(d["sold_out"])
+    return d
+
+
+# ── Discounts ──────────────────────────────────────────────────────────────
+
+def get_discounts(active_only: bool = False) -> list[dict]:
+    sql = "SELECT * FROM discounts"
+    if active_only:
+        sql += " WHERE active = 1"
+    sql += " ORDER BY id"
+    with get_conn() as conn:
+        rows = conn.execute(sql).fetchall()
+    return [_discount_row(r) for r in rows]
+
+
+def get_discount(discount_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM discounts WHERE id=?", (discount_id,)).fetchone()
+    return _discount_row(row) if row else None
+
+
+def create_discount(
+    name: str, method_code: str, description: str, active: bool = True, image_url: str | None = None
+) -> dict:
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO discounts (name, method_code, description, active, image_url) VALUES (?,?,?,?,?)",
+            (name, method_code, description, int(active), image_url),
+        )
+        row = conn.execute("SELECT * FROM discounts WHERE id=?", (cur.lastrowid,)).fetchone()
+    return _discount_row(row)
+
+
+def update_discount(discount_id: int, **fields) -> dict | None:
+    allowed = {"name", "method_code", "description", "active", "image_url"}
+    updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    if not updates:
+        return None
+    if "active" in updates:
+        updates["active"] = int(updates["active"])
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_conn() as conn:
+        conn.execute(
+            f"UPDATE discounts SET {set_clause} WHERE id=?",
+            (*updates.values(), discount_id),
+        )
+        row = conn.execute("SELECT * FROM discounts WHERE id=?", (discount_id,)).fetchone()
+    return _discount_row(row) if row else None
+
+
+def delete_discount(discount_id: int) -> bool:
+    with get_conn() as conn:
+        affected = conn.execute("DELETE FROM discounts WHERE id=?", (discount_id,)).rowcount
+    return affected > 0
+
+
+def _discount_row(row: sqlite3.Row) -> dict:
+    d = dict(row)
+    d["active"] = bool(d["active"])
     return d
 
 

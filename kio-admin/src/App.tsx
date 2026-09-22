@@ -5,11 +5,12 @@ import { SalesStatus } from "./pages/SalesStatus";
 import { MenuAnalytics } from "./pages/MenuAnalytics";
 import { OrderHistory } from "./pages/OrderHistory";
 import { MenuManagement } from "./pages/MenuManagement";
+import { DiscountManagement } from "./pages/DiscountManagement";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { clearToken, getToken, getUsername, UNAUTHORIZED_EVENT } from "./api";
 
-export type PageId = "sales" | "analytics" | "orders" | "menus";
+export type PageId = "sales" | "analytics" | "orders" | "menus" | "discounts";
 type AuthView = "login" | "signup";
 
 const formatToday = () =>
@@ -39,6 +40,7 @@ function App() {
     analytics: "메뉴 분석",
     orders: "주문 내역",
     menus: "메뉴 관리",
+    discounts: "할인 혜택 관리",
   };
 
   if (!isAuthed) {
@@ -95,6 +97,7 @@ function App() {
           {activePage === "analytics" && <MenuAnalytics />}
           {activePage === "orders" && <OrderHistory />}
           {activePage === "menus" && <MenuManagement />}
+          {activePage === "discounts" && <DiscountManagement />}
         </main>
       </div>
     </div>

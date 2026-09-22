@@ -4,7 +4,6 @@ import { LuX } from "react-icons/lu";
 import { useMenuStore } from "../store/menuStore";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
-import type { AppliedCoupon } from "../store/couponStore";
 
 interface CouponResult {
   code: string;

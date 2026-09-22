@@ -12,14 +12,13 @@ from ai.entity import extract_multi_order
 from ai.payment import get_payment_response
 from ai.discount import get_discount_tip
 from ai.order import apply_discount_menu_fallback, cart_answer, entities_to_orders, split_sold_out
-from app.ocr.router import router as ocr_router
-from app.ocr.db import get_all_discount_texts
 from app.coupon.router import router as coupon_router
 from app.admin import db as admin_db
 from app.admin.db import UPLOAD_DIR
 from app.admin.router import (
     router as admin_router,
     auth_router as admin_auth_router,
+    discounts_public_router,
     menus_public_router,
     orders_router,
 )
@@ -41,12 +40,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ocr_router)
 app.include_router(coupon_router)
 app.include_router(admin_auth_router)
 app.include_router(admin_router)
 app.include_router(orders_router)
 app.include_router(menus_public_router)
+app.include_router(discounts_public_router)
 
 app.mount("/uploads/menu-images", StaticFiles(directory=UPLOAD_DIR), name="menu-images")
 
@@ -90,10 +89,7 @@ async def ask_intent(request: QueryRequest):
         named = [o for o in orders if o["menu"]]
         answer = cart_answer(named, sold_out)
 
-        discount_tip: str | None = None
-        if named:
-            discount_texts = get_all_discount_texts()
-            discount_tip = get_discount_tip(discount_texts)
+        discount_tip: str | None = get_discount_tip() if named else None
 
         return {
             "question": request.query,
