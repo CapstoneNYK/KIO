@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.admin import db
 from app.admin.db import UPLOAD_DIR
@@ -39,16 +39,16 @@ def signup(body: SignupRequest):
 # ── Menus ──────────────────────────────────────────────────────────────────
 
 class MenuCreate(BaseModel):
-    name: str
-    price: int
+    name: str = Field(min_length=1, max_length=50)
+    price: int = Field(ge=0)
     category: str
     temps: list[str] = []
     image_url: str | None = None
 
 
 class MenuUpdate(BaseModel):
-    name: str | None = None
-    price: int | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    price: int | None = Field(default=None, ge=0)
     category: str | None = None
     temps: list[str] | None = None
     sold_out: bool | None = None
@@ -86,7 +86,12 @@ def list_menus():
 
 @router.post("/menus", status_code=201)
 def create_menu(body: MenuCreate):
-    return db.create_menu(body.name, body.price, body.category, body.temps, body.image_url)
+    name = body.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="메뉴명을 입력해주세요.")
+    if db.menu_name_exists(name):
+        raise HTTPException(status_code=409, detail="이미 존재하는 메뉴명입니다.")
+    return db.create_menu(name, body.price, body.category, body.temps, body.image_url)
 
 
 @router.put("/menus/{menu_id}")
@@ -94,7 +99,14 @@ def update_menu(menu_id: int, body: MenuUpdate):
     existing = db.get_menu(menu_id)
     if existing is None:
         raise HTTPException(status_code=404, detail="메뉴를 찾을 수 없습니다.")
-    result = db.update_menu(menu_id, **body.model_dump(exclude_none=True)) or existing
+    fields = body.model_dump(exclude_none=True)
+    if "name" in fields:
+        fields["name"] = fields["name"].strip()
+        if not fields["name"]:
+            raise HTTPException(status_code=422, detail="메뉴명을 입력해주세요.")
+        if db.menu_name_exists(fields["name"], exclude_id=menu_id):
+            raise HTTPException(status_code=409, detail="이미 존재하는 메뉴명입니다.")
+    result = db.update_menu(menu_id, **fields) or existing
     if body.image_url is not None and existing["image_url"] != body.image_url:
         _delete_image_file(existing["image_url"])
     return result
@@ -162,6 +174,13 @@ def get_sales(period: str = "today"):
     if period not in ("today", "week", "month"):
         raise HTTPException(status_code=400, detail="period는 today/week/month 중 하나여야 합니다.")
     return db.get_sales(period)
+
+
+@router.get("/sales/trend")
+def get_sales_trend(period: str = "today"):
+    if period not in ("today", "week", "month"):
+        raise HTTPException(status_code=400, detail="period는 today/week/month 중 하나여야 합니다.")
+    return db.get_sales_trend(period)
 
 
 @router.get("/analytics")

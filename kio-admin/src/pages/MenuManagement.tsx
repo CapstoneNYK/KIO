@@ -30,6 +30,7 @@ export const MenuManagement = () => {
   });
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [actionError, setActionError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -59,17 +60,28 @@ export const MenuManagement = () => {
   const soldOutCount = menus.filter((m) => m.sold_out).length;
 
   const handleToggleSoldOut = async (id: number, current: boolean) => {
-    const updated = await apiFetch<Menu>(`/api/admin/menus/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sold_out: !current }),
-    });
-    setMenus((prev) => prev.map((m) => m.id === id ? updated : m));
+    setActionError("");
+    try {
+      const updated = await apiFetch<Menu>(`/api/admin/menus/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sold_out: !current }),
+      });
+      setMenus((prev) => prev.map((m) => m.id === id ? updated : m));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "품절 상태를 변경하지 못했습니다.");
+    }
   };
 
-  const handleDelete = async (id: number) => {
-    await fetch(`${API}/api/admin/menus/${id}`, { method: "DELETE", headers: authHeaders() });
-    setMenus((prev) => prev.filter((m) => m.id !== id));
+  const handleDelete = async (menu: Menu) => {
+    if (!window.confirm(`'${menu.name}' 메뉴를 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)) return;
+    setActionError("");
+    try {
+      await apiFetch<void>(`/api/admin/menus/${menu.id}`, { method: "DELETE" });
+      setMenus((prev) => prev.filter((m) => m.id !== menu.id));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "메뉴를 삭제하지 못했습니다.");
+    }
   };
 
   const toggleTemp = (temp: string) => setNewMenu((prev) => ({
@@ -105,21 +117,33 @@ export const MenuManagement = () => {
   };
 
   const handleSave = async () => {
-    if (!newMenu.name.trim() || !newMenu.price) return;
-    const created = await apiFetch<Menu>("/api/admin/menus", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: newMenu.name.trim(),
-        price: parseInt(newMenu.price),
-        category: newMenu.category,
-        temps: newMenu.temps,
-        image_url: newMenu.imageUrl,
-      }),
-    });
-    setMenus((prev) => [...prev, created]);
-    setNewMenu({ name: "", price: "", category: "커피", temps: [], imageUrl: null });
+    if (!newMenu.name.trim() || newMenu.price === "") {
+      setUploadError("메뉴명과 가격을 입력해주세요.");
+      return;
+    }
+    const price = parseInt(newMenu.price);
+    if (Number.isNaN(price) || price < 0) {
+      setUploadError("가격은 0원 이상의 숫자로 입력해주세요.");
+      return;
+    }
     setUploadError("");
+    try {
+      const created = await apiFetch<Menu>("/api/admin/menus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newMenu.name.trim(),
+          price,
+          category: newMenu.category,
+          temps: newMenu.temps,
+          image_url: newMenu.imageUrl,
+        }),
+      });
+      setMenus((prev) => [...prev, created]);
+      setNewMenu({ name: "", price: "", category: "커피", temps: [], imageUrl: null });
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "메뉴를 추가하지 못했습니다.");
+    }
   };
 
   const openEdit = (menu: Menu) => {
@@ -167,20 +191,34 @@ export const MenuManagement = () => {
   };
 
   const handleEditSave = async () => {
-    if (editingId == null || !editForm.name.trim() || !editForm.price) return;
-    const updated = await apiFetch<Menu>(`/api/admin/menus/${editingId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: editForm.name.trim(),
-        price: parseInt(editForm.price),
-        category: editForm.category,
-        temps: editForm.temps,
-        image_url: editForm.imageUrl,
-      }),
-    });
-    setMenus((prev) => prev.map((m) => m.id === editingId ? updated : m));
-    setEditingId(null);
+    if (editingId == null) return;
+    if (!editForm.name.trim() || editForm.price === "") {
+      setEditError("메뉴명과 가격을 입력해주세요.");
+      return;
+    }
+    const price = parseInt(editForm.price);
+    if (Number.isNaN(price) || price < 0) {
+      setEditError("가격은 0원 이상의 숫자로 입력해주세요.");
+      return;
+    }
+    setEditError("");
+    try {
+      const updated = await apiFetch<Menu>(`/api/admin/menus/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editForm.name.trim(),
+          price,
+          category: editForm.category,
+          temps: editForm.temps,
+          image_url: editForm.imageUrl,
+        }),
+      });
+      setMenus((prev) => prev.map((m) => m.id === editingId ? updated : m));
+      setEditingId(null);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "메뉴를 수정하지 못했습니다.");
+    }
   };
 
   return (
@@ -265,6 +303,15 @@ export const MenuManagement = () => {
         {uploadError && <p className="text-xs font-semibold text-red-500 mt-2">{uploadError}</p>}
       </div>
 
+      {actionError && (
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-lg px-4 py-2.5 flex items-center justify-between gap-3">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError("")} className="text-red-400 hover:text-red-600 shrink-0" aria-label="닫기">
+            <FiX size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Filter row */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap gap-2">
@@ -317,7 +364,7 @@ export const MenuManagement = () => {
                       : <PiToggleRightFill size={22} style={{ color: "#F5A623" }} />}
                   </button>
                   <button onClick={() => openEdit(menu)} className="p-1 text-gray-400 hover:text-amber-500 transition-colors"><FiEdit2 size={13} /></button>
-                  <button onClick={() => handleDelete(menu.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><FiTrash2 size={13} /></button>
+                  <button onClick={() => handleDelete(menu)} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><FiTrash2 size={13} /></button>
                 </div>
               </div>
             </div>

@@ -73,7 +73,8 @@ def init_db() -> None:
                 temperature TEXT    NOT NULL DEFAULT '',
                 quantity    INTEGER NOT NULL DEFAULT 1,
                 unit_price  INTEGER NOT NULL,
-                is_free     INTEGER NOT NULL DEFAULT 0
+                is_free     INTEGER NOT NULL DEFAULT 0,
+                category    TEXT
             );
 
             CREATE TABLE IF NOT EXISTS admins (
@@ -87,6 +88,16 @@ def init_db() -> None:
         existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(menus)")}
         if "image_url" not in existing_columns:
             conn.execute("ALTER TABLE menus ADD COLUMN image_url TEXT")
+
+        # 주문 당시 카테고리를 저장해 두어, 이후 메뉴 이름 변경/삭제에도 카테고리 통계가 유지되도록 한다.
+        item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(order_items)")}
+        if "category" not in item_columns:
+            conn.execute("ALTER TABLE order_items ADD COLUMN category TEXT")
+        conn.execute(
+            """UPDATE order_items
+               SET category = (SELECT m.category FROM menus m WHERE m.name = order_items.menu_name)
+               WHERE category IS NULL"""
+        )
 
         count = conn.execute("SELECT COUNT(*) FROM menus").fetchone()[0]
         if count == 0:
@@ -139,6 +150,16 @@ def update_menu(menu_id: int, **fields) -> dict | None:
         )
         row = conn.execute("SELECT * FROM menus WHERE id=?", (menu_id,)).fetchone()
     return _menu_row(row) if row else None
+
+
+def menu_name_exists(name: str, exclude_id: int | None = None) -> bool:
+    normalized = name.replace(" ", "").lower()
+    with get_conn() as conn:
+        rows = conn.execute("SELECT id, name FROM menus").fetchall()
+    return any(
+        r["name"].replace(" ", "").lower() == normalized and r["id"] != exclude_id
+        for r in rows
+    )
 
 
 def get_menu(menu_id: int) -> dict | None:
@@ -196,13 +217,17 @@ def save_order(
             (payment_method, total_amount, discount_amount, final_amount, int(is_packaging)),
         )
         order_id = cur.lastrowid
+        category_by_name = {
+            r["name"]: r["category"] for r in conn.execute("SELECT name, category FROM menus")
+        }
         conn.executemany(
             """INSERT INTO order_items
-               (order_id, menu_name, temperature, quantity, unit_price, is_free)
-               VALUES (?,?,?,?,?,?)""",
+               (order_id, menu_name, temperature, quantity, unit_price, is_free, category)
+               VALUES (?,?,?,?,?,?,?)""",
             [
                 (order_id, i["menu_name"], i.get("temperature", ""),
-                 i["quantity"], i["unit_price"], int(i.get("is_free", False)))
+                 i["quantity"], i["unit_price"], int(i.get("is_free", False)),
+                 category_by_name.get(i["menu_name"]))
                 for i in items
             ],
         )
@@ -285,6 +310,58 @@ def get_sales(period: str) -> dict:
     return {"current": curr, "previous": prev}
 
 
+WEEKDAYS_KO = ["월", "화", "수", "목", "금", "토", "일"]
+
+
+def get_sales_trend(period: str) -> list[dict]:
+    """today=시간대별(0~23시), week=요일별(월~일), month=일별(1일~말일) 매출 추이. 데이터 없는 구간은 0으로 채움."""
+    start, end, _, _ = _period_range(period)
+    start_dt = datetime.strptime(start, "%Y-%m-%d %H:%M:%S")
+
+    if period == "today":
+        bucket_sql = "strftime('%H', created_at)"
+        buckets = [f"{h:02d}" for h in range(24)]
+        labels = {b: (f"{int(b)}시", f"{int(b)}시~{int(b) + 1}시") for b in buckets}
+    else:
+        bucket_sql = "strftime('%Y-%m-%d', created_at)"
+        if period == "week":
+            days = [start_dt.date() + timedelta(days=i) for i in range(7)]
+        else:
+            first = start_dt.date().replace(day=1)
+            next_month = (first.replace(day=28) + timedelta(days=4)).replace(day=1)
+            days = [first + timedelta(days=i) for i in range((next_month - first).days)]
+        buckets = [d.isoformat() for d in days]
+        labels = {
+            d.isoformat(): (
+                WEEKDAYS_KO[d.weekday()] if period == "week" else f"{d.day}일",
+                f"{d.month}월 {d.day}일 ({WEEKDAYS_KO[d.weekday()]})",
+            )
+            for d in days
+        }
+
+    with get_conn() as conn:
+        rows = conn.execute(
+            f"""SELECT {bucket_sql} AS bucket,
+                       COALESCE(SUM(final_amount),0) AS sales,
+                       COUNT(*) AS orders
+                FROM orders
+                WHERE created_at >= ? AND created_at <= ?
+                GROUP BY bucket""",
+            (start, end),
+        ).fetchall()
+    by_bucket = {r["bucket"]: r for r in rows}
+
+    return [
+        {
+            "label": labels[b][0],
+            "title": labels[b][1],
+            "sales": by_bucket[b]["sales"] if b in by_bucket else 0,
+            "orders": by_bucket[b]["orders"] if b in by_bucket else 0,
+        }
+        for b in buckets
+    ]
+
+
 # ── Analytics ──────────────────────────────────────────────────────────────
 
 def get_analytics() -> dict:
@@ -305,12 +382,12 @@ def get_analytics() -> dict:
 
         # 카테고리별 판매 수량
         cat_rows = conn.execute(
-            """SELECT m.category, SUM(oi.quantity) AS cnt
+            """SELECT COALESCE(oi.category, m.category, '기타') AS category, SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
-               JOIN menus m ON m.name = oi.menu_name
+               LEFT JOIN menus m ON m.name = oi.menu_name
                WHERE o.created_at >= ? AND oi.is_free = 0
-               GROUP BY m.category""",
+               GROUP BY COALESCE(oi.category, m.category, '기타')""",
             (week_start,),
         ).fetchall()
 

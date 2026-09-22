@@ -5,7 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from ai.dictionary import MENU_DICTIONARY
-from app.ocr.db import get_all_menu_texts, get_all_discount_texts
+from app.ocr.db import get_all_discount_texts
+from app.admin import db as admin_db
 
 load_dotenv()
 
@@ -29,11 +30,16 @@ _dict_chain = (
 )
 
 
-def _build_menu_context() -> str:
-    menus = get_all_menu_texts()
+def _build_menu_context(include_sold_out: bool = True) -> str:
+    menus = [m for m in admin_db.get_menus() if include_sold_out or not m["sold_out"]]
     if not menus:
         return "현재 등록된 메뉴가 없습니다."
-    return "\n".join(f"- {m}" for m in menus)
+    lines = []
+    for m in menus:
+        temps = "/".join(m["temps"]) or "-"
+        line = f"- {m['name']} ({m['category']}, {m['price']:,}원, {temps})"
+        lines.append(f"{line} [품절]" if m["sold_out"] else line)
+    return "\n".join(lines)
 
 
 _POSTER_LABEL = {
@@ -59,6 +65,8 @@ def _build_discount_context() -> str:
 _qa_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 안내 전문가입니다.
 아래 메뉴 목록과 할인 혜택 정보를 바탕으로 질문에 답변해주세요.
+
+메뉴 목록의 형식은 "메뉴명 (카테고리, 가격, 제공 온도)"이며, [품절] 표시가 있는 메뉴는 현재 주문할 수 없다고 안내하세요.
 
 주의: 할인 혜택 정보는 포스터 이미지를 OCR로 추출한 텍스트라 오타나 깨진 글자가 있을 수 있습니다.
 예를 들어 "멈버십"은 "멤버십", "3096"은 "30%", "5096"은 "50%", "스랜"은 "스캔"을 의미합니다.
@@ -101,16 +109,16 @@ qa_chain = (
 )
 
 
-# ── 추천 체인 (OCR DB + GPT, 구조화 출력) ────────────────────────────────────
+# ── 추천 체인 (관리자 메뉴 + GPT, 구조화 출력) ──────────────────────────────
 
 class RecommendOutput(BaseModel):
     answer: str        # 손님에게 보여줄 추천 메시지
-    menus: list[str]   # 추천 메뉴명 목록 (OCR DB에 있는 이름 그대로)
+    menus: list[str]   # 추천 메뉴명 목록 (메뉴 목록에 있는 이름 그대로)
 
 
 _recommend_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음료 추천 전문가입니다.
-아래는 현재 주문 가능한 메뉴 목록입니다.
+아래는 현재 주문 가능한 메뉴 목록이며, 형식은 "메뉴명 (카테고리, 가격, 제공 온도)"입니다.
 
 {menus}
 
@@ -119,6 +127,7 @@ _recommend_prompt = ChatPromptTemplate.from_template("""
 위 메뉴 목록에서만 골라 손님의 취향에 맞는 음료를 1~2가지 추천해 주세요.
 각 메뉴가 왜 어울리는지 맛 특징을 한 줄로 설명해 주세요.
 목록에 없는 메뉴는 절대 추천하지 마세요.
+menus에는 괄호 앞의 메뉴명만 목록에 적힌 그대로 적으세요.
 메뉴 목록이 비어 있거나 요청에 맞는 메뉴가 없으면, answer에 "죄송합니다, 현재 해당 조건에 맞는 메뉴를 찾을 수 없습니다."라고 적고 menus는 빈 목록으로 응답하세요.
 
 반드시 아래 JSON 형식으로만 응답하세요:
@@ -133,7 +142,7 @@ _recommend_llm = ChatOpenAI(model="gpt-4o", temperature=0.7).with_structured_out
 recommend_chain = (
     {
         "question": RunnablePassthrough(),
-        "menus": RunnableLambda(lambda _: _build_menu_context()),
+        "menus": RunnableLambda(lambda _: _build_menu_context(include_sold_out=False)),
     }
     | _recommend_prompt
     | _recommend_llm
