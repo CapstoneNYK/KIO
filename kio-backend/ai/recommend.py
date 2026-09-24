@@ -5,7 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from ai.dictionary import MENU_DICTIONARY
-from app.ocr.db import get_all_menu_texts, get_all_discount_texts
+# from app.ocr.db import get_all_menu_texts, get_all_discount_texts
+from app.admin import db as admin_db
 
 load_dotenv()
 
@@ -29,30 +30,48 @@ _dict_chain = (
 )
 
 
+# def _build_menu_context() -> str:
+#     menus = get_all_menu_texts()
+#     if not menus:
+#         return "현재 등록된 메뉴가 없습니다."
+#     return "\n".join(f"- {m}" for m in menus)
 def _build_menu_context() -> str:
-    menus = get_all_menu_texts()
+    menus = admin_db.get_menus()
     if not menus:
         return "현재 등록된 메뉴가 없습니다."
-    return "\n".join(f"- {m}" for m in menus)
+    return "\n".join(
+        f"- {m['name']} ({m['price']}원, {m['category']}){' [품절]' if m['sold_out'] else ''}"
+        for m in menus
+    )
 
 
-_POSTER_LABEL = {
-    "poster_kt": "KT 멤버십",
-    "poster_t": "T 멤버십 (SKT 계열)",
-    "poster_tpass": "T우주패스 (SKT 계열)",
-}
 
+
+# _POSTER_LABEL = {
+#     "poster_kt": "KT 멤버십",
+#     "poster_t": "T 멤버십 (SKT 계열)",
+#     "poster_tpass": "T우주패스 (SKT 계열)",
+# }
+
+# def _build_discount_context() -> str:
+#     grouped = get_all_discount_texts()
+#     if not grouped:
+#         return "등록된 할인 정보가 없습니다."
+#     sections: list[str] = []
+#     for screen_name, texts in sorted(grouped.items()):
+#         label = _POSTER_LABEL.get(screen_name, screen_name)
+#         body = "\n".join(f"  - {t}" for t in texts)
+#         sections.append(f"[{label}]\n{body}")
+#     return "\n\n".join(sections)
 def _build_discount_context() -> str:
-    grouped = get_all_discount_texts()
-    if not grouped:
+    discounts = admin_db.get_discounts(active_only=True)
+    if not discounts:
         return "등록된 할인 정보가 없습니다."
-    sections: list[str] = []
-    for screen_name, texts in sorted(grouped.items()):
-        label = _POSTER_LABEL.get(screen_name, screen_name)
-        body = "\n".join(f"  - {t}" for t in texts)
-        sections.append(f"[{label}]\n{body}")
+    sections = []
+    for d in discounts:
+        method_label = admin_db.DISCOUNT_METHODS.get(d["method_code"], d["method_code"])
+        sections.append(f"[{d['name']} - {method_label}]\n{d['description']}")
     return "\n\n".join(sections)
-
 
 # ── QA 체인 (OCR DB 기반) ────────────────────────────────────────────────────
 
