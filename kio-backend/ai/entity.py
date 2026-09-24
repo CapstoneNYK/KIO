@@ -50,29 +50,52 @@ def extract_quantity(text: str) -> int:
     return 1
 
 
-def extract_menu(text: str, ocr_menus: list = None) -> Optional[str]:
+def active_keywords(menu_names: Optional[list]) -> dict[str, str]:
+    """축약어 사전 중 실제로 존재하는 메뉴를 가리키는 항목만 남긴다 (삭제/이름 변경된 메뉴 제외).
+    사전 값은 관리자 메뉴의 실제 표기로 바꿔 돌려준다. menu_names가 None이면 필터링하지 않는다."""
+    if menu_names is None:
+        return MENU_KEYWORDS
+    by_norm = {normalize_text(m): m for m in menu_names}
+    return {k: by_norm[normalize_text(v)] for k, v in MENU_KEYWORDS.items() if normalize_text(v) in by_norm}
+
+
+def _longest_menu_in_text(text_norm: str, menu_names: list) -> Optional[str]:
+    best_match, best_len = None, 0
+    for name in menu_names:
+        name_norm = normalize_text(name)
+        if name_norm and name_norm in text_norm and len(name_norm) > best_len:
+            best_match, best_len = name, len(name_norm)
+    return best_match
+
+
+def _longest_menu_containing_text(text_norm: str, menu_names: list) -> Optional[str]:
+    best_match, best_len = None, 0
+    for name in menu_names:
+        name_norm = normalize_text(name)
+        if text_norm in name_norm and len(name_norm) > best_len:
+            best_match, best_len = name, len(name_norm)
+    return best_match
+
+
+def extract_menu(text: str, menu_names: list = None) -> Optional[str]:
+    keywords = active_keywords(menu_names)
     text_norm = normalize_text(text)
 
-    # 1단계: 축약어 → 정식 메뉴명으로 변환 ("아아" → "아메리카노")
-    for key in sorted(MENU_KEYWORDS.keys(), key=len, reverse=True):
+    # 1단계: 관리자 메뉴명 직접 매칭 (가장 긴 매칭 우선).
+    # 축약어보다 먼저 봐야 '헤이즐넛라떼'가 '라떼' → '카페라떼'로 잘못 치환되지 않는다.
+    if menu_names:
+        match = _longest_menu_in_text(text_norm, menu_names)
+        if match:
+            return match
+
+    # 2단계: 축약어 → 정식 메뉴명 ("아아" → "아메리카노")
+    for key in sorted(keywords.keys(), key=len, reverse=True):
         if normalize_text(key) in text_norm:
-            text_norm = text_norm.replace(normalize_text(key), normalize_text(MENU_KEYWORDS[key]))
-            break
+            return keywords[key]
 
-    # 2단계: OCR DB 메뉴와 직접 매칭 (가장 긴 매칭 우선)
-    if ocr_menus:
-        best_match, best_len = None, 0
-        for ocr in ocr_menus:
-            ocr_norm = normalize_text(ocr)
-            if (ocr_norm in text_norm or text_norm in ocr_norm) and len(ocr_norm) > best_len:
-                best_match, best_len = ocr, len(ocr_norm)
-        if best_match:
-            return best_match
-
-    # 3단계: OCR 없으면 dictionary 결과 반환
-    for key in sorted(MENU_KEYWORDS.keys(), key=len, reverse=True):
-        if normalize_text(key) in normalize_text(text):
-            return MENU_KEYWORDS[key]
+    # 3단계: 발화 전체가 메뉴명의 일부인 경우 ("바닐라" → "바닐라라떼")
+    if menu_names:
+        return _longest_menu_containing_text(text_norm, menu_names)
 
     return None
 
@@ -95,8 +118,8 @@ def extract_attributes(text: str):
     return attrs
 
 
-def extract_entity(text: str, ocr_menus: list = None) -> Dict:
-    menu = extract_menu(text, ocr_menus)
+def extract_entity(text: str, menu_names: list = None) -> Dict:
+    menu = extract_menu(text, menu_names)
     attrs = extract_attributes(text)
     quantity = extract_quantity(text)
     options = extract_options_from_text(text)
@@ -112,7 +135,7 @@ def extract_entity(text: str, ocr_menus: list = None) -> Dict:
             "confidence": 0.0
         }
 
-    # OCR에서 가져온 메뉴명엔 이미 온도가 포함될 수 있으므로 중복 방지
+    # 메뉴명에 이미 온도가 포함돼 있으면 중복해서 붙이지 않는다
     menu_norm = normalize_text(menu)
     if "ice" in attrs and not any(w in menu_norm for w in ["아이스", "ice"]):
         menu = "아이스 " + menu
@@ -126,26 +149,27 @@ def extract_entity(text: str, ocr_menus: list = None) -> Dict:
         "options": options,
         "needs_recommendation": False,
         "matched_menu": menu,
-        "confidence": 0.9 if ocr_menus else 0.7
+        "confidence": 0.9 if menu_names else 0.7
     }
 
 
 MULTI_SPLIT_PATTERN = re.compile(r'\s*(?:이랑|랑|하고|그리고|과|와|,|，)\s*')
 
 
-def extract_all_menus_from_text(text: str, ocr_menus: list = None) -> list:
+def extract_all_menus_from_text(text: str, menu_names: list = None) -> list:
     """구분자 없이 나열된 텍스트에서 등장 순서대로 모든 메뉴 추출.
     축약어 치환을 먼저 하면 '바닐라라떼'→'바닐라카페라떼'처럼 깨지므로,
     풀 메뉴명으로 직접 매칭만 수행한다."""
     text_norm = normalize_text(text)
+    keywords = active_keywords(menu_names)
 
-    # 후보: OCR 메뉴 + MENU_KEYWORDS 값(풀 메뉴명) + 키(축약어), 길이 내림차순
+    # 후보: 관리자 메뉴 + 축약어 사전 값(풀 메뉴명) + 키(축약어), 길이 내림차순
     candidates = []
-    if ocr_menus:
-        candidates += [(normalize_text(m), m) for m in ocr_menus]
-    for v in set(MENU_KEYWORDS.values()):
+    if menu_names:
+        candidates += [(normalize_text(m), m) for m in menu_names]
+    for v in set(keywords.values()):
         candidates.append((normalize_text(v), v))
-    for k, v in MENU_KEYWORDS.items():
+    for k, v in keywords.items():
         norm_k = normalize_text(k)
         norm_v = normalize_text(v)
         if norm_k != norm_v:
@@ -191,7 +215,7 @@ def extract_all_menus_from_text(text: str, ocr_menus: list = None) -> list:
     return found
 
 
-def extract_multi_order(text: str, ocr_menus: list = None) -> list:
+def extract_multi_order(text: str, menu_names: list = None) -> list:
     # 1단계: 구분자로 분리 시도
     parts = MULTI_SPLIT_PATTERN.split(text)
     if len(parts) > 1:
@@ -200,14 +224,14 @@ def extract_multi_order(text: str, ocr_menus: list = None) -> list:
             part = part.strip()
             if not part:
                 continue
-            entity = extract_entity(part, ocr_menus)
+            entity = extract_entity(part, menu_names)
             if entity["menu"]:
                 results.append(entity)
         if results:
             return results
 
     # 2단계: 구분자 없이 나열된 경우 전체 텍스트 스캔
-    menu_qty_pairs = extract_all_menus_from_text(text, ocr_menus)
+    menu_qty_pairs = extract_all_menus_from_text(text, menu_names)
     if len(menu_qty_pairs) > 1:
         attrs = extract_attributes(text)
         results = []
@@ -223,4 +247,4 @@ def extract_multi_order(text: str, ocr_menus: list = None) -> list:
             })
         return results
 
-    return [extract_entity(text, ocr_menus)]
+    return [extract_entity(text, menu_names)]
