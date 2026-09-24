@@ -11,7 +11,7 @@ import { CartBar } from "../components/CartBar";
 import { CouponScanner } from "../components/CouponScanner";
 import { useCouponStore } from "../store/couponStore";
 import { PaymentModal } from "../components/PaymentModal";
-import { MENUS, CATEGORIES } from "../data/menus";
+import { useMenuStore, CATEGORIES } from "../store/menuStore";
 import type { MenuItem } from "../types/menu";
 
 const PAYMENT_GUIDE_SCREENS = ["payment", "payment_card", "payment_complete"];
@@ -38,6 +38,7 @@ export const Home = () => {
     setGuideScreen("payment");
   };
   const cartItems = useCartStore((s) => s.items);
+  const menus = useMenuStore((s) => s.menus);
 
   const showStandalonePayment =
     PAYMENT_GUIDE_SCREENS.includes(guideScreen ?? "") && cartItems.length === 0;
@@ -47,14 +48,14 @@ export const Home = () => {
 
   const selectedItem =
     learningScreen === "menu_modal" || guideScreen === "menu_modal"
-      ? MENUS[0]
+      ? menus[0] ?? null
       : learningForcesReset
         ? null
         : userSelectedItem;
 
   const filteredMenus = activeCategory === "전체"
-    ? MENUS
-    : MENUS.filter((m) => m.category === activeCategory);
+    ? menus
+    : menus.filter((m) => m.category === activeCategory);
 
   return (
     <div className="flex flex-col h-screen">
@@ -71,6 +72,7 @@ export const Home = () => {
             img={menu.img}
             title={menu.title}
             price={menu.price}
+            soldOut={menu.soldOut}
             onClick={() => setUserSelectedItem(menu)}
           />
         ))}
