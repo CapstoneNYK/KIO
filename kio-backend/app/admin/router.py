@@ -44,6 +44,10 @@ class MenuCreate(BaseModel):
     category: str
     temps: list[str] = []
     image_url: str | None = None
+    caffeine: bool = True
+    tags: list[str] = []
+    sizes: list[str] = ["S", "M", "L"]
+    stock: int | None = Field(default=None, ge=0)   # None 이면 재고를 관리하지 않음(무제한)
 
 
 class MenuUpdate(BaseModel):
@@ -53,6 +57,11 @@ class MenuUpdate(BaseModel):
     temps: list[str] | None = None
     sold_out: bool | None = None
     image_url: str | None = None
+    caffeine: bool | None = None
+    tags: list[str] | None = None
+    sizes: list[str] | None = None
+    stock: int | None = Field(default=None, ge=0)
+    track_stock: bool | None = None   # False 면 재고 관리 해제(무제한)
 
 
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
@@ -91,7 +100,23 @@ def create_menu(body: MenuCreate):
         raise HTTPException(status_code=422, detail="메뉴명을 입력해주세요.")
     if db.menu_name_exists(name):
         raise HTTPException(status_code=409, detail="이미 존재하는 메뉴명입니다.")
-    return db.create_menu(name, body.price, body.category, body.temps, body.image_url)
+    return db.create_menu(
+        name, body.price, body.category, body.temps, body.image_url,
+        caffeine=body.caffeine, tags=body.tags, sizes=body.sizes, stock=body.stock,
+    )
+
+
+class MenuAnalyzeRequest(BaseModel):
+    name: str
+    category: str
+    description: str = ""
+
+
+@router.post("/menus/analyze")
+def analyze_menu_attrs(body: MenuAnalyzeRequest):
+    """등록 전 폼에서 쓰는 속성 분석: 이름·카테고리로 맛 태그·카페인을 제안한다 (저장은 하지 않음)."""
+    from ai.menu_analyzer import analyze_menu
+    return analyze_menu(body.name.strip(), body.category, body.description)
 
 
 @router.put("/menus/{menu_id}")
@@ -100,6 +125,9 @@ def update_menu(menu_id: int, body: MenuUpdate):
     if existing is None:
         raise HTTPException(status_code=404, detail="메뉴를 찾을 수 없습니다.")
     fields = body.model_dump(exclude_none=True)
+    if fields.pop("track_stock", None) is False:
+        fields["clear_stock"] = True
+        fields.pop("stock", None)
     if "name" in fields:
         fields["name"] = fields["name"].strip()
         if not fields["name"]:
@@ -213,6 +241,7 @@ class OrderCreate(BaseModel):
     final_amount: int
     is_packaging: bool = False
     items: list[OrderItem]
+    request_id: str | None = Field(default=None, max_length=64)  # 멱등키(중복 주문 방지)
 
 
 # kio-frontend가 호출하는 엔드포인트 (prefix 없이 /api/orders, /api/menus, /api/discounts)
@@ -233,14 +262,47 @@ def list_discounts_public():
 
 @orders_router.post("/orders", status_code=201)
 def create_order(body: OrderCreate):
-    return db.save_order(
-        payment_method=body.payment_method,
-        total_amount=body.total_amount,
-        discount_amount=body.discount_amount,
-        final_amount=body.final_amount,
-        is_packaging=body.is_packaging,
-        items=[i.model_dump() for i in body.items],
-    )
+    try:
+        return db.save_order(
+            payment_method=body.payment_method,
+            total_amount=body.total_amount,
+            discount_amount=body.discount_amount,
+            final_amount=body.final_amount,
+            is_packaging=body.is_packaging,
+            items=[i.model_dump() for i in body.items],
+            request_id=body.request_id,
+        )
+    except db.OutOfStock as e:
+        raise HTTPException(status_code=409, detail=f"{', '.join(e.names)}의 재고가 부족합니다.")
+
+
+class CancelRequest(BaseModel):
+    request_id: str = Field(min_length=1, max_length=64)
+
+
+@orders_router.post("/orders/cancel")
+def cancel_order(body: CancelRequest):
+    """키오스크에서 결제 직후 주문을 취소한다. 결제 후 일정 시간(기본 3분) 이내에만 가능하다.
+    주문 번호 대신 결제 때 만든 멱등키(request_id)로 식별해서, 다른 사람의 주문을 번호로 취소할 수 없게 한다."""
+    order = db.get_order_by_request_id(body.request_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="주문을 찾을 수 없습니다.")
+    result, error = db.change_order_status(order["id"], "CANCELLED", by_customer=True)
+    if error:
+        raise HTTPException(status_code=409, detail=error)
+    return result
+
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+
+@router.patch("/orders/{order_id}/status")
+def update_order_status(order_id: int, body: OrderStatusUpdate):
+    result, error = db.change_order_status(order_id, body.status)
+    if error:
+        raise HTTPException(status_code=404 if "찾을 수 없" in error else 409, detail=error)
+    return result
 
 
 @router.get("/orders")

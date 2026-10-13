@@ -71,6 +71,36 @@ INITIAL_MENUS = [
 ]
 
 
+# 맞춤형 추천용 메뉴 속성: 메뉴명 -> (카페인 유무, 맛 태그).
+# 기존 DB에 컬럼을 새로 추가할 때(또는 최초 시드 시) 한 번만 채워 넣는다.
+# 이후 관리자가 API로 수정한 값은 덮어쓰지 않는다.
+DEFAULT_SIZES = ["S", "M", "L"]
+INITIAL_MENU_ATTRS = {
+    "아메리카노":          (True,  ["쌉쌀", "산미", "깔끔"]),
+    "카페라떼":            (True,  ["고소", "부드러운"]),
+    "카푸치노":            (True,  ["고소", "부드러운", "진한"]),
+    "바닐라라떼":          (True,  ["달콤", "부드러운"]),
+    "카라멜마키아토":      (True,  ["달콤", "진한"]),
+    "에스프레소":          (True,  ["진한", "쌉쌀", "산미"]),
+    "디카페인 아메리카노": (False, ["쌉쌀", "깔끔"]),
+    "디카페인 라떼":       (False, ["고소", "부드러운"]),
+    "디카페인 바닐라라떼": (False, ["달콤", "부드러운"]),
+    "딸기 스무디":         (False, ["달콤", "상큼", "과일"]),
+    "망고 요거트 스무디":  (False, ["달콤", "상큼", "과일", "부드러운"]),
+    "블루베리 스무디":     (False, ["달콤", "상큼", "과일"]),
+    "레몬 에이드":         (False, ["상큼", "탄산", "과일"]),
+    "자몽 에이드":         (False, ["상큼", "쌉쌀", "탄산", "과일"]),
+    "청포도 에이드":       (False, ["상큼", "달콤", "탄산", "과일"]),
+    "오렌지 주스":         (False, ["상큼", "달콤", "과일"]),
+    "망고 주스":           (False, ["달콤", "과일"]),
+    "딸기 바나나 주스":    (False, ["달콤", "과일", "부드러운"]),
+    "얼그레이":            (True,  ["향긋", "깔끔"]),
+    "캐모마일":            (False, ["향긋", "부드러운"]),
+    "페퍼민트":            (False, ["향긋", "상쾌"]),
+    "히비스커스":          (False, ["상큼", "향긋"]),
+}
+
+
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -89,6 +119,9 @@ def init_db() -> None:
                 temps       TEXT    NOT NULL DEFAULT '[]',
                 sold_out    INTEGER NOT NULL DEFAULT 0,
                 image_url   TEXT,
+                caffeine    INTEGER NOT NULL DEFAULT 1,
+                tags        TEXT    NOT NULL DEFAULT '[]',
+                sizes       TEXT    NOT NULL DEFAULT '[]',
                 created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
@@ -99,6 +132,7 @@ def init_db() -> None:
                 discount_amount INTEGER NOT NULL DEFAULT 0,
                 final_amount    INTEGER NOT NULL,
                 is_packaging    INTEGER NOT NULL DEFAULT 0,
+                request_id      TEXT,
                 created_at      TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
@@ -139,6 +173,38 @@ def init_db() -> None:
         if "image_url" not in existing_columns:
             conn.execute("ALTER TABLE menus ADD COLUMN image_url TEXT")
 
+        # 맞춤형 추천용 속성(카페인/맛 태그/사이즈). 새로 추가되는 경우에만 기본값을 채운다.
+        attrs_added = False
+        if "caffeine" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN caffeine INTEGER NOT NULL DEFAULT 1")
+            attrs_added = True
+        if "tags" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'")
+            attrs_added = True
+        if "sizes" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN sizes TEXT NOT NULL DEFAULT '[]'")
+            attrs_added = True
+
+        # 주문 저장 멱등키: 네트워크 재시도로 같은 결제가 두 번 저장되지 않게 한다.
+        order_columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)")}
+        if "request_id" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN request_id TEXT")
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_request_id "
+            "ON orders(request_id) WHERE request_id IS NOT NULL"
+        )
+
+        # 주문 상태: 결제 완료(PAID) 또는 CANCELLED. 실제 매장 운영을 고려해 조리 단계 상태는 두지 않는다.
+        # 기존 주문은 모두 결제가 끝난 상태로 저장되어 있었으므로 PAID 로 채운다.
+        if "status" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN status TEXT NOT NULL DEFAULT 'PAID'")
+        if "status_updated_at" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN status_updated_at TEXT")
+
+        # 수량 재고: NULL 이면 재고를 관리하지 않는 메뉴(무제한)
+        if "stock" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN stock INTEGER")
+
         # 주문 당시 카테고리를 저장해 두어, 이후 메뉴 이름 변경/삭제에도 카테고리 통계가 유지되도록 한다.
         item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(order_items)")}
         if "category" not in item_columns:
@@ -155,6 +221,15 @@ def init_db() -> None:
                 "INSERT INTO menus (id, name, price, category, temps, sold_out) VALUES (?,?,?,?,?,?)",
                 INITIAL_MENUS,
             )
+            attrs_added = True
+
+        if attrs_added:
+            for name, (caffeine, tags) in INITIAL_MENU_ATTRS.items():
+                conn.execute(
+                    "UPDATE menus SET caffeine=?, tags=?, sizes=? WHERE name=?",
+                    (int(caffeine), json.dumps(tags, ensure_ascii=False),
+                     json.dumps(DEFAULT_SIZES), name),
+                )
 
         admin_count = conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0]
         if admin_count == 0:
@@ -182,29 +257,59 @@ def get_menus() -> list[dict]:
     return [_menu_row(r) for r in rows]
 
 
-def create_menu(name: str, price: int, category: str, temps: list[str], image_url: str | None = None) -> dict:
+def create_menu(
+    name: str,
+    price: int,
+    category: str,
+    temps: list[str],
+    image_url: str | None = None,
+    caffeine: bool = True,
+    tags: list[str] | None = None,
+    sizes: list[str] | None = None,
+    stock: int | None = None,
+) -> dict:
     with get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO menus (name, price, category, temps, image_url) VALUES (?,?,?,?,?)",
-            (name, price, category, json.dumps(temps, ensure_ascii=False), image_url),
+            "INSERT INTO menus (name, price, category, temps, image_url, caffeine, tags, sizes, stock, sold_out) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (name, price, category, json.dumps(temps, ensure_ascii=False), image_url,
+             int(caffeine), json.dumps(tags or [], ensure_ascii=False),
+             json.dumps(sizes if sizes is not None else DEFAULT_SIZES),
+             stock, int(stock is not None and stock <= 0)),
         )
         row = conn.execute("SELECT * FROM menus WHERE id=?", (cur.lastrowid,)).fetchone()
     return _menu_row(row)
 
 
 def update_menu(menu_id: int, **fields) -> dict | None:
-    allowed = {"name", "price", "category", "temps", "sold_out", "image_url"}
+    """clear_stock=True 이면 재고 관리를 끄고(무제한) stock 값은 무시한다."""
+    allowed = {"name", "price", "category", "temps", "sold_out", "image_url", "caffeine", "tags", "sizes", "stock"}
+    clear_stock = bool(fields.pop("clear_stock", False))
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
-    if not updates:
+    if clear_stock:
+        updates.pop("stock", None)
+    if not updates and not clear_stock:
         return None
-    if "temps" in updates:
-        updates["temps"] = json.dumps(updates["temps"], ensure_ascii=False)
-    set_clause = ", ".join(f"{k}=?" for k in updates)
+    for key in ("temps", "tags", "sizes"):
+        if key in updates:
+            updates[key] = json.dumps(updates[key], ensure_ascii=False)
+    if "caffeine" in updates:
+        updates["caffeine"] = int(updates["caffeine"])
+    if "sold_out" in updates:
+        updates["sold_out"] = int(updates["sold_out"])
     with get_conn() as conn:
-        conn.execute(
-            f"UPDATE menus SET {set_clause} WHERE id=?",
-            (*updates.values(), menu_id),
-        )
+        if clear_stock:
+            conn.execute("UPDATE menus SET stock=NULL WHERE id=?", (menu_id,))
+        if "stock" in updates:
+            updates["stock"] = max(0, int(updates["stock"]))
+            before = conn.execute("SELECT stock, sold_out FROM menus WHERE id=?", (menu_id,)).fetchone()
+            if updates["stock"] == 0:
+                updates["sold_out"] = 1            # 재고 0 → 자동 품절
+            elif before and before["stock"] == 0 and before["sold_out"] and "sold_out" not in updates:
+                updates["sold_out"] = 0            # 재고를 다시 채우면 자동 품절 해제
+        if updates:
+            set_clause = ", ".join(f"{k}=?" for k in updates)
+            conn.execute(f"UPDATE menus SET {set_clause} WHERE id=?", (*updates.values(), menu_id))
         row = conn.execute("SELECT * FROM menus WHERE id=?", (menu_id,)).fetchone()
     return _menu_row(row) if row else None
 
@@ -235,6 +340,11 @@ def _menu_row(row: sqlite3.Row) -> dict:
     d = dict(row)
     d["temps"] = json.loads(d["temps"])
     d["sold_out"] = bool(d["sold_out"])
+    d["caffeine"] = bool(d.get("caffeine", 1))
+    d["tags"] = json.loads(d.get("tags") or "[]")
+    d["sizes"] = json.loads(d.get("sizes") or "[]")
+    d["stock"] = d.get("stock")
+    d["track_stock"] = d["stock"] is not None
     return d
 
 
@@ -317,6 +427,50 @@ def create_admin(username: str, password_hash: str) -> dict:
 
 # ── Orders ─────────────────────────────────────────────────────────────────
 
+class OutOfStock(Exception):
+    """재고가 부족한 메뉴가 있을 때. names 에 부족한 메뉴명 목록."""
+
+    def __init__(self, names: list[str]):
+        super().__init__(", ".join(names))
+        self.names = names
+
+
+def _need_by_menu(items: list[dict]) -> dict[str, int]:
+    need: dict[str, int] = {}
+    for i in items:
+        if i.get("is_free"):
+            continue
+        need[i["menu_name"]] = need.get(i["menu_name"], 0) + i["quantity"]
+    return need
+
+
+def _check_stock(conn: sqlite3.Connection, items: list[dict]) -> None:
+    short = []
+    for name, qty in _need_by_menu(items).items():
+        row = conn.execute("SELECT stock, sold_out FROM menus WHERE name=?", (name,)).fetchone()
+        if row is None:
+            continue
+        if row["sold_out"] or (row["stock"] is not None and row["stock"] < qty):
+            short.append(name)
+    if short:
+        raise OutOfStock(short)
+
+
+def _apply_stock(conn: sqlite3.Connection, items: list[dict], sign: int) -> None:
+    """sign=-1: 주문으로 차감, +1: 취소로 복구. 재고가 0이 되면 자동 품절, 복구되면 자동 해제."""
+    for name, qty in _need_by_menu(items).items():
+        row = conn.execute("SELECT stock, sold_out FROM menus WHERE name=?", (name,)).fetchone()
+        if row is None or row["stock"] is None:
+            continue
+        new_stock = max(0, row["stock"] + sign * qty)
+        sold_out = row["sold_out"]
+        if new_stock == 0:
+            sold_out = 1
+        elif row["stock"] == 0 and sign > 0:
+            sold_out = 0
+        conn.execute("UPDATE menus SET stock=?, sold_out=? WHERE name=?", (new_stock, sold_out, name))
+
+
 def save_order(
     payment_method: str,
     total_amount: int,
@@ -324,15 +478,36 @@ def save_order(
     final_amount: int,
     is_packaging: bool,
     items: list[dict],
+    request_id: str | None = None,
 ) -> dict:
+    """주문을 저장한다. request_id(멱등키)가 같은 요청이 이미 저장돼 있으면 새로 저장하지 않고
+    기존 주문을 그대로 돌려준다 (네트워크 재시도로 인한 중복 주문 방지)."""
     with get_conn() as conn:
-        cur = conn.execute(
-            """INSERT INTO orders
-               (payment_method, total_amount, discount_amount, final_amount, is_packaging)
-               VALUES (?,?,?,?,?)""",
-            (payment_method, total_amount, discount_amount, final_amount, int(is_packaging)),
-        )
+        if request_id:
+            existing = conn.execute(
+                "SELECT * FROM orders WHERE request_id=?", (request_id,)
+            ).fetchone()
+            if existing:
+                return dict(existing)
+        _check_stock(conn, items)
+        try:
+            cur = conn.execute(
+                """INSERT INTO orders
+                   (payment_method, total_amount, discount_amount, final_amount, is_packaging, request_id)
+                   VALUES (?,?,?,?,?,?)""",
+                (payment_method, total_amount, discount_amount, final_amount,
+                 int(is_packaging), request_id),
+            )
+        except sqlite3.IntegrityError:
+            # 거의 동시에 같은 멱등키 요청이 들어온 경우
+            existing = conn.execute(
+                "SELECT * FROM orders WHERE request_id=?", (request_id,)
+            ).fetchone()
+            if existing:
+                return dict(existing)
+            raise
         order_id = cur.lastrowid
+        _apply_stock(conn, items, sign=-1)
         category_by_name = {
             r["name"]: r["category"] for r in conn.execute("SELECT name, category FROM menus")
         }
@@ -349,6 +524,64 @@ def save_order(
         )
         row = conn.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
     return dict(row)
+
+
+# 주문 상태는 결제완료(PAID)와 취소(CANCELLED)만 쓴다.
+# 실제 매장에서는 직원이 조리 단계마다 버튼을 누를 수 없으므로 "조리 시작/수령 완료" 같은 상태는 두지 않는다.
+# (예전 버전에서 만든 PREPARING/READY/COMPLETED 값이 DB에 남아 있어도 표시·집계는 정상 동작한다.)
+ORDER_STATUSES = ("PAID", "CANCELLED")
+STATUS_LABELS = {"PAID": "결제 완료", "CANCELLED": "취소됨",
+                 "PREPARING": "결제 완료", "READY": "결제 완료", "COMPLETED": "결제 완료"}
+# 고객이 키오스크에서 직접 취소할 수 있는 시간(초). 이후에는 직원이 관리자 화면에서 취소한다.
+CUSTOMER_CANCEL_WINDOW_SEC = int(os.getenv("CUSTOMER_CANCEL_WINDOW_SEC", "180"))
+
+
+def get_order(order_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+        if row is None:
+            return None
+        order = dict(row)
+        order["items"] = [dict(r) for r in conn.execute(
+            "SELECT * FROM order_items WHERE order_id=?", (order_id,))]
+    return order
+
+
+def get_order_by_request_id(request_id: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT id FROM orders WHERE request_id=?", (request_id,)).fetchone()
+    return get_order(row["id"]) if row else None
+
+
+def change_order_status(order_id: int, new_status: str, *, by_customer: bool = False) -> tuple[dict | None, str | None]:
+    """주문을 취소한다. (주문, 오류메시지) 를 돌려준다. 취소하면 재고를 복구한다.
+    by_customer=True(키오스크)이면 결제 후 CUSTOMER_CANCEL_WINDOW_SEC 이내에만 가능하다. 직원(관리자)은 시간 제한이 없다."""
+    if new_status not in ORDER_STATUSES:
+        return None, "알 수 없는 주문 상태입니다."
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT *, CAST(strftime('%s','now','localtime') AS INTEGER) - CAST(strftime('%s', created_at) AS INTEGER) AS age_sec "
+            "FROM orders WHERE id=?", (order_id,)).fetchone()
+        if row is None:
+            return None, "주문을 찾을 수 없습니다."
+        current = row["status"]
+        if new_status == current:
+            return get_order(order_id), None
+        if current == "CANCELLED":
+            return None, "이미 취소된 주문입니다."
+        if new_status == "PAID":
+            return None, "취소된 주문은 되돌릴 수 없습니다."
+        if by_customer and (row["age_sec"] or 0) > CUSTOMER_CANCEL_WINDOW_SEC:
+            minutes = max(1, CUSTOMER_CANCEL_WINDOW_SEC // 60)
+            return None, f"결제 후 {minutes}분이 지나 키오스크에서는 취소할 수 없어요. 카운터 직원에게 말씀해 주세요."
+        conn.execute(
+            "UPDATE orders SET status=?, status_updated_at=datetime('now','localtime') WHERE id=?",
+            (new_status, order_id),
+        )
+        items = [dict(r) for r in conn.execute("SELECT * FROM order_items WHERE order_id=?", (order_id,))]
+        _apply_stock(conn, [{"menu_name": i["menu_name"], "quantity": i["quantity"],
+                             "is_free": i["is_free"]} for i in items], sign=+1)
+    return get_order(order_id), None
 
 
 def get_orders(date_from: str | None = None, date_to: str | None = None) -> list[dict]:
@@ -407,7 +640,7 @@ def _aggregate(conn: sqlite3.Connection, start: str, end: str) -> dict:
                COALESCE(SUM(final_amount),0) AS sales,
                COALESCE(AVG(final_amount),0) AS avg,
                COALESCE(SUM(CASE WHEN discount_amount > 0 THEN 1 ELSE 0 END),0) AS coupons
-           FROM orders WHERE created_at >= ? AND created_at <= ?""",
+           FROM orders WHERE created_at >= ? AND created_at <= ? AND status != 'CANCELLED'""",
         (start, end),
     ).fetchone()
     return {
@@ -461,7 +694,7 @@ def get_sales_trend(period: str) -> list[dict]:
                        COALESCE(SUM(final_amount),0) AS sales,
                        COUNT(*) AS orders
                 FROM orders
-                WHERE created_at >= ? AND created_at <= ?
+                WHERE created_at >= ? AND created_at <= ? AND status != 'CANCELLED'
                 GROUP BY bucket""",
             (start, end),
         ).fetchall()
@@ -490,7 +723,7 @@ def get_analytics() -> dict:
             """SELECT oi.menu_name, SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                GROUP BY oi.menu_name
                ORDER BY cnt DESC LIMIT 5""",
             (week_start,),
@@ -502,8 +735,22 @@ def get_analytics() -> dict:
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
                LEFT JOIN menus m ON m.name = oi.menu_name
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                GROUP BY COALESCE(oi.category, m.category, '기타')""",
+            (week_start,),
+        ).fetchall()
+
+        # 카테고리별 매출 금액 (무료 제공 제외, 취소 주문 제외)
+        cat_sales_rows = conn.execute(
+            """SELECT COALESCE(oi.category, m.category, '기타') AS category,
+                      SUM(oi.quantity * oi.unit_price) AS amount,
+                      SUM(oi.quantity) AS cnt
+               FROM order_items oi
+               JOIN orders o ON o.id = oi.order_id
+               LEFT JOIN menus m ON m.name = oi.menu_name
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
+               GROUP BY COALESCE(oi.category, m.category, '기타')
+               ORDER BY amount DESC""",
             (week_start,),
         ).fetchall()
 
@@ -512,7 +759,7 @@ def get_analytics() -> dict:
             """SELECT oi.temperature, SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                  AND oi.temperature IN ('HOT','ICE')
                GROUP BY oi.temperature""",
             (week_start,),
@@ -531,7 +778,7 @@ def get_analytics() -> dict:
                    SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                GROUP BY time_slot, oi.menu_name
                ORDER BY time_slot, cnt DESC""",
             (week_start,),
@@ -565,7 +812,15 @@ def get_analytics() -> dict:
         for slot in time_slots
     ]
 
+    total_amount = sum(r["amount"] for r in cat_sales_rows) or 1
+    category_sales = [
+        {"name": r["category"], "amount": r["amount"], "count": r["cnt"],
+         "share": round(r["amount"] / total_amount * 100)}
+        for r in cat_sales_rows
+    ]
+
     return {
+        "category_sales": category_sales,
         "top_menus": top_menus,
         "category_data": category_data,
         "temp_data": temp_data,
