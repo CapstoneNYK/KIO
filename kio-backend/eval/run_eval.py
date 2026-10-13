@@ -142,35 +142,87 @@ def run_set(title, menus, order, cart, reco, report):
     return total_ok, total
 
 
-def eval_intent(report):
-    """의도 분류(LLM) 정확도. Ollama 가 실행 중이어야 한다."""
+def eval_intent_fast(menus):
+    """LLM 없이 규칙(fast_classify)만으로 의도 분류. 확실한 것만 결정하고 나머지는 None(=LLM 담당).
+    핵심 지표: 오분류(wrong)는 0이어야 하고, 결정한 비율(coverage)이 높을수록 LLM 호출이 줄어든다."""
+    from ai.fast_intent import fast_classify
+    from eval.cases_intent import INTENT_CASES
+    names = [m["name"] for m in menus]
+    decided = right = 0
+    wrong = []
+    for text, expected in INTENT_CASES:
+        got = fast_classify(text, names)
+        if got is None:
+            continue
+        decided += 1
+        if got == expected:
+            right += 1
+        else:
+            wrong.append({"text": text, "problems": [f"규칙 예측 {got} (정답 {expected})"]})
+    n = len(INTENT_CASES)
+    print(f"\n=== [규칙] 빠른 의도 분류: 규칙이 결정 {decided}/{n} ({decided / n * 100:.1f}%), 그중 정답 {right}/{decided or 1}, 오분류 {len(wrong)}건")
+    for f in wrong:
+        print(f"  ✗ {f['text']}  {f['problems'][0]}")
+    return {"decided": decided, "total": n, "right": right, "wrong": wrong}
+
+
+def eval_intent(report, menus):
+    """의도 분류 정확도. 규칙 단독 / LLM 단독 / 실제 파이프라인(규칙 → 애매하면 LLM) 세 가지를 잰다. Ollama 필요."""
+    from ai.fast_intent import fast_classify
     from ai.intent import classify_intent
     from eval.cases_intent import INTENT_CASES
-    ok, fails = 0, []
+    names = [m["name"] for m in menus]
+    llm_ok = pipe_ok = 0
+    llm_fails, pipe_fails = [], []
     confusion = {}
+    per_class = {}
     for text, expected in INTENT_CASES:
-        got = classify_intent(text)
-        if got == expected:
-            ok += 1
+        llm = classify_intent(text)
+        fast = fast_classify(text, names)
+        pipe = fast or llm
+        c = per_class.setdefault(expected, {"n": 0, "llm": 0, "pipeline": 0})
+        c["n"] += 1
+        if llm == expected:
+            llm_ok += 1
+            c["llm"] += 1
         else:
-            fails.append({"text": text, "problems": [f"예측 {got} (정답 {expected})"]})
-            confusion[f"{expected}->{got}"] = confusion.get(f"{expected}->{got}", 0) + 1
+            llm_fails.append({"text": text, "problems": [f"예측 {llm} (정답 {expected})"]})
+        if pipe == expected:
+            pipe_ok += 1
+            c["pipeline"] += 1
+        else:
+            key = f"{expected}->{pipe}"
+            confusion[key] = confusion.get(key, 0) + 1
+            pipe_fails.append({"text": text, "problems": [f"예측 {pipe} (정답 {expected}) [{'규칙' if fast else 'LLM'}]"]})
     n = len(INTENT_CASES)
-    print(f"\n=== [LLM] 의도 분류: {ok}/{n} ({ok / n * 100:.1f}%)")
-    for f in fails:
+    print(f"\n=== [LLM 단독] 의도 분류: {llm_ok}/{n} ({llm_ok / n * 100:.1f}%)")
+    for f in llm_fails:
         print(f"  ✗ {f['text']}  {f['problems'][0]}")
-    report["LLM / 의도 분류"] = {"correct": ok, "total": n, "accuracy": round(ok / n * 100, 1),
-                              "confusion": confusion, "failures": fails}
+    print(f"\n=== [실제 파이프라인: 규칙 → LLM] 의도 분류: {pipe_ok}/{n} ({pipe_ok / n * 100:.1f}%)")
+    for f in pipe_fails:
+        print(f"  ✗ {f['text']}  {f['problems'][0]}")
+    print("\n클래스별 정확도 (LLM 단독 / 파이프라인)")
+    for k, c in per_class.items():
+        print(f"  {k:14s} {c['llm']}/{c['n']}  /  {c['pipeline']}/{c['n']}")
+    report["LLM / 의도 분류(LLM 단독)"] = {"correct": llm_ok, "total": n, "accuracy": round(llm_ok / n * 100, 1), "failures": llm_fails}
+    report["LLM / 의도 분류(파이프라인)"] = {"correct": pipe_ok, "total": n, "accuracy": round(pipe_ok / n * 100, 1),
+                                      "confusion": confusion, "per_class": per_class, "failures": pipe_fails}
 
 
 def main():
-    from eval import cases, cases_hard
+    from eval import cases, cases_hard, cases_extra
+    # 평가는 항상 '기본 시드 메뉴'로 한다. 실제 DB에서 품절 처리해 둔 메뉴(예: 아메리카노)가 있으면
+    # 정답이 달라지기 때문이다. 실제 DB 상태로 보고 싶으면 --live
+    if "--live" not in sys.argv:
+        import tempfile
+        admin_db.DB_PATH = Path(tempfile.mkdtemp()) / "eval.db"
     admin_db.init_db()
     menus = admin_db.get_menus()
     report = {}
     sets = [
         ("기본셋", cases.ORDER_CASES, cases.CART_CASES, cases.RECO_CASES),
         ("자연발화셋", cases_hard.ORDER_CASES, cases_hard.CART_CASES, cases_hard.RECO_CASES),
+        ("추가셋", cases_extra.ORDER_CASES, cases_extra.CART_CASES, cases_extra.RECO_CASES),
     ]
     all_ok = all_n = 0
     for title, o, c, r in sets:
@@ -179,8 +231,9 @@ def main():
         all_n += n
     print(f"\n전체(규칙 기반): {all_ok}/{all_n} ({all_ok / all_n * 100:.1f}%)")
     report["overall_rules"] = {"correct": all_ok, "total": all_n, "accuracy": round(all_ok / all_n * 100, 1)}
+    report["intent_rules"] = eval_intent_fast(menus)
     if "--intent" in sys.argv:
-        eval_intent(report)
+        eval_intent(report, menus)
     out = Path(__file__).parent / "report.json"
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"리포트 저장: {out}")

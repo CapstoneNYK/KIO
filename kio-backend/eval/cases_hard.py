@@ -25,7 +25,7 @@ ORDER_CASES = [
 ]
 CART_CASES = [
     ("아까 담은 거 취소", CART, C("cancel", {"type": "remove_last"})),
-    ("아메리카노는 안 마실래요", CART, C("cancel", {"type": "remove_item", "menu": "아메리카노"})),
+    ("아메리카노는 안 마실래요", CART, C("cancel", {"type": "remove_line", "indexes": [0]})),
     ("그냥 다 지워주세요", CART, C("cancel", {"type": "remove_all"})),
     ("아메리카노 한 잔 더 늘려줘", CART1, None),   # 명시 수량이 없으면 명령으로 보지 않음(되묻기 영역)
     ("라떼 하나로 줄여줘", CART, C("modify", {"type": "set_quantity", "menu": "카페라떼", "quantity": 1})),

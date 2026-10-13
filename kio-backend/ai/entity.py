@@ -63,6 +63,15 @@ def _unify_ae_e(ch: str) -> str:
     return ch
 
 
+# STT가 "디카페인"을 자주 잘못 받아 적는 변형들 (티카페인, 디카패인, 디 카페인 ...)
+_STT_DECAF = re.compile(r"디\s*카\s*[페패]\s*인|티카\s*[페패]\s*인")
+
+
+def fix_stt_errors(text: str) -> str:
+    """음성 인식(STT)이 자주 틀리는 단어를 바로잡는다. 메뉴 추출 전에 한 번 적용."""
+    return _STT_DECAF.sub("디카페인", text)
+
+
 def normalize_text(text: str) -> str:
     text = text.lower()
     text = re.sub(r"\s+", "", text)
@@ -215,7 +224,7 @@ _SIZE_PATTERNS = [
 ]
 _SIZE_WORD_RE = _rx(r"사이즈|크기")
 
-_PACK_RE = _rx(r"포장|테이크아웃|가져갈|가져가|들고갈|싸줘|싸서")
+_PACK_RE = _rx(r"포장|테이크아웃|가져갈|가져가|들고갈|싸줘|싸서|싸주|싸드|싸가")
 _DINE_RE = _rx(r"매장|먹고갈|먹고가|드시고|여기서")
 
 
@@ -424,7 +433,28 @@ def extract_all_menus_from_text(text: str, menu_names: list = None) -> list:
     return found
 
 
+_DISTRIBUTIVE = re.compile(normalize_text(r"씩|둘다|모두|전부|다같이"))
+
+
+def _share_trailing_temperature(results: list, last_part: str) -> None:
+    """"얼그레이랑 캐모마일 따뜻하게 하나씩"처럼 마지막에 온 온도·'씩' 표현은 앞 메뉴에도 적용한다."""
+    if len(results) < 2 or not _DISTRIBUTIVE.search(normalize_text(last_part)):
+        return
+    last = results[-1]
+    temp = "hot" if "hot" in last["attributes"] else "ice" if "ice" in last["attributes"] else None
+    if not temp:
+        return
+    prefix = "핫 " if temp == "hot" else "아이스 "
+    for prev in results[:-1]:
+        if "hot" in prev["attributes"] or "ice" in prev["attributes"]:
+            continue
+        prev["attributes"] = list(prev["attributes"]) + [temp]
+        if prev["menu"] and not prev["menu"].startswith(("핫 ", "아이스 ")):
+            prev["menu"] = prefix + prev["menu"]
+
+
 def extract_multi_order(text: str, menu_names: list = None) -> list:
+    text = fix_stt_errors(text)
     # 1단계: 구분자로 분리 시도
     parts = MULTI_SPLIT_PATTERN.split(text)
     if len(parts) > 1:
@@ -451,6 +481,7 @@ def extract_multi_order(text: str, menu_names: list = None) -> list:
                 if prev.get("packaging") is None and entity.get("packaging") is not None:
                     prev["packaging"] = entity["packaging"]
         if results:
+            _share_trailing_temperature(results, parts[-1])
             return results
 
     # 2단계: 구분자 없이 나열된 경우 전체 텍스트 스캔

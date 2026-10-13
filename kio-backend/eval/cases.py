@@ -100,9 +100,9 @@ CART_CASES = [
     ("전부 취소할게요", CART, C("cancel", {"type": "remove_all"})),
     ("처음부터 다시 할게요", CART, C("cancel", {"type": "remove_all"})),
     ("장바구니 비워줘", CART, C("cancel", {"type": "remove_all"})),
-    ("아메리카노 빼줘", CART, C("cancel", {"type": "remove_item", "menu": "아메리카노"})),
-    ("라떼 취소해 주세요", CART, C("cancel", {"type": "remove_item", "menu": "카페라떼"})),
-    ("카페라떼 삭제", CART, C("cancel", {"type": "remove_item", "menu": "카페라떼"})),
+    ("아메리카노 빼줘", CART, C("cancel", {"type": "remove_line", "indexes": [0]})),
+    ("라떼 취소해 주세요", CART, C("cancel", {"type": "remove_line", "indexes": [1]})),
+    ("카페라떼 삭제", CART, C("cancel", {"type": "remove_line", "indexes": [1]})),
     ("방금 거 취소해줘", CART, C("cancel", {"type": "remove_last"})),
     ("마지막에 담은 거 빼줘", CART, C("cancel", {"type": "remove_last"})),
     ("아메리카노 3잔으로 바꿔줘", CART, C("modify", {"type": "set_quantity", "menu": "아메리카노", "quantity": 3})),
@@ -168,4 +168,16 @@ ORDER_CASES += [
     ("에이드 중에 레몬으로 주세요", [{"menu": "레몬 에이드", "temp": "ICE", "qty": 1}]),
     ("스무디는 딸기로 한 잔", [{"menu": "딸기 스무디", "temp": "ICE", "qty": 1}]),
     ("망고 스무디 하나 주세요", [{"menu": "망고 요거트 스무디", "temp": "ICE", "qty": 1}]),
+]
+
+# 줄 단위 취소·옵션 수정 (프론트가 수량/옵션을 포함한 문자열을 보낸다)
+CART_LINES = ["아이스 카페라떼 ×2", "아이스 카페라떼 (시럽 적게)", "아이스 아메리카노"]
+CART_CASES += [
+    ("처음에 시킨 카페라떼 취소해줘", CART_LINES, C("cancel", {"type": "remove_line", "indexes": [0]})),
+    ("마지막 카페라떼 빼줘", CART_LINES, C("cancel", {"type": "remove_line", "indexes": [1]})),
+    ("방금 담은 카페라떼 취소", CART_LINES, C("cancel", {"type": "remove_line", "indexes": [1]})),
+    ("카페라떼 전부 취소해줘", CART_LINES, C("cancel", {"type": "remove_line", "indexes": [0, 1]})),
+    ("카페라떼 취소해줘", CART_LINES, C("cancel")),  # 여러 줄이라 되묻기 (액션 없음)
+    ("카페라떼 담은 거에 하나는 시럽 적게", ["아이스 카페라떼 ×2"],
+     C("modify", {"type": "set_options", "index": 0, "count": 1, "options": [{"name": "시럽 적게", "count": 1}]})),
 ]

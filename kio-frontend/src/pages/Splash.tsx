@@ -65,9 +65,10 @@ export const Splash = () => {
 
       {/* 포스터 슬라이드 */}
       <div className="relative z-10 flex flex-1 min-h-0 flex-col items-center justify-center px-8 py-2">
-        <div className="w-full max-w-lg overflow-hidden rounded-3xl shadow-2xl">
+        {/* 남는 높이 안에서 포스터 전체가 보이도록 높이에 맞춰 줄인다 (잘리지 않게 object-contain) */}
+        <div className="w-full max-w-lg flex-1 min-h-0 overflow-hidden">
           <div
-            className="flex"
+            className="flex h-full"
             style={{
               transform: `translateX(-${currentIndex * 100}%)`,
               transition: transitionEnabled
@@ -76,13 +77,14 @@ export const Splash = () => {
             }}
           >
             {EXTENDED_POSTERS.map((poster, index) => (
-              <img
-                key={index}
-                src={poster}
-                alt={`포스터 ${(index % POSTERS.length) + 1}`}
-                className="w-full shrink-0 object-cover"
-                draggable={false}
-              />
+              <div key={index} className="flex h-full w-full shrink-0 items-center justify-center">
+                <img
+                  src={poster}
+                  alt={`포스터 ${(index % POSTERS.length) + 1}`}
+                  className="max-h-full max-w-full rounded-3xl object-contain shadow-2xl"
+                  draggable={false}
+                />
+              </div>
             ))}
           </div>
         </div>
