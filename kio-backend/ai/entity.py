@@ -67,9 +67,21 @@ def _unify_ae_e(ch: str) -> str:
 _STT_DECAF = re.compile(r"디\s*카\s*[페패]\s*인|티카\s*[페패]\s*인")
 
 
+# "샷 추가"를 "찹 추가/샵 추가/삿 추가"로 잘못 받아 적는 경우 ("추가" 바로 앞일 때만 보정해 오탐을 막는다)
+_STT_SHOT = re.compile(r"(?:찹|챱|샵|삿|셧|샤)(?=\s*(?:을|를)?\s*(?:더\s*)?추가)")
+
+
+# 영어 알파벳 T로 적힌 "티"("T로 된 거"), "할인에 등/할인 해택" 같은 오인식
+_STT_TEA_T = re.compile(r"(?<![A-Za-z])[Tt](?![A-Za-z])(?=\s*(?:로|가|를|는|은|종류|류|말고|계열|\b))")
+_STT_DISCOUNT = re.compile(r"할인\s*(?:에\s*등|해택|헤택|혜택|에\s*택)")
+
+
 def fix_stt_errors(text: str) -> str:
     """음성 인식(STT)이 자주 틀리는 단어를 바로잡는다. 메뉴 추출 전에 한 번 적용."""
-    return _STT_DECAF.sub("디카페인", text)
+    text = _STT_DECAF.sub("디카페인", text)
+    text = _STT_TEA_T.sub("티", text)
+    text = _STT_DISCOUNT.sub("할인혜택", text)
+    return _STT_SHOT.sub("샷", text)
 
 
 def normalize_text(text: str) -> str:
@@ -453,8 +465,45 @@ def _share_trailing_temperature(results: list, last_part: str) -> None:
             prev["menu"] = prefix + prev["menu"]
 
 
+# "라떼 세 잔, 하나는 샷 추가하고 하나는 시럽 추가" — 같은 메뉴를 잔마다 다른 옵션으로 나눠 주문
+_UNIT_START = re.compile(r"(?<![가-힣0-9])(\d+|한|하나|두|둘|세|셋|네|넷)\s*(?:잔|개)?\s*(?:은|는|만)(?=\s)")
+_UNIT_NUM = {"한": 1, "하나": 1, "두": 2, "둘": 2, "세": 3, "셋": 3, "네": 4, "넷": 4}
+
+
+def _per_unit_orders(text: str, menu_names: Optional[list]) -> Optional[list]:
+    starts = list(_UNIT_START.finditer(text))
+    if not starts:
+        return None
+    prefix = text[:starts[0].start()]
+    base = extract_entity(prefix, menu_names)
+    if not base["menu"]:
+        return None
+    total = extract_quantity(prefix)
+    packaging = extract_packaging(text)
+    out, used = [], 0
+    for i, m in enumerate(starts):
+        end = starts[i + 1].start() if i + 1 < len(starts) else len(text)
+        seg = text[m.end():end]
+        g = m.group(1)
+        n = int(g) if g.isdigit() else _UNIT_NUM.get(g, 1)
+        details = extract_option_details(seg)
+        e = dict(base)
+        e.update(quantity=n, option_details=details, options=[d["name"] for d in details], packaging=packaging)
+        out.append(e)
+        used += n
+    rest = max(total - used, 0)
+    if rest:
+        e = dict(base)
+        e.update(quantity=rest, packaging=packaging)
+        out.append(e)
+    return out
+
+
 def extract_multi_order(text: str, menu_names: list = None) -> list:
     text = fix_stt_errors(text)
+    per_unit = _per_unit_orders(text, menu_names)
+    if per_unit:
+        return per_unit
     # 1단계: 구분자로 분리 시도
     parts = MULTI_SPLIT_PATTERN.split(text)
     if len(parts) > 1:
