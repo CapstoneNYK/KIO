@@ -36,12 +36,16 @@ interface ChatPrefs {
   setTtsOn: (v: boolean) => void;
   resetCount: number;
   resetChat: () => void;
+  closeCount: number;
+  closeChat: () => void;
 }
 
 export const useChatPrefs = create<ChatPrefs>((set, get) => ({
   ...load(),
   resetCount: 0,
   resetChat: () => set((s) => ({ resetCount: s.resetCount + 1 })),
+  closeCount: 0,
+  closeChat: () => set((s) => ({ closeCount: s.closeCount + 1 })),
   setScale: (scale) => {
     set({ scale });
     save(scale, get().ttsOn);

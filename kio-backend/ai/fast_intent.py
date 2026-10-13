@@ -17,6 +17,7 @@ _RE_RECOMMEND = _rx(r"추천|골라줘|골라주|뭐마실|뭐먹|맛있는거|�
 _RE_RECO_REQUEST = _rx(r"추천해줘|추천해주세요|추천해달라|추천좀|추천해봐|추천해요|추천해줄래|추천부탁")
 _RE_PAY_VERB = _rx(r"결제|계산|지불|페이로|카드로|쓸게|쓰겠|할게|하겠|해줘|해주세요|진행")
 _RE_ORDER_VERB = _rx(r"주세요|주셔|줘|줄래|주라|담아|담을게|넣어|주문|할게|하겠|부탁|드릴게|먹을게|마실게|시킬게|원해|원합니다")
+_RE_CAFFEINE_ASK = _rx(r"(?:디카페인|카페인(?:이|은)?(?:없는|프리|안든|적은)).*(?:뭐|있|종류|메뉴|음료|거|것)|(?:뭐|어떤).*디카페인")
 _RE_COUPON = _rx(r"쿠폰|바코드|상품권|기프티콘")
 _RE_COUPON_ACT = _rx(r"쓸게|쓰고|쓰려|사용|스캔|찍을|찍어|있어요|있는데|있습니다|있어|할게|등록")
 _RE_ORDINAL = _rx(r"\d+번(?:으로|째|거|걸|이요)?|[한두세네다섯]번째")
@@ -37,6 +38,9 @@ def fast_classify(query: str, menu_names: Optional[list] = None) -> Optional[str
         if not is_question and _RE_COUPON_ACT.search(t) and not menu:
             return "coupon"
         return None
+
+    if _RE_CAFFEINE_ASK.search(t) and not _RE_ORDER_VERB.search(t) and not _RE_HAS_QTY.search(t) and not _RE_ORDINAL.search(t):
+        return "recommend"
 
     if _RE_RECOMMEND.search(t):
         if _RE_ORDINAL.search(t) and _RE_ORDER_VERB.search(t) and not _RE_RECO_REQUEST.search(t):

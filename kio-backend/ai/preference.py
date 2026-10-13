@@ -148,7 +148,7 @@ def parse_conditions(text: str) -> Conditions:
     for rx, cats in _CATEGORY_PATTERNS:
         if rx.search(t):
             c.categories.extend(cats)
-    if not c.exclude_categories and not c.categories and _RE_COFFEE.search(t):
+    if not c.exclude_categories and not c.categories and (_RE_COFFEE.search(t) or "디카페인" in t):
         c.categories = list(_COFFEE_CATEGORIES)
 
     scrubbed = t

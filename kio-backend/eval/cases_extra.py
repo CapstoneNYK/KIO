@@ -113,6 +113,9 @@ CART_CASES = [
 ]
 
 RECO_CASES = [
+    ("디카페인 음료 뭐있어", dict(caffeine=False, coffee_only=True)),
+    ("디카페인 뭐 있어요", dict(caffeine=False, coffee_only=True)),
+    ("디카페인 추천해줘", dict(caffeine=False, coffee_only=True)),
     ("카페인 없는 거 마시고 싶어요", dict(caffeine=False)),
     ("카페인 없는 시원한 거 추천해줘", dict(caffeine=False, temp="ICE")),
     ("따뜻하고 부드러운 거 마시고 싶어", dict(temp="HOT", tags=["부드러운"])),

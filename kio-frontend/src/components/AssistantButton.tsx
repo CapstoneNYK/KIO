@@ -38,6 +38,11 @@ export const AssistantButton = () => {
     if (guideScreen) setMode("idle");
   }, [guideScreen]);
 
+  const closeCount = useChatPrefs((s) => s.closeCount);
+  useEffect(() => {
+    if (closeCount > 0) setMode("idle");
+  }, [closeCount]);
+
   const handleClick = () => {
     setShowGreeting(false);
     if (mode === "idle") setMode("voice");

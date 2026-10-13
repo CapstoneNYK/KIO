@@ -96,6 +96,8 @@ def eval_reco(menus):
                 if m is None:
                     problems.append(f"없는 메뉴 {raw}")
                     continue
+                if cond.get("coffee_only") and m["category"] not in ("커피", "디카페인"):
+                    problems.append(f"{name}: 커피가 아님 ({m['category']})")
                 if cond.get("caffeine") is False and m["caffeine"]:
                     problems.append(f"{name}: 카페인 있음")
                 if cond.get("caffeine") is True and not m["caffeine"]:

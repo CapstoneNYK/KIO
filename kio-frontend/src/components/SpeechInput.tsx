@@ -211,6 +211,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           setHighlightPaymentMethod(res.payment_method ?? null);
           setGuideScreen(res.payment_method ? "payment" : "order_confirm");
           setMessages([]);
+          useChatPrefs.getState().closeChat();
         }
         return;
       }
@@ -269,6 +270,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           setTimeout(() => {
             setHighlightPaymentMethod(res.payment_method ?? null);
             setGuideScreen(res.payment_method ? "payment" : "order_confirm");
+            useChatPrefs.getState().closeChat();
           }, 1000);
           return;
         }
@@ -281,9 +283,6 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       const newMessages: Message[] = [
         { role: "bot", text: botText, recommended: res.intent === "recommend" ? res.recommended_menus : undefined },
       ];
-      if (res.intent === "order" && res.discount_tip) {
-        newMessages.push({ role: "bot", text: res.discount_tip });
-      }
       setMessages((prev) => [...prev, ...newMessages]);
     } catch (error) {
       console.error(error);

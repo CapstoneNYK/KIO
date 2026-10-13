@@ -34,7 +34,6 @@ export interface AskResponse {
   orders?: OrderInfo[];
   recommended_menus?: string[];
   payment_method?: string | null;
-  discount_tip?: string | null;
   cart_actions?: CartAction[];
 }
 

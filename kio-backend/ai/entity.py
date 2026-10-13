@@ -274,11 +274,27 @@ def extract_packaging(text: str) -> Optional[bool]:
 
 
 def extract_attributes(text: str):
+    raw = text
     text = normalize_text(text)
     attrs = []
     for key, value in ATTRIBUTE_KEYWORDS.items():
         if normalize_text(key) in text:
             attrs.append(value)
+    if "ice" not in attrs and (
+        "아이스" in text or re.search(r"(?<![가-힣])(?:아아|아라|아바라|아카라)(?![가-힣])", raw)
+    ):
+        attrs.append("ice")
+    if "ice" in attrs and "hot" in attrs:
+        neg = re.search(r"말고|아니라|아닌|빼고|싫", text)
+        hot_pos = min((text.find(normalize_text(k)) for k, v in ATTRIBUTE_KEYWORDS.items()
+                       if v == "hot" and normalize_text(k) in text), default=-1)
+        ice_pos = min((text.find(normalize_text(k)) for k, v in ATTRIBUTE_KEYWORDS.items()
+                       if v == "ice" and normalize_text(k) in text), default=-1)
+        if "아이스" in text:
+            ice_pos = text.find("아이스") if ice_pos < 0 else min(ice_pos, text.find("아이스"))
+        if neg:
+            drop = "ice" if ice_pos < hot_pos else "hot"
+            attrs = [x for x in attrs if x != drop]
     return attrs
 
 

@@ -24,7 +24,6 @@ from ai.entity import (
     normalize_text,
 )
 from ai.payment import get_payment_response
-from ai.discount import get_discount_tip
 from ai.stt import transcribe as transcribe_audio
 from ai.logging_utils import log_intent_query
 from ai.order import (
@@ -223,7 +222,6 @@ def _order_response(
         "intent": "order",
         "answer": cart_answer(named, sold_out, alternatives=alternatives, notices=notices),
         "orders": orders,
-        "discount_tip": get_discount_tip() if named else None,
         "sold_out": sold_out,
         "alternatives": alternatives,
     }
