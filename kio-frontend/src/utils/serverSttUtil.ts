@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // 다르므로 실제 기기에서 테스트해보며 값을 조정해야 한다.
 const SILENCE_THRESHOLD = 0.02;
 // 침묵이 이 시간(ms) 이상 지속되면 자동으로 녹음을 끊고 서버로 전송한다.
-const SILENCE_DURATION_MS = 1200;
+// 어르신은 말 중간에 쉬는 경우가 많아 넉넉하게 기다린다.
+const SILENCE_DURATION_MS = 2200;
+// 아직 말을 시작하지 않았을 때는 더 오래(ms) 기다린다. (마이크가 켜지자마자 끊기지 않도록)
+const INITIAL_WAIT_MS = 5000;
 // 안전장치: 아무리 말이 길어도 이 시간이 지나면 강제로 녹음을 종료한다.
 const MAX_RECORDING_MS = 15000;
 
@@ -43,6 +46,7 @@ export const useServerSTT = (language: string = "ko") => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const spokeRef = useRef(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const maxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -111,12 +115,16 @@ export const useServerSTT = (language: string = "ko") => {
       const rms = Math.sqrt(sumSquares / data.length);
 
       if (rms > SILENCE_THRESHOLD) {
+        spokeRef.current = true;
         if (silenceTimerRef.current) {
           clearTimeout(silenceTimerRef.current);
           silenceTimerRef.current = null;
         }
       } else if (!silenceTimerRef.current) {
-        silenceTimerRef.current = setTimeout(stopListening, SILENCE_DURATION_MS);
+        silenceTimerRef.current = setTimeout(
+          stopListening,
+          spokeRef.current ? SILENCE_DURATION_MS : INITIAL_WAIT_MS
+        );
       }
 
       rafRef.current = requestAnimationFrame(tick);
@@ -127,6 +135,7 @@ export const useServerSTT = (language: string = "ko") => {
 
   const startListening = useCallback(async () => {
     if (listening) return;
+    spokeRef.current = false;
     setTranscript("");
 
     try {
