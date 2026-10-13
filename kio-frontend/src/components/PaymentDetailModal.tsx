@@ -3,6 +3,14 @@ import { LuX, LuTag } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
+
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+const PAYMENT_LABELS: Record<string, string> = {
+  card: "카드결제", appcard: "앱카드결제", kakao: "카카오페이",
+  naver: "네이버페이", voucher: "모바일상품권", giftcard: "기프트카드",
+  kt: "KT VIP", tmembership: "T멤버십", cjone: "CJ ONE", uzu: "T우주",
+};
 import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
 import { PaymentCompleteModal } from "./PaymentCompleteModal";
 import { CouponScanner } from "./CouponScanner";
@@ -398,8 +406,10 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
   const [isProcessing, setIsProcessing] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const learningScreen = useLearningStore((s) => s.learningScreen);
-
   const guideScreen = useLearningStore((s) => s.guideScreen);
+  const cartItems = useCartStore((s) => s.items);
+  const isPackaging = useCartStore((s) => s.isPackaging);
+  const coupons = useCouponStore((s) => s.coupons);
 
   useEffect(() => {
     setShowComplete(learningScreen === "payment_complete");
@@ -411,7 +421,35 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
 
   const handleApprove = () => {
     setIsProcessing(true);
-    setTimeout(() => {
+    setTimeout(async () => {
+      const totalAmount = cartItems.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+      const freeDiscount = cartItems.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
+      const couponDiscount = calcDiscount(coupons, totalAmount - freeDiscount, cartItems);
+      const discountAmount = freeDiscount + couponDiscount;
+
+      try {
+        await fetch(`${API_URL}/api/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_method: PAYMENT_LABELS[method] ?? method,
+            total_amount: totalAmount,
+            discount_amount: discountAmount,
+            final_amount: totalAmount - discountAmount,
+            is_packaging: isPackaging,
+            items: cartItems.map((i) => ({
+              menu_name: i.item.title,
+              temperature: i.temperature,
+              quantity: i.quantity,
+              unit_price: i.item.price,
+              is_free: i.isFree ?? false,
+            })),
+          }),
+        });
+      } catch {
+        // 주문 저장 실패해도 결제 완료 화면은 정상 표시
+      }
+
       setIsProcessing(false);
       setShowComplete(true);
     }, 3000);

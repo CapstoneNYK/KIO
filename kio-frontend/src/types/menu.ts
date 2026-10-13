@@ -4,6 +4,8 @@ export interface MenuItem {
   price: number;
   img: string;
   category?: string;
+  temps?: string[];
+  soldOut?: boolean;
 }
 
 export type Temperature = "HOT" | "ICE";

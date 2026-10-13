@@ -24,3 +24,6 @@ Thumbs.db
 
 # DB
 *.db
+
+.claude/
+

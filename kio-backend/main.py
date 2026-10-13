@@ -5,6 +5,7 @@ import tempfile
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ai.recommend import qa_chain, recommend_chain
@@ -20,9 +21,23 @@ from ai.payment import get_payment_response
 from ai.discount import get_discount_tip
 from ai.stt import transcribe as transcribe_audio
 from ai.logging_utils import log_intent_query
-from app.ocr.router import router as ocr_router
-from app.ocr.db import get_all_menu_texts, get_all_discount_texts
+from ai.order import (
+    _is_noise_menu,
+    apply_discount_menu_fallback,
+    cart_answer,
+    entities_to_orders,
+    split_sold_out,
+)
 from app.coupon.router import router as coupon_router
+from app.admin import db as admin_db
+from app.admin.db import UPLOAD_DIR
+from app.admin.router import (
+    router as admin_router,
+    auth_router as admin_auth_router,
+    discounts_public_router,
+    menus_public_router,
+    orders_router,
+)
 
 load_dotenv()
 
@@ -36,15 +51,21 @@ _frontend_urls = [u.strip() for u in os.getenv("FRONTEND_URL", "http://localhost
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_frontend_urls,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3}):5173",
+    allow_origins=[*_frontend_urls, os.getenv("ADMIN_URL", "http://localhost:5174")],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|100\.\d{1,3}\.\d{1,3}\.\d{1,3}):517[3-6]",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(ocr_router)
 app.include_router(coupon_router)
+app.include_router(admin_auth_router)
+app.include_router(admin_router)
+app.include_router(orders_router)
+app.include_router(menus_public_router)
+app.include_router(discounts_public_router)
+
+app.mount("/uploads/menu-images", StaticFiles(directory=UPLOAD_DIR), name="menu-images")
 
 # 직전에 추천했던 메뉴 목록(순서 그대로). 카페 키오스크는 보통 한 번에 한 사람만
 # 이용하므로 세션 관리 없이 전역 변수로 "방금 추천받은 목록"만 기억해두고,
@@ -74,75 +95,16 @@ def _resolve_ordinal_order(query: str) -> dict | None:
     return None
 
 
-# 할인 수단 언급 + 메뉴 미추출(또는 단음절 오인식) 시 할인 대상 메뉴로 보완할 때 쓰는 표.
-# (요청마다 새로 만들 필요 없는 고정 데이터라 모듈 레벨로 뺐다.)
-_DISCOUNT_MENU_MAP = {
-    "T멤버십": ("아메리카노", None),   # None = 온도 그대로 (ICE/HOT 무관)
-    "tmembership": ("아메리카노", None),
-}
-
-
-def _is_noise_menu(menu: str | None) -> bool:
-    """메뉴명이 비어있거나, 할인 키워드 앞글자(T/KT 등)를 잘못 메뉴로 인식한 노이즈인지 판단."""
-    if not menu:
-        return True
-    cleaned = menu.strip()
-    if len(cleaned) <= 2:
-        return True
-    if cleaned.upper() in ("T", "KT", "CJ", "SKT"):
-        return True
-    return False
-
-
-def _entities_to_orders(entities: list[dict]) -> list[dict]:
-    """entity 추출 결과(menu/attributes/quantity/options/needs_recommendation)를
-    프론트에 내려줄 orders 형식으로 변환한다. "아이스 "/"핫 " 접두어가 붙어 있으면
-    분리해서 temperature 필드로 뺀다. order/order_and_pay 두 분기에서 동일하게 써서
-    하나로 뽑았다."""
-    orders = []
-    for entity in entities:
-        base_menu = None
-        temperature = "ICE"
-        if entity["menu"]:
-            raw = entity["menu"]
-            if raw.startswith("아이스 "):
-                base_menu = raw[4:]
-                temperature = "ICE"
-            elif raw.startswith("핫 "):
-                base_menu = raw[2:]
-                temperature = "HOT"
-            else:
-                base_menu = raw
-                temperature = "HOT" if "hot" in entity["attributes"] else "ICE"
-        orders.append({
-            "menu": base_menu,
-            "temperature": temperature,
-            "quantity": entity["quantity"],
-            "options": entity.get("options", []),
-            "needs_recommendation": entity["needs_recommendation"],
-        })
-    return orders
-
-
-def _format_items(named: list[dict]) -> str:
-    return ", ".join(
-        f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
-        for o in named
-    )
-
-
-def _order_response(question: str, orders: list[dict], named: list[dict]) -> dict:
+def _order_response(question: str, orders: list[dict], named: list[dict], sold_out: list[str]) -> dict:
     """"장바구니에 담았습니다" 형태의 일반 주문 응답을 만든다.
-    order 분기와, order_and_pay인데 실제로는 결제수단이 없어서 order로 강등되는
-    경우에서 공용으로 쓴다."""
-    answer = f"{_format_items(named)}을(를) 장바구니에 담았습니다." if named else "어떤 메뉴를 주문하시겠어요?"
-    discount_tip = get_discount_tip(get_all_discount_texts()) if named else None
+    order 분기와, order_and_pay인데 실제로는 결제수단이 없거나 담을 메뉴가 없어서
+    order로 강등되는 경우에서 공용으로 쓴다."""
     return {
         "question": question,
         "intent": "order",
-        "answer": answer,
+        "answer": cart_answer(named, sold_out),
         "orders": orders,
-        "discount_tip": discount_tip,
+        "discount_tip": get_discount_tip() if named else None,
     }
 
 
@@ -203,8 +165,11 @@ async def ask_intent(request: QueryRequest):
     log_intent_query(request.query, intent)
 
     if intent == "order":
-        ocr_menus = get_all_menu_texts()
-        entities = extract_multi_order(request.query, ocr_menus)
+        menus = admin_db.get_menus()
+        menu_names = [m["name"] for m in menus]
+        sold_out_names = {m["name"] for m in menus if m["sold_out"]}
+
+        entities = extract_multi_order(request.query, menu_names)
 
         if all(_is_noise_menu(e.get("menu")) for e in entities):
             ordinal_entity = _resolve_ordinal_order(request.query)
@@ -216,17 +181,12 @@ async def ask_intent(request: QueryRequest):
                 answer = qa_chain.invoke({"question": request.query, "cart_items": request.cart_items})
                 return {"question": request.query, "intent": "qa", "answer": answer}
             else:
-                q_norm = request.query.replace(" ", "")
-                for keyword, (menu, temp) in _DISCOUNT_MENU_MAP.items():
-                    if keyword.replace(" ", "") in q_norm:
-                        resolved_temp = temp if temp else "ICE"
-                        entities = [{"menu": menu, "quantity": 1, "temperature": resolved_temp,
-                                     "options": [], "attributes": [], "needs_recommendation": False}]
-                        break
+                entities = apply_discount_menu_fallback(entities, request.query, menu_names)
 
-        orders = _entities_to_orders(entities)
+        orders_all = entities_to_orders(entities)
+        orders, sold_out = split_sold_out(orders_all, sold_out_names)
         named = [o for o in orders if o["menu"]]
-        return _order_response(request.query, orders, named)
+        return _order_response(request.query, orders, named, sold_out)
     elif intent == "coupon":
         return {
             "question": request.query,
@@ -243,40 +203,45 @@ async def ask_intent(request: QueryRequest):
             "recommended_menus": result.menus,
         }
     elif intent == "order_and_pay":
-        ocr_menus = get_all_menu_texts()
-        entities = extract_multi_order(request.query, ocr_menus)
+        menus = admin_db.get_menus()
+        menu_names = [m["name"] for m in menus]
+        sold_out_names = {m["name"] for m in menus if m["sold_out"]}
+
+        entities = extract_multi_order(request.query, menu_names)
 
         if all(not e.get("menu") for e in entities):
             ordinal_entity = _resolve_ordinal_order(request.query)
             if ordinal_entity:
                 entities = [ordinal_entity]
+            else:
+                entities = apply_discount_menu_fallback(entities, request.query, menu_names)
 
-        orders = _entities_to_orders(entities)
+        orders_all = entities_to_orders(entities)
+        orders, sold_out = split_sold_out(orders_all, sold_out_names)
         named = [o for o in orders if o["menu"]]
         _, payment_method = get_payment_response(request.query)
 
         if not payment_method:
             # 결제수단이 실제로 언급되지 않았는데도 로컬 LLM이 order_and_pay로
-            # 잘못 분류하는 경우가 있다("결제수단 언급 없음"이 order_and_pay가 될
-            # 조건이 아닌데도 종종 발생). 결제 화면으로 강제 이동시키지 않고
+            # 잘못 분류하는 경우가 있다. 결제 화면으로 강제 이동시키지 않고
             # 그냥 주문(order)처럼 장바구니에만 담는다.
-            return _order_response(request.query, orders, named)
+            return _order_response(request.query, orders, named, sold_out)
 
-        if named:
-            method_label = {
-                "card": "카드", "kakao": "카카오페이", "naver": "네이버페이",
-                "appcard": "앱카드", "voucher": "모바일상품권", "giftcard": "기프트카드",
-                "kt": "KT VIP", "tmembership": "T멤버십", "cjone": "CJ ONE", "uzu": "T우주",
-            }.get(payment_method or "", "")
-            suffix = f" {method_label}로 결제 화면으로 이동합니다." if method_label else " 결제 화면으로 이동합니다."
-            answer = f"{_format_items(named)}을(를) 장바구니에 담고{suffix}"
-        else:
-            answer = "어떤 메뉴를 주문하시겠어요?"
+        if sold_out and not named:
+            # 담을 수 있는 메뉴가 없으면 결제 화면으로 넘어가지 않도록 일반 주문 응답으로 돌려준다
+            return _order_response(request.query, orders, named, sold_out)
+
+        method_label = {
+            "card": "카드", "kakao": "카카오페이", "naver": "네이버페이",
+            "appcard": "앱카드", "voucher": "모바일상품권", "giftcard": "기프트카드",
+            "kt": "KT VIP", "tmembership": "T멤버십", "cjone": "CJ ONE", "uzu": "T우주",
+        }.get(payment_method or "", "")
+        suffix = f" {method_label}로 결제 화면으로 이동합니다." if method_label else " 결제 화면으로 이동합니다."
 
         return {
             "question": request.query,
             "intent": "order_and_pay",
-            "answer": answer,
+            "answer": cart_answer(named, sold_out, pay_suffix=suffix),
             "orders": orders,
             "payment_method": payment_method,
         }

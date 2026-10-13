@@ -1,24 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { tpass_poster, t_poster, kt_poster, cafe_logo } from "../assets";
+import { useDiscountStore } from "../store/discountStore";
 
-const POSTERS = [tpass_poster, t_poster, kt_poster];
+// 관리자 페이지에 등록된 포스터가 없거나 아직 못 불러왔을 때 쓰는 기본 이미지
+const FALLBACK_POSTERS = [tpass_poster, t_poster, kt_poster];
 const SLIDE_INTERVAL = 3500;
-const EXTENDED_POSTERS = [...POSTERS, POSTERS[0]];
 
 export const Splash = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const fetchedPosters = useDiscountStore((s) => s.posters);
+  const postersLoading = useDiscountStore((s) => s.loading);
+
+  const POSTERS = useMemo(
+    () => (fetchedPosters.length > 0 ? fetchedPosters.map((p) => p.url) : FALLBACK_POSTERS),
+    [fetchedPosters]
+  );
+  const EXTENDED_POSTERS = useMemo(() => [...POSTERS, POSTERS[0]], [POSTERS]);
+
+  // 관리자 포스터가 늦게 도착해서 개수가 바뀌면 슬라이드 위치를 0으로 되돌린다
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [POSTERS.length]);
 
   useEffect(() => {
+    if (postersLoading) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => prev + 1);
     }, SLIDE_INTERVAL);
     return () => clearInterval(timer);
-  }, []);
+  }, [postersLoading, POSTERS.length]);
 
-  // 복제 슬라이드(index 3)에 도달하면 애니메이션 후 조용히 0으로 초기화
+  // 복제 슬라이드(마지막 index)에 도달하면 애니메이션 후 조용히 0으로 초기화
   useEffect(() => {
     if (currentIndex === POSTERS.length) {
       const timeout = setTimeout(() => {
@@ -27,7 +42,7 @@ export const Splash = () => {
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [currentIndex]);
+  }, [currentIndex, POSTERS.length]);
 
   // transition 비활성화 후 다음 틱에 다시 활성화
   useEffect(() => {
