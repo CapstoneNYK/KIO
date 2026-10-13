@@ -76,14 +76,17 @@ def entities_to_orders(entities: list[dict]) -> list[dict]:
     for entity in entities:
         base_menu = None
         temperature = "ICE"
+        explicit = "hot" in entity["attributes"] or "ice" in entity["attributes"]
         raw = entity["menu"]
         if raw:
             if raw.startswith("아이스 "):
                 base_menu = raw[len("아이스 "):]
                 temperature = "ICE"
+                explicit = True
             elif raw.startswith("핫 "):
                 base_menu = raw[len("핫 "):]
                 temperature = "HOT"
+                explicit = True
             else:
                 base_menu = raw
                 temperature = "HOT" if "hot" in entity["attributes"] else "ICE"
@@ -91,6 +94,7 @@ def entities_to_orders(entities: list[dict]) -> list[dict]:
         orders.append({
             "menu": base_menu,
             "temperature": temperature,
+            "temp_explicit": explicit,
             "quantity": entity["quantity"],
             "options": [d["name"] for d in details],
             "option_details": details,
@@ -125,10 +129,14 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
     불가한 옵션만 빼고 메뉴는 그대로 담는다."""
     by_name = {m["name"]: m for m in menus}
     notices: list[str] = []
+    defaulted: list[str] = []  # 온도를 말하지 않아 아이스로 담은 메뉴 (따뜻하게도 가능한 것만)
     for order in orders:
         info = by_name.get(order["menu"]) if order["menu"] else None
         if info is None:
             continue
+        if (not order.get("temp_explicit", True) and order["temperature"] == "ICE"
+                and "HOT" in (info.get("temps") or []) and order["menu"] not in defaulted):
+            defaulted.append(order["menu"])
         # 메뉴가 지원하지 않는 온도면 지원하는 온도로 맞춘다 (예: 에스프레소는 HOT만, 스무디는 ICE만)
         temps = info.get("temps") or []
         if temps and order["temperature"] not in temps and len(temps) == 1:
@@ -154,6 +162,9 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
             notices.append(f"{order['menu']}에는 {label} 옵션을 선택할 수 없어서 빼고 담았어요.{hint}")
         order["option_details"] = kept
         order["options"] = [d["name"] for d in kept]
+    if defaulted:
+        names = ", ".join(defaulted)
+        notices.append(f"온도를 말씀하지 않으셔서 {_josa(names, '은', '는')} 아이스로 담았어요. 따뜻하게 드시려면 '다 핫으로 바꿔줘'라고 말씀해 주세요.")
     # 같은 안내가 중복되지 않게
     return orders, list(dict.fromkeys(notices))
 

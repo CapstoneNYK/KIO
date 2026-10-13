@@ -62,13 +62,30 @@ ORDER_CASES = [
     ("딸기 스무디 따뜻하게 주세요", [O("딸기 스무디", "ICE")]),
     ("레몬 에이드 샷 추가해서 주세요", [O("레몬 에이드", opts={})]),
     ("오렌지 주스 크림 올려주세요", [O("오렌지 주스", opts={})]),
+    # 같은 메뉴를 잔마다 다른 옵션으로 나눠 주문
+    ("따뜻한 라떼 세 잔 하나는 샷 추가해주고 하나는 시럽 추가해줘",
+     [O("카페라떼", "HOT", 1, opts={"shot": ("샷추가", 1)}), O("카페라떼", "HOT", 1, opts={"syrup": ("시럽 추가", 1)}), O("카페라떼", "HOT", 1, opts={})]),
+    ("아메리카노 두 잔인데 한 잔은 연하게", [O("아메리카노", qty=1, opts={"light": ("연하게", 1)}), O("아메리카노", qty=1, opts={})]),
+    ("카페라떼 네 잔 두 잔은 샷 추가 한 잔은 시럽 적게",
+     [O("카페라떼", qty=2, opts={"shot": ("샷추가", 1)}), O("카페라떼", qty=1, opts={"syrup": ("시럽 적게", 1)}), O("카페라떼", qty=1, opts={})]),
     # STT 오인식 보정
+    ("따뜻한 라떼 찹 추가해줘", [O("카페라떼", "HOT", opts={"shot": ("샷추가", 1)})]),
+    ("아메리카노 샵 추가해서 한 잔", [O("아메리카노", opts={"shot": ("샷추가", 1)})]),
     ("티카페인 아메리카노 한 잔", [O("디카페인 아메리카노")]),
     ("디카패인 라떼 따뜻하게 하나", [O("디카페인 라떼", "HOT")]),
 ]
 
+TEMP_CART = ["아이스 얼그레이 ×3", "아이스 히비스커스 ×2"]
 LINES = ["아이스 아메리카노", "따뜻한 카페라떼 ×2", "아이스 바닐라라떼 (시럽 적게)"]
 CART_CASES = [
+    # 온도 일괄 정정 (STT 오인식 포함)
+    ("아이스가 아니라 다 핫이라고", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("아이스가 아니라 다 하시라고", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("아이스가 아니라 다 하신대", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("다 따뜻하게 바꿔줘", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("전부 뜨거운 걸로 해주세요", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("핫 말고 다 아이스로 해줘", LINES, C("modify", {"type": "set_temperature_all", "temperature": "ICE"})),
+    ("아이스 말고 핫으로 바꿔줘", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     # 전체/마지막
     ("전부 다 빼 주세요", CART, C("cancel", {"type": "remove_all"})),
     ("모두 취소할게요", CART, C("cancel", {"type": "remove_all"})),
@@ -131,7 +148,58 @@ RECO_CASES = [
     ("안 단 시원한 거 추천해줘", dict(exclude_tags=["달콤"], temp="ICE")),
     ("부드러운 거 한 개만 추천", dict(tags=["부드러운"], limit=1)),
     ("잠 깨는 음료 추천해줘", dict(caffeine=True)),
+    # 종류를 정하지 않은 요청은 커피만 나오지 않고 여러 계열이 섞여야 한다
+    ("달달한 거 추천해줘", dict(tags=["달콤"], min_categories=2)),
+    ("상큼한 거 추천해줘", dict(tags=["상큼"], min_categories=2)),
+    ("시원한 거 추천해줘", dict(temp="ICE", min_categories=2)),
     ("뭐가 좋을까", None),
     ("아무거나 추천해줘", None),
     ("뭐 먹을지 모르겠어", None),
+]
+
+# ── D. 되묻기 이어 받기(대화형): 여러 턴. 각 턴 = (발화, 장바구니, 기대) / 기대 형식은 C(...) 또는 None ──
+L3 = ["아이스 카페라떼 ×2", "아이스 카페라떼 (시럽 적게)", "아이스 아메리카노"]
+L2T = ["아이스 카페라떼", "따뜻한 카페라떼"]
+DIALOG_CASES = [
+    ("되묻기 후 '처음 거'", [
+        ("카페라떼 취소해줘", L3, C("cancel")),
+        ("처음 거요", L3, C("cancel", {"type": "remove_line", "indexes": [0]})),
+    ]),
+    ("되묻기 후 '마지막'", [
+        ("카페라떼 빼줘", L3, C("cancel")),
+        ("마지막 거", L3, C("cancel", {"type": "remove_line", "indexes": [1]})),
+    ]),
+    ("되묻기 후 '2번'", [
+        ("카페라떼 취소해줘", L3, C("cancel")),
+        ("2번이요", L3, C("cancel", {"type": "remove_line", "indexes": [1]})),
+    ]),
+    ("되묻기 후 '전부'", [
+        ("카페라떼 지워줘", L3, C("cancel")),
+        ("전부 다 취소", L3, C("cancel", {"type": "remove_line", "indexes": [0, 1]})),
+    ]),
+    ("되묻기 후 온도로 지정", [
+        ("카페라떼 취소해줘", L2T, C("cancel")),
+        ("따뜻한 거", L2T, C("cancel", {"type": "remove_line", "indexes": [1]})),
+    ]),
+    ("되묻기 후 '됐어요'", [
+        ("카페라떼 취소해줘", L3, C("cancel")),
+        ("아니 됐어요", L3, C("cancel")),
+        ("처음 거", L3, None),  # 이미 취소된 되묻기는 이어받지 않는다
+    ]),
+    ("어떤 메뉴냐고 되물은 뒤 메뉴 이름으로 답", [
+        ("취소할게요", L3, C("cancel")),
+        ("아메리카노요", L3, C("cancel", {"type": "remove_line", "indexes": [2]})),
+    ]),
+    ("옵션 수정 되묻기 후 줄 선택", [
+        ("카페라떼 담은 거에 샷 추가해줘", L3, C("modify")),
+        ("처음 거", L3, C("modify", {"type": "set_options", "index": 0, "count": 2})),
+    ]),
+    ("되묻기가 없으면 짧은 말을 명령으로 오해하지 않는다", [
+        ("처음 거", L3, None),
+        ("2번이요", L3, None),
+    ]),
+    ("되묻기 중 긴 새 발화는 새 요청으로 처리", [
+        ("카페라떼 취소해줘", L3, C("cancel")),
+        ("아메리카노 두 잔 주세요", L3, None),
+    ]),
 ]
