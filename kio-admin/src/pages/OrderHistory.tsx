@@ -8,6 +8,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   is_free: number;
+  options?: string;
 }
 
 interface Order {
@@ -59,7 +60,7 @@ const downloadCsv = (orders: Order[]) => {
     o.payment_method,
     o.is_packaging ? "포장" : "매장",
     o.items
-      .map((i) => `${i.menu_name}${i.temperature ? `(${i.temperature})` : ""} x${i.quantity}${i.is_free ? " [무료]" : ""}`)
+      .map((i) => `${i.menu_name}${i.temperature ? `(${i.temperature})` : ""} x${i.quantity}${i.options ? ` {${i.options}}` : ""}${i.is_free ? " [무료]" : ""}`)
       .join(" / "),
     o.total_amount,
     o.discount_amount,
@@ -307,6 +308,9 @@ export const OrderHistory = () => {
                             )}
                             <span className="font-medium text-gray-800">{item.menu_name}</span>
                             <span className="text-gray-400">× {item.quantity}</span>
+                            {item.options ? (
+                              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{item.options}</span>
+                            ) : null}
                             {item.is_free ? (
                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-50 text-green-600">무료(쿠폰)</span>
                             ) : null}
@@ -323,7 +327,6 @@ export const OrderHistory = () => {
                             className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
                             주문 취소
                           </button>
-                          <span className="text-xs text-gray-400">결제 후 3분이 지나 고객이 직접 취소할 수 없는 경우에 사용하세요.</span>
                         </div>
                       )}
                       <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap justify-end gap-x-6 gap-y-1 text-xs text-gray-500">

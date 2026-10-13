@@ -232,6 +232,7 @@ class OrderItem(BaseModel):
     quantity: int
     unit_price: int
     is_free: bool = False
+    options: str = Field(default="", max_length=200)  # 예: "샷추가 ×2, 시럽 적게, 포장"
 
 
 class OrderCreate(BaseModel):

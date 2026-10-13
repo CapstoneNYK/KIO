@@ -144,7 +144,8 @@ def init_db() -> None:
                 quantity    INTEGER NOT NULL DEFAULT 1,
                 unit_price  INTEGER NOT NULL,
                 is_free     INTEGER NOT NULL DEFAULT 0,
-                category    TEXT
+                category    TEXT,
+                options     TEXT NOT NULL DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS admins (
@@ -209,6 +210,8 @@ def init_db() -> None:
         item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(order_items)")}
         if "category" not in item_columns:
             conn.execute("ALTER TABLE order_items ADD COLUMN category TEXT")
+        if "options" not in item_columns:
+            conn.execute("ALTER TABLE order_items ADD COLUMN options TEXT NOT NULL DEFAULT ''")
         conn.execute(
             """UPDATE order_items
                SET category = (SELECT m.category FROM menus m WHERE m.name = order_items.menu_name)
@@ -513,12 +516,12 @@ def save_order(
         }
         conn.executemany(
             """INSERT INTO order_items
-               (order_id, menu_name, temperature, quantity, unit_price, is_free, category)
-               VALUES (?,?,?,?,?,?,?)""",
+               (order_id, menu_name, temperature, quantity, unit_price, is_free, category, options)
+               VALUES (?,?,?,?,?,?,?,?)""",
             [
                 (order_id, i["menu_name"], i.get("temperature", ""),
                  i["quantity"], i["unit_price"], int(i.get("is_free", False)),
-                 category_by_name.get(i["menu_name"]))
+                 category_by_name.get(i["menu_name"]), (i.get("options") or "")[:200])
                 for i in items
             ],
         )
