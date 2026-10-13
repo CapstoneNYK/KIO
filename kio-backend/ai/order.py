@@ -1,3 +1,4 @@
+import re
 DISCOUNT_MENU_MAP = {
     "T멤버십": "아메리카노",
     "tmembership": "아메리카노",
@@ -24,7 +25,8 @@ OPTION_LABELS = {
 
 def _josa(word: str, with_final: str, without_final: str) -> str:
     """받침 유무에 맞는 조사를 붙인다. 한글로 끝나지 않으면(예: ")") 'A(B)' 형태로 표기한다."""
-    stripped = word.rstrip(") ")
+    # "아이스 카페라떼 (시럽 적게)"처럼 괄호로 끝나면 괄호 앞 단어 기준으로 받침을 본다
+    stripped = re.sub(r"\s*\([^)]*\)\s*$", "", word).rstrip(") ")
     code = ord(stripped[-1]) if stripped else 0
     if 0xAC00 <= code <= 0xD7A3:
         return word + (with_final if (code - 0xAC00) % 28 else without_final)
@@ -132,7 +134,8 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
         if temps and order["temperature"] not in temps and len(temps) == 1:
             order["temperature"] = temps[0]
             only = "따뜻한" if temps[0] == "HOT" else "아이스"
-            notices.append(f"{_josa(order['menu'], '은', '는')} {only} 음료로만 주문할 수 있어서 {only}로 담았어요.")
+            how = "따뜻하게" if temps[0] == "HOT" else "아이스로"
+            notices.append(f"{_josa(order['menu'], '은', '는')} {only} 음료로만 주문할 수 있어서 {how} 담았어요.")
         kept = []
         for d in order.get("option_details", []):
             kind = d.get("kind")

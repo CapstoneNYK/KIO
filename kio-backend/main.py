@@ -19,6 +19,9 @@ from ai.entity import (
     extract_options_from_text,
     extract_option_details,
     extract_packaging,
+    extract_menu,
+    fix_stt_errors,
+    normalize_text,
 )
 from ai.payment import get_payment_response
 from ai.discount import get_discount_tip
@@ -83,6 +86,40 @@ _last_recommended_menus: list[str] = []
 _DISCOUNT_QUESTION_PATTERN = re.compile(
     r"(\?|되나요|되나|돼요|되나여|가능해|가능한가|뭐야|뭐예요|뭔가요|얼마|무엇|알려줘)"
 )
+
+
+# 메뉴/결제수단을 특정하지 않은 "할인 혜택 뭐 있어?" 류 → LLM 없이 DB의 활성 할인을 그대로 안내
+_RE_DISCOUNT_INFO = re.compile(
+    normalize_text(r"(?:할인|혜택).{0,8}(?:뭐|무엇|뭘|어떤|무슨|있|알려|종류)|(?:뭐|어떤|무슨).{0,6}(?:할인|혜택)")
+)
+_RE_DISCOUNT_SPECIFIC = re.compile(normalize_text(r"kt|티멤버십|t멤버십|우주|cj|씨제이|쿠폰|바코드"))
+# "제일 잘 나가는 메뉴" 류 → 판매 집계로 답한다 (LLM이 없는 메뉴를 지어내지 않도록)
+_RE_POPULAR = re.compile(
+    normalize_text(r"잘나가|잘팔|베스트|많이(?:팔|시켜|주문|찾)|인기(?:메뉴|있는|많은|가많|제일|가장)|가장인기|제일인기|대표메뉴|시그니처")
+)
+
+
+def _discount_info_answer() -> str:
+    discounts = admin_db.get_discounts(active_only=True)
+    if not discounts:
+        return "지금은 진행 중인 할인이 없어요."
+    lines = []
+    for i, d in enumerate(discounts, 1):
+        first = (d.get("description") or "").strip().split("\n")[0]
+        lines.append(f"{i}. {d['name']}: {first}" if first else f"{i}. {d['name']}")
+    return ("지금 받을 수 있는 할인이에요.\n" + "\n".join(lines) +
+            "\n결제할 때 해당 수단을 선택하거나 '쿠폰 쓸게요'라고 말씀해 주세요.")
+
+
+def _popular_answer(menus: list[dict]) -> tuple[str, list[str]]:
+    by_name = {m["name"]: m for m in menus}
+    top = [t for t in admin_db.get_analytics()["top_menus"]
+           if t["name"] in by_name and not by_name[t["name"]]["sold_out"]][:3]
+    if not top:
+        return ("아직 집계된 판매 기록이 없어요. 원하시는 맛이나 온도를 말씀해 주시면 추천해 드릴게요.", [])
+    lines = [f"{i}번 {t['name']} ({t['count']}잔 판매)" for i, t in enumerate(top, 1)]
+    return ("최근 일주일 동안 가장 많이 팔린 메뉴예요.\n" + "\n".join(lines) +
+            "\n번호로 말씀하시면 바로 담아드려요.", [t["name"] for t in top])
 
 
 def _resolve_ordinal_order(query: str) -> dict | None:
@@ -203,10 +240,20 @@ async def ask_intent(request: QueryRequest):
 
     # 장바구니 취소·변경은 장바구니를 직접 바꾸는 동작이라 LLM 분류 전에 규칙으로 먼저 처리한다
     # (오분류 비용이 크고, 모호하면 실행하지 않고 되묻는다).
+    request.query = fix_stt_errors(request.query)  # 음성 인식 오류(티카페인→디카페인 등) 보정
     all_menus = admin_db.get_menus()
     command = detect_cart_command(request.query, request.cart_items, all_menus)
     if command:
         return {"question": request.query, **command}
+
+    qn = normalize_text(request.query)
+    if _RE_POPULAR.search(qn):
+        answer, popular = _popular_answer(all_menus)
+        _last_recommended_menus[:] = popular
+        return {"question": request.query, "intent": "recommend", "answer": answer, "recommended_menus": popular}
+    if (_RE_DISCOUNT_INFO.search(qn) and not _RE_DISCOUNT_SPECIFIC.search(qn)
+            and not extract_menu(request.query, [m["name"] for m in all_menus])):
+        return {"question": request.query, "intent": "qa", "answer": _discount_info_answer()}
 
     # 확실한 발화는 규칙으로 즉시 분류하고(LLM 호출 생략), 애매할 때만 LLM에 맡긴다.
     intent = fast_classify(request.query, [m["name"] for m in all_menus]) or classify_intent(request.query)

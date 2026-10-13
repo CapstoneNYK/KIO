@@ -22,9 +22,12 @@ def _rx(pattern: str) -> "re.Pattern":
 # 질문·정보 요청 표현이 있으면 주문/결제로 단정하지 않는다
 _RE_QUESTION = _rx(
     r"\?|얼마|가격|칼로리|당류|성분|알레르기|뭐예요|뭐에요|뭔가요|뭐야|뭐가|뭐지|어때|어떤|어디|언제|몇|"
-    r"되나요|돼요|되나|되요|가능한가|있나요|있어요|있을까|없나요|알려|궁금|차이|혜택|정보|어떻게|왜"
+    r"되나요|돼요|되나|되요|가능한가|있나요|있어요|있을까|없나요|알려|궁금|차이|혜택|정보|어떻게|왜|"
+    r"결제하면|계산하면|나와요|나오나|나옵"
 )
 _RE_RECOMMEND = _rx(r"추천|골라줘|골라주|뭐마실|뭐먹|맛있는거|인기")
+# "추천해줘/추천해 주세요"처럼 추천을 **요청**하는 말 (방금 추천해준 …은 해당 안 됨)
+_RE_RECO_REQUEST = _rx(r"추천해줘|추천해주세요|추천해달라|추천좀|추천해봐|추천해요|추천해줄래|추천부탁")
 _RE_PAY_VERB = _rx(r"결제|계산|지불|페이로|카드로|쓸게|쓰겠|할게|하겠|해줘|해주세요|진행")
 _RE_ORDER_VERB = _rx(r"주세요|주셔|줘|줄래|주라|담아|담을게|넣어|주문|할게|하겠|부탁|드릴게|먹을게|마실게|시킬게|원해|원합니다")
 _RE_COUPON = _rx(r"쿠폰|바코드|상품권|기프티콘")
@@ -52,6 +55,9 @@ def fast_classify(query: str, menu_names: Optional[list] = None) -> Optional[str
 
     # 질문형은 qa/recommend 판단이 필요하므로 추천 키워드가 없으면 LLM에 맡긴다
     if _RE_RECOMMEND.search(t):
+        # "방금 추천해준 거 중에 1번으로 주세요" → 추천 요청이 아니라 직전 추천 목록에서 고르는 주문
+        if _RE_ORDINAL.search(t) and _RE_ORDER_VERB.search(t) and not _RE_RECO_REQUEST.search(t):
+            return "order"
         if menu and _RE_ORDER_VERB.search(t) and not re.search(normalize_text("추천"), t):
             return None
         return "recommend" if not menu else None
