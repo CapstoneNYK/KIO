@@ -18,6 +18,7 @@ interface CartStore {
   addItem: (item: MenuItem, quantity: number, temperature: Temperature, options: MenuOption[], isPackaging: boolean, isFree?: boolean) => void;
   removeItem: (cartId: number) => void;
   updateQuantity: (cartId: number, quantity: number) => void;
+  updateTemperature: (cartId: number, temperature: Temperature) => void;
   clear: () => void;
 }
 
@@ -62,6 +63,10 @@ export const useCartStore = create<CartStore>((set) => ({
   updateQuantity: (cartId, quantity) =>
     set((state) => ({
       items: state.items.map((i) => (i.cartId === cartId ? { ...i, quantity } : i)),
+    })),
+  updateTemperature: (cartId, temperature) =>
+    set((state) => ({
+      items: state.items.map((i) => (i.cartId === cartId ? { ...i, temperature } : i)),
     })),
   clear: () => set({ items: [] }),
 }));

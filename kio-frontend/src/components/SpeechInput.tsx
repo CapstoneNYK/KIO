@@ -2,6 +2,7 @@ import { useServerSTT } from "../utils/serverSttUtil";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { askApi } from "../api/askApi";
+import type { CartAction } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
@@ -56,6 +57,11 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const addItem = useCartStore((s) => s.addItem);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const updateTemperature = useCartStore((s) => s.updateTemperature);
+  const clearCart = useCartStore((s) => s.clear);
+  const setIsPackaging = useCartStore((s) => s.setIsPackaging);
   const cartItems = useCartStore((s) => s.items);
   const menus = useMenuStore((s) => s.menus);
   const openScan = useCouponStore((s) => s.openScan);
@@ -66,6 +72,44 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const dismissPaymentOverlay = useLearningStore(
     (s) => s.dismissPaymentOverlay
   );
+
+  // 백엔드가 해석한 장바구니 취소·변경 명령을 실제 장바구니에 적용한다.
+  const applyCartActions = (actions: CartAction[]) => {
+    const current = useCartStore.getState().items;
+    const lines = (menu: string, temperature?: Temperature | null) =>
+      current.filter(
+        (i) => i.item.title === menu && (!temperature || i.temperature === temperature)
+      );
+
+    for (const action of actions) {
+      if (action.type === "remove_all") {
+        clearCart();
+      } else if (action.type === "remove_last") {
+        const all = useCartStore.getState().items;
+        const last = all[all.length - 1];
+        if (last) removeItem(last.cartId);
+      } else if (action.type === "remove_item") {
+        // 같은 메뉴가 여러 줄이면(온도가 다른 경우) 온도가 지정된 줄만, 아니면 해당 메뉴 전부
+        lines(action.menu, action.temperature).forEach((i) => removeItem(i.cartId));
+      } else if (action.type === "set_quantity") {
+        const found = lines(action.menu, action.temperature);
+        const target = found[found.length - 1];
+        if (target) updateQuantity(target.cartId, action.quantity);
+      } else if (action.type === "set_temperature") {
+        const found = lines(action.menu);
+        const target = found[found.length - 1];
+        if (target) updateTemperature(target.cartId, action.temperature);
+      } else if (action.type === "replace_item") {
+        const found = lines(action.menu);
+        const target = found[found.length - 1];
+        const next = findMenuItem(action.to_menu, menus);
+        if (target && next) {
+          removeItem(target.cartId);
+          addItem(next, target.quantity, target.temperature, target.options, target.isPackaging);
+        }
+      }
+    }
+  };
 
   const resolveMenusFromRef = (query: string): string[] => {
     const resolved: string[] = [];
@@ -102,6 +146,12 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
 
       if (res.intent === "recommend" && res.recommended_menus) {
         setLastRecommended(res.recommended_menus);
+      }
+
+      if (res.intent === "cancel" || res.intent === "modify") {
+        applyCartActions(res.cart_actions ?? []);
+        setMessages((prev) => [...prev, { role: "bot", text: botText }]);
+        return;
       }
 
       if (res.intent === "payment") {
@@ -149,16 +199,19 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
             if (!orderInfo.menu) continue;
             const temperature = (orderInfo.temperature as Temperature) ?? "ICE";
             const menuItem = findMenuItem(orderInfo.menu, menus);
-            const menuOptions: MenuOption[] = (orderInfo.options ?? []).map(
-              (name) => ({ name, count: 1 })
-            );
+            // 구조화된 옵션(샷 개수, 시럽·크림 양, 사이즈)을 우선 사용하고, 없으면 기존 이름 목록으로 폴백
+            const menuOptions: MenuOption[] = orderInfo.option_details
+              ? orderInfo.option_details.map((d) => ({ name: d.name, count: d.count }))
+              : (orderInfo.options ?? []).map((name) => ({ name, count: 1 }));
+            const packaging = orderInfo.packaging === true;
+            if (packaging) setIsPackaging(true);
             if (menuItem)
               addItem(
                 menuItem,
                 orderInfo.quantity ?? 1,
                 temperature,
                 menuOptions,
-                false
+                packaging
               );
           }
         }
