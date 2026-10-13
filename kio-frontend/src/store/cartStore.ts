@@ -19,6 +19,7 @@ interface CartStore {
   removeItem: (cartId: number) => void;
   updateQuantity: (cartId: number, quantity: number) => void;
   updateTemperature: (cartId: number, temperature: Temperature) => void;
+  updateOptions: (cartId: number, options: MenuOption[]) => void;
   clear: () => void;
 }
 
@@ -68,5 +69,27 @@ export const useCartStore = create<CartStore>((set) => ({
     set((state) => ({
       items: state.items.map((i) => (i.cartId === cartId ? { ...i, temperature } : i)),
     })),
+  // 옵션을 바꾼 뒤 같은 구성의 다른 줄이 있으면 하나로 합친다
+  updateOptions: (cartId, options) =>
+    set((state) => {
+      const same = (a: MenuOption[], b: MenuOption[]) =>
+        a.length === b.length && a.every((x) => b.some((o) => o.name === x.name && o.count === x.count));
+      const target = state.items.find((i) => i.cartId === cartId);
+      if (!target) return state;
+      const twin = state.items.find(
+        (i) =>
+          i.cartId !== cartId && !i.isFree && !target.isFree &&
+          i.item.id === target.item.id && i.temperature === target.temperature &&
+          i.isPackaging === target.isPackaging && same(i.options, options)
+      );
+      if (twin) {
+        return {
+          items: state.items
+            .filter((i) => i.cartId !== cartId)
+            .map((i) => (i.cartId === twin.cartId ? { ...i, quantity: i.quantity + target.quantity } : i)),
+        };
+      }
+      return { items: state.items.map((i) => (i.cartId === cartId ? { ...i, options } : i)) };
+    }),
   clear: () => set({ items: [] }),
 }));

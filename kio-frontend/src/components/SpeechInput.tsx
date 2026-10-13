@@ -11,6 +11,26 @@ import type { MenuItem, Temperature, MenuOption } from "../types/menu";
 
 type Message = { role: "user" | "bot"; text: string };
 
+// 봇 답변 렌더링: 줄바꿈을 살리고, "1번 …"/"1. …"로 시작하는 줄은 번호 배지가 있는 목록으로 보여준다
+function BotText({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {text.split("\n").map((line, idx) => {
+        const m = line.match(/^(\d+)\s*(?:번|\.)\s*(.+)$/);
+        if (!m) return <p key={idx} className="text-[15px] leading-relaxed break-keep">{line}</p>;
+        return (
+          <p key={idx} className="flex items-start gap-2 text-[15px] leading-relaxed break-keep">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pink-500 text-xs font-bold text-white">
+              {m[1]}
+            </span>
+            <span className="font-semibold">{m[2]}</span>
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function findMenuItem(menuName: string | null, menus: MenuItem[]): MenuItem | null {
   if (!menuName) return null;
   const normalized = menuName.replace(/\s/g, "").toLowerCase();
@@ -60,6 +80,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const removeItem = useCartStore((s) => s.removeItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const updateTemperature = useCartStore((s) => s.updateTemperature);
+  const updateOptions = useCartStore((s) => s.updateOptions);
   const clearCart = useCartStore((s) => s.clear);
   const setIsPackaging = useCartStore((s) => s.setIsPackaging);
   const cartItems = useCartStore((s) => s.items);
@@ -99,6 +120,22 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         const found = lines(action.menu);
         const target = found[found.length - 1];
         if (target) updateTemperature(target.cartId, action.temperature);
+      } else if (action.type === "remove_line") {
+        action.indexes.forEach((idx) => {
+          const line = current[idx];
+          if (line) removeItem(line.cartId);
+        });
+      } else if (action.type === "set_options") {
+        const line = current[action.index];
+        if (line) {
+          if (action.count >= line.quantity) {
+            updateOptions(line.cartId, action.options);
+          } else {
+            // 일부만 바꾸는 경우: 기존 줄 수량을 줄이고, 바뀐 옵션으로 새 줄을 만든다
+            updateQuantity(line.cartId, line.quantity - action.count);
+            addItem(line.item, action.count, line.temperature, action.options, line.isPackaging);
+          }
+        }
       } else if (action.type === "replace_item") {
         const found = lines(action.menu);
         const target = found[found.length - 1];
@@ -137,10 +174,19 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", text: query }]);
     try {
-      const cartItemNames = cartItems.map(
-        (i) =>
-          `${i.temperature === "ICE" ? "아이스" : "따뜻한"} ${i.item.title}`
-      );
+      // 백엔드가 "처음에 시킨 카페라떼"처럼 특정 줄을 가리킬 수 있도록 수량·옵션까지 보낸다
+      // 형식: "아이스 카페라떼 ×2 (시럽 적게, 샷추가 ×2, 포장)"
+      const cartItemNames = cartItems.map((i) => {
+        const extra = [
+          ...i.options.map((o) => (o.count > 1 ? `${o.name} ×${o.count}` : o.name)),
+          ...(i.isPackaging ? ["포장"] : []),
+        ];
+        return (
+          `${i.temperature === "ICE" ? "아이스" : "따뜻한"} ${i.item.title}` +
+          (i.quantity > 1 ? ` ×${i.quantity}` : "") +
+          (extra.length ? ` (${extra.join(", ")})` : "")
+        );
+      });
       const res = await askApi(query, cartItemNames);
       let botText = res.answer;
 
@@ -274,11 +320,11 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   }, [messages, loading, transcript]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="kio-chat flex flex-col h-full">
       {/* 채팅 히스토리 영역 (스크롤, 높이 고정) */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-3 p-3 min-h-0">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-3 p-4 min-h-0 bg-pink-50/60">
         {messages.length === 0 && !listening && !loading && (
-          <p className="text-xs text-pink-300 text-center pt-4">
+          <p className="text-sm text-pink-400 text-center pt-4">
             아래 버튼을 눌러 말씀해 주세요
           </p>
         )}
@@ -286,16 +332,14 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         {messages.map((msg, i) =>
           msg.role === "user" ? (
             <div key={i} className="flex justify-end">
-              <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
-                <p className="text-sm leading-relaxed">{msg.text}</p>
+              <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-[85%] shadow-sm">
+                <p className="text-[15px] leading-relaxed break-keep">{msg.text}</p>
               </div>
             </div>
           ) : (
             <div key={i} className="flex justify-start">
-              <div className="bg-white border border-pink-100 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
-                <p className="text-sm text-gray-800 leading-relaxed">
-                  {msg.text}
-                </p>
+              <div className="bg-white border border-pink-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-[90%] shadow-sm text-gray-900">
+                <BotText text={msg.text} />
               </div>
             </div>
           )
@@ -304,8 +348,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         {/* 음성 인식 중 실시간 미리보기 */}
         {listening && transcript && (
           <div className="flex justify-end opacity-60">
-            <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
-              <p className="text-sm leading-relaxed">{transcript}</p>
+            <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-[85%] shadow-sm">
+              <p className="text-[15px] leading-relaxed">{transcript}</p>
             </div>
           </div>
         )}
@@ -366,7 +410,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           )}
         </button>
         <p
-          className={`text-xs font-medium ${
+          className={`text-sm font-medium ${
             listening ? "text-red-500" : "text-pink-500"
           }`}
         >

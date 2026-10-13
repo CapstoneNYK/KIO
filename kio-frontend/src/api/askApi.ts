@@ -23,7 +23,11 @@ export type CartAction =
   | { type: "remove_item"; menu: string; temperature?: "ICE" | "HOT" | null }
   | { type: "set_quantity"; menu: string; quantity: number; temperature?: "ICE" | "HOT" | null }
   | { type: "set_temperature"; menu: string; temperature: "ICE" | "HOT" }
-  | { type: "replace_item"; menu: string; to_menu: string };
+  | { type: "replace_item"; menu: string; to_menu: string }
+  // 장바구니의 특정 줄(0부터, 백엔드에 보낸 cart_items 순서 기준)만 삭제
+  | { type: "remove_line"; indexes: number[] }
+  // 해당 줄의 count잔 옵션을 options로 교체 (줄 전체가 아니면 한 줄을 둘로 쪼갠다)
+  | { type: "set_options"; index: number; count: number; options: { name: string; count: number }[] };
 
 export interface AskResponse {
   question: string;

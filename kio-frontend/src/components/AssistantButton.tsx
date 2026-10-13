@@ -48,21 +48,21 @@ export const AssistantButton = () => {
     >
       {/* 음성 어시스턴트 채팅 패널 - 항상 마운트, 채팅 내역 유지 */}
       <div
-        className={`bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col shrink-0 ${
+        className={`kio-chat bg-white rounded-2xl shadow-2xl border-2 border-pink-400 ring-4 ring-pink-200/70 w-[26rem] h-[38rem] max-h-[calc(100vh-2rem)] flex flex-col shrink-0 ${
           mode !== "voice" ? "hidden" : ""
         }`}
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0 rounded-t-2xl">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-pink-500 shrink-0 rounded-t-xl">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-pink-400 inline-block" />
-            <span className="text-sm font-bold text-pink-700">
+            <span className="w-2.5 h-2.5 rounded-full bg-white inline-block" />
+            <span className="text-base font-bold text-white">
               KIO 어시스턴트
             </span>
           </div>
           <button
             onClick={() => setMode("idle")}
-            className="text-pink-300 hover:text-pink-500 transition-colors text-base leading-none"
+            className="text-pink-100 hover:text-white transition-colors text-lg leading-none"
           >
             ✕
           </button>

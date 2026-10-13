@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PiShoppingCartSimple } from "react-icons/pi";
-import { LuX } from "react-icons/lu";
+import { LuX, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
@@ -23,6 +23,28 @@ export const CartBar = () => {
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const orderOverlayOpen = useLearningStore((s) => s.orderOverlayOpen);
   const setOrderOverlayOpen = useLearningStore((s) => s.setOrderOverlayOpen);
+
+  // 담은 메뉴 목록 가로 슬라이드: 마우스 드래그 / 휠 / 좌우 버튼 (터치는 기본 스크롤)
+  // (전역 CSS가 스크롤바를 숨기고 있어서, 마우스로는 따로 지원하지 않으면 넘길 방법이 없다)
+  const listRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false });
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const updateArrows = () => {
+    const el = listRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+  useEffect(() => {
+    updateArrows();
+    window.addEventListener("resize", updateArrows);
+    return () => window.removeEventListener("resize", updateArrows);
+  }, [items.length]);
+
+  const slide = (dir: -1 | 1) =>
+    listRef.current?.scrollBy({ left: dir * 240, behavior: "smooth" });
 
   const showConfirm = orderOverlayOpen
     || CONFIRM_SCREENS.includes(learningScreen ?? "")
@@ -48,7 +70,52 @@ export const CartBar = () => {
       </div>
 
       {/* 아이템 목록 - 가로 스크롤 */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+      <div className="relative">
+      {canLeft && (
+        <button
+          onClick={() => slide(-1)}
+          className="absolute left-0 top-1/2 z-10 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 active:bg-gray-100"
+        >
+          <LuChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+      {canRight && (
+        <button
+          onClick={() => slide(1)}
+          className="absolute right-0 top-1/2 z-10 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 active:bg-gray-100"
+        >
+          <LuChevronRight className="w-5 h-5" />
+        </button>
+      )}
+      <div
+        ref={listRef}
+        onScroll={updateArrows}
+        onWheel={(e) => {
+          if (listRef.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) listRef.current.scrollLeft += e.deltaY;
+        }}
+        onMouseDown={(e) => {
+          if (!listRef.current) return;
+          dragRef.current = { down: true, startX: e.clientX, startScroll: listRef.current.scrollLeft, moved: false };
+        }}
+        onMouseMove={(e) => {
+          const d = dragRef.current;
+          if (!d.down || !listRef.current) return;
+          const dx = e.clientX - d.startX;
+          if (Math.abs(dx) > 5) d.moved = true;
+          listRef.current.scrollLeft = d.startScroll - dx;
+        }}
+        onMouseUp={() => { dragRef.current.down = false; }}
+        onMouseLeave={() => { dragRef.current.down = false; }}
+        // 드래그로 넘긴 직후에 버튼(수량·삭제)이 눌리지 않게 막는다
+        onClickCapture={(e) => {
+          if (dragRef.current.moved) {
+            e.stopPropagation();
+            e.preventDefault();
+            dragRef.current.moved = false;
+          }
+        }}
+        className="flex gap-2 overflow-x-auto pb-2 mb-3 select-none cursor-grab active:cursor-grabbing"
+      >
         {items.map((cartItem) => (
           <div
             key={cartItem.cartId}
@@ -84,6 +151,7 @@ export const CartBar = () => {
             </div>
           </div>
         ))}
+      </div>
       </div>
 
       {/* 구분선 */}
