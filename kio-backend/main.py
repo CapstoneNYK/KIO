@@ -10,12 +10,15 @@ from pydantic import BaseModel
 
 from ai.recommend import qa_chain, recommend_chain
 from ai.intent import classify_intent
+from ai.fast_intent import fast_classify
 from ai.entity import (
     extract_multi_order,
     extract_ordinal,
     extract_quantity,
     extract_attributes,
     extract_options_from_text,
+    extract_option_details,
+    extract_packaging,
 )
 from ai.payment import get_payment_response
 from ai.discount import get_discount_tip
@@ -27,7 +30,10 @@ from ai.order import (
     cart_answer,
     entities_to_orders,
     split_sold_out,
+    validate_options,
 )
+from ai.cart_command import detect_cart_command
+from ai.preference import find_alternatives, recommend_by_conditions
 from app.coupon.router import router as coupon_router
 from app.admin import db as admin_db
 from app.admin.db import UPLOAD_DIR
@@ -90,21 +96,56 @@ def _resolve_ordinal_order(query: str) -> dict | None:
             "quantity": extract_quantity(query),
             "attributes": extract_attributes(query),
             "options": extract_options_from_text(query),
+            "option_details": extract_option_details(query),
+            "packaging": extract_packaging(query),
             "needs_recommendation": False,
         }
     return None
 
 
-def _order_response(question: str, orders: list[dict], named: list[dict], sold_out: list[str]) -> dict:
+def _alternatives_map(sold_out: list[str], menus: list[dict]) -> dict[str, list[str]]:
+    """품절 메뉴별 대체 메뉴(같은 카테고리의 주문 가능한 메뉴)를 찾고, 첫 번째 목록을 '직전 추천'으로 기억한다."""
+    alternatives = {}
+    for name in sold_out:
+        alts = find_alternatives(name, menus)
+        if alts:
+            alternatives[name] = alts
+    if alternatives:
+        _last_recommended_menus[:] = next(iter(alternatives.values()))
+    return alternatives
+
+
+def _recommend(query: str):
+    """맞춤형 추천. 조건(맛/온도/카페인/가격/종류)이 잡히면 실제 메뉴 DB를 규칙으로 필터링하고,
+    조건이 없는 막연한 요청만 LLM 추천으로 넘긴다."""
+    by_rule = recommend_by_conditions(query, admin_db.get_menus())
+    if by_rule is not None:
+        return by_rule
+    return recommend_chain.invoke(query)
+
+
+def _order_response(
+    question: str,
+    orders: list[dict],
+    named: list[dict],
+    sold_out: list[str],
+    menus: list[dict] | None = None,
+    notices: list[str] | None = None,
+) -> dict:
     """"장바구니에 담았습니다" 형태의 일반 주문 응답을 만든다.
     order 분기와, order_and_pay인데 실제로는 결제수단이 없거나 담을 메뉴가 없어서
-    order로 강등되는 경우에서 공용으로 쓴다."""
+    order로 강등되는 경우에서 공용으로 쓴다.
+    품절 메뉴가 있으면 같은 카테고리의 대체 메뉴를 함께 안내하고, 그 목록을
+    '직전 추천'으로 기억해 "1번으로 담아줘" 같은 후속 발화를 받을 수 있게 한다."""
+    alternatives = _alternatives_map(sold_out, menus or [])
     return {
         "question": question,
         "intent": "order",
-        "answer": cart_answer(named, sold_out),
+        "answer": cart_answer(named, sold_out, alternatives=alternatives, notices=notices),
         "orders": orders,
         "discount_tip": get_discount_tip() if named else None,
+        "sold_out": sold_out,
+        "alternatives": alternatives,
     }
 
 
@@ -150,7 +191,7 @@ async def ask_menu(request: QueryRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
-    result = recommend_chain.invoke(request.query)
+    result = _recommend(request.query)
     _last_recommended_menus[:] = result.menus
     return {"question": request.query, "answer": result.answer, "recommended_menus": result.menus}
 
@@ -160,12 +201,20 @@ async def ask_intent(request: QueryRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
-    intent = classify_intent(request.query)
+    # 장바구니 취소·변경은 장바구니를 직접 바꾸는 동작이라 LLM 분류 전에 규칙으로 먼저 처리한다
+    # (오분류 비용이 크고, 모호하면 실행하지 않고 되묻는다).
+    all_menus = admin_db.get_menus()
+    command = detect_cart_command(request.query, request.cart_items, all_menus)
+    if command:
+        return {"question": request.query, **command}
+
+    # 확실한 발화는 규칙으로 즉시 분류하고(LLM 호출 생략), 애매할 때만 LLM에 맡긴다.
+    intent = fast_classify(request.query, [m["name"] for m in all_menus]) or classify_intent(request.query)
     # 실사용 발화+예측 의도를 누적 기록 -> 나중에 검토 후 파인튜닝 데이터로 활용
     log_intent_query(request.query, intent)
 
     if intent == "order":
-        menus = admin_db.get_menus()
+        menus = all_menus
         menu_names = [m["name"] for m in menus]
         sold_out_names = {m["name"] for m in menus if m["sold_out"]}
 
@@ -185,8 +234,9 @@ async def ask_intent(request: QueryRequest):
 
         orders_all = entities_to_orders(entities)
         orders, sold_out = split_sold_out(orders_all, sold_out_names)
+        orders, notices = validate_options(orders, menus)
         named = [o for o in orders if o["menu"]]
-        return _order_response(request.query, orders, named, sold_out)
+        return _order_response(request.query, orders, named, sold_out, menus, notices)
     elif intent == "coupon":
         return {
             "question": request.query,
@@ -194,7 +244,7 @@ async def ask_intent(request: QueryRequest):
             "answer": "쿠폰 바코드를 카메라로 스캔해볼게요!",
         }
     elif intent == "recommend":
-        result = recommend_chain.invoke(request.query)
+        result = _recommend(request.query)
         _last_recommended_menus[:] = result.menus
         return {
             "question": request.query,
@@ -203,7 +253,7 @@ async def ask_intent(request: QueryRequest):
             "recommended_menus": result.menus,
         }
     elif intent == "order_and_pay":
-        menus = admin_db.get_menus()
+        menus = all_menus
         menu_names = [m["name"] for m in menus]
         sold_out_names = {m["name"] for m in menus if m["sold_out"]}
 
@@ -218,6 +268,7 @@ async def ask_intent(request: QueryRequest):
 
         orders_all = entities_to_orders(entities)
         orders, sold_out = split_sold_out(orders_all, sold_out_names)
+        orders, notices = validate_options(orders, menus)
         named = [o for o in orders if o["menu"]]
         _, payment_method = get_payment_response(request.query)
 
@@ -225,11 +276,11 @@ async def ask_intent(request: QueryRequest):
             # 결제수단이 실제로 언급되지 않았는데도 로컬 LLM이 order_and_pay로
             # 잘못 분류하는 경우가 있다. 결제 화면으로 강제 이동시키지 않고
             # 그냥 주문(order)처럼 장바구니에만 담는다.
-            return _order_response(request.query, orders, named, sold_out)
+            return _order_response(request.query, orders, named, sold_out, menus, notices)
 
         if sold_out and not named:
             # 담을 수 있는 메뉴가 없으면 결제 화면으로 넘어가지 않도록 일반 주문 응답으로 돌려준다
-            return _order_response(request.query, orders, named, sold_out)
+            return _order_response(request.query, orders, named, sold_out, menus, notices)
 
         method_label = {
             "card": "카드", "kakao": "카카오페이", "naver": "네이버페이",
@@ -241,7 +292,10 @@ async def ask_intent(request: QueryRequest):
         return {
             "question": request.query,
             "intent": "order_and_pay",
-            "answer": cart_answer(named, sold_out, pay_suffix=suffix),
+            "answer": cart_answer(
+                named, sold_out, pay_suffix=suffix,
+                alternatives=_alternatives_map(sold_out, menus), notices=notices,
+            ),
             "orders": orders,
             "payment_method": payment_method,
         }

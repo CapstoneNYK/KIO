@@ -31,7 +31,11 @@ OLLAMA_INTENT_MODEL = os.getenv("OLLAMA_INTENT_MODEL", OLLAMA_MODEL)
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 
-def get_llm(temperature: float = 0.0, model: str | None = None) -> ChatOllama:
+# 모델을 메모리에 상주시켜 첫 요청 지연(콜드 스타트)을 없앤다. Ollama 기본값은 5분 후 언로드.
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
+
+
+def get_llm(temperature: float = 0.0, model: str | None = None, num_predict: int | None = None) -> ChatOllama:
     """설정된 Ollama 모델을 사용하는 ChatOllama 인스턴스를 반환한다.
 
     LangChain의 ChatOpenAI와 동일한 방식(LCEL 체인, 프롬프트 템플릿과 결합)으로
@@ -42,4 +46,7 @@ def get_llm(temperature: float = 0.0, model: str | None = None) -> ChatOllama:
         model=model or OLLAMA_MODEL,
         base_url=OLLAMA_BASE_URL,
         temperature=temperature,
+        keep_alive=OLLAMA_KEEP_ALIVE,
+        # 생성 토큰 상한: 의도 분류는 단어 하나면 되므로 작게 제한해 속도를 높인다
+        num_predict=num_predict,
     )
