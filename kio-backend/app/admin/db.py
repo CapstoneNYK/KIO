@@ -532,8 +532,7 @@ def save_order(
 ORDER_STATUSES = ("PAID", "CANCELLED")
 STATUS_LABELS = {"PAID": "결제 완료", "CANCELLED": "취소됨",
                  "PREPARING": "결제 완료", "READY": "결제 완료", "COMPLETED": "결제 완료"}
-# 고객이 키오스크에서 직접 취소할 수 있는 시간(초). 이후에는 직원이 관리자 화면에서 취소한다.
-CUSTOMER_CANCEL_WINDOW_SEC = int(os.getenv("CUSTOMER_CANCEL_WINDOW_SEC", "180"))
+# 결제 후 취소는 직원만 관리자 화면에서 한다. (이미 조리가 시작됐을 수 있어 손님이 키오스크에서 취소하게 두지 않는다.)
 
 
 def get_order(order_id: int) -> dict | None:
@@ -553,15 +552,14 @@ def get_order_by_request_id(request_id: str) -> dict | None:
     return get_order(row["id"]) if row else None
 
 
-def change_order_status(order_id: int, new_status: str, *, by_customer: bool = False) -> tuple[dict | None, str | None]:
+def change_order_status(order_id: int, new_status: str) -> tuple[dict | None, str | None]:
     """주문을 취소한다. (주문, 오류메시지) 를 돌려준다. 취소하면 재고를 복구한다.
-    by_customer=True(키오스크)이면 결제 후 CUSTOMER_CANCEL_WINDOW_SEC 이내에만 가능하다. 직원(관리자)은 시간 제한이 없다."""
+    관리자(직원)만 호출한다. 시간 제한은 없다."""
     if new_status not in ORDER_STATUSES:
         return None, "알 수 없는 주문 상태입니다."
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT *, CAST(strftime('%s','now','localtime') AS INTEGER) - CAST(strftime('%s', created_at) AS INTEGER) AS age_sec "
-            "FROM orders WHERE id=?", (order_id,)).fetchone()
+            "SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
         if row is None:
             return None, "주문을 찾을 수 없습니다."
         current = row["status"]
@@ -571,9 +569,6 @@ def change_order_status(order_id: int, new_status: str, *, by_customer: bool = F
             return None, "이미 취소된 주문입니다."
         if new_status == "PAID":
             return None, "취소된 주문은 되돌릴 수 없습니다."
-        if by_customer and (row["age_sec"] or 0) > CUSTOMER_CANCEL_WINDOW_SEC:
-            minutes = max(1, CUSTOMER_CANCEL_WINDOW_SEC // 60)
-            return None, f"결제 후 {minutes}분이 지나 키오스크에서는 취소할 수 없어요. 카운터 직원에게 말씀해 주세요."
         conn.execute(
             "UPDATE orders SET status=?, status_updated_at=datetime('now','localtime') WHERE id=?",
             (new_status, order_id),

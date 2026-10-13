@@ -276,23 +276,6 @@ def create_order(body: OrderCreate):
         raise HTTPException(status_code=409, detail=f"{', '.join(e.names)}의 재고가 부족합니다.")
 
 
-class CancelRequest(BaseModel):
-    request_id: str = Field(min_length=1, max_length=64)
-
-
-@orders_router.post("/orders/cancel")
-def cancel_order(body: CancelRequest):
-    """키오스크에서 결제 직후 주문을 취소한다. 결제 후 일정 시간(기본 3분) 이내에만 가능하다.
-    주문 번호 대신 결제 때 만든 멱등키(request_id)로 식별해서, 다른 사람의 주문을 번호로 취소할 수 없게 한다."""
-    order = db.get_order_by_request_id(body.request_id)
-    if order is None:
-        raise HTTPException(status_code=404, detail="주문을 찾을 수 없습니다.")
-    result, error = db.change_order_status(order["id"], "CANCELLED", by_customer=True)
-    if error:
-        raise HTTPException(status_code=409, detail=error)
-    return result
-
-
 class OrderStatusUpdate(BaseModel):
     status: str
 

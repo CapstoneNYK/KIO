@@ -180,9 +180,13 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
                       추천
                     </span>
                   )}
-                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
+                  <div
+                    className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden"
+                    style={m.id === "kakao" ? { backgroundColor: "#FEE500" } : undefined}
+                  >
                     {m.imgIcon
-                      ? <img src={m.imgIcon} alt={m.label} className="w-full h-full object-cover" />
+                      // 카카오페이 로고는 둥근 사각형이라 원 안에 꽉 차도록 확대하고 로고 색(노랑)으로 바탕을 채운다
+                      ? <img src={m.imgIcon} alt={m.label} className={`w-full h-full object-cover ${m.id === "kakao" ? "scale-[1.3]" : ""}`} />
                       : <span className="text-gray-500">{m.icon}</span>
                     }
                   </div>
