@@ -108,7 +108,7 @@ const CardPayment = ({
 
   return (
     <>
-      <div className="flex flex-col mb-5 rounded-xl overflow-hidden border border-gray-100">
+      <div className="flex flex-col mb-5 rounded-md overflow-hidden border border-gray-100">
         {discount > 0 && (
           <div className="flex justify-between items-center py-2.5 px-4 bg-emerald-50">
             <div className="flex items-center gap-1.5">
@@ -120,7 +120,7 @@ const CardPayment = ({
         )}
         <div className="flex justify-between items-center py-3 px-4 bg-gray-50">
           <span className="text-gray-600">총 결제금액</span>
-          <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
+          <span className="font-bold text-[#B45309]">{totalPrice.toLocaleString()}원</span>
         </div>
         <div className="flex justify-between items-center py-3 px-4 bg-white">
           <span className="text-gray-600">할부개월</span>
@@ -140,15 +140,15 @@ const CardPayment = ({
       <div className="flex gap-3 mb-5">
         <button
           onClick={onCancel}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
           취소
         </button>
         <button
           onClick={onApprove}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
-          style={{ backgroundColor: "#FFB900" }}
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
+          style={{ backgroundColor: "#1C1917" }}
         >
           승인 요청
         </button>
@@ -156,7 +156,7 @@ const CardPayment = ({
 
       <p className="text-center text-sm text-gray-500 mb-4 leading-relaxed">{description}</p>
 
-      <img src={image} alt="리더기" className="w-full rounded-xl object-contain" />
+      <img src={image} alt="리더기" className="w-full rounded-md object-contain" />
     </>
   );
 };
@@ -213,7 +213,7 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
           </div>
           <div className="flex justify-between items-center py-3 border-b border-gray-100">
             <span className="text-gray-600 text-sm">받음금액</span>
-            <span className="font-bold text-orange-500 text-sm">{cartTotal.toLocaleString()}원</span>
+            <span className="font-bold text-[#B45309] text-sm">{cartTotal.toLocaleString()}원</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between items-center py-2.5 border-b border-gray-100">
@@ -226,7 +226,7 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
           )}
           <div className="flex justify-between items-center py-3 border-b border-gray-100">
             <span className="text-gray-600 text-sm">결제금액</span>
-            <span className="font-bold text-orange-500 text-sm">{totalPrice.toLocaleString()}원</span>
+            <span className="font-bold text-[#B45309] text-sm">{totalPrice.toLocaleString()}원</span>
           </div>
         </div>
         {/* 오른쪽 숫자패드 */}
@@ -238,14 +238,14 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
       <div className="flex gap-3 mb-4">
         <button
           onClick={handleQuery}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
           조회
         </button>
         <button
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
-          style={{ backgroundColor: "#FFB900" }}
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
+          style={{ backgroundColor: "#1C1917" }}
         >
           사용
         </button>
@@ -255,7 +255,7 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
         스캔이 되지 않을 경우 위에 키패드로 번호를 직접 입력해주세요.
       </p>
 
-      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain" />
+      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-md object-contain" />
 
       {showScanner && <CouponScanner onClose={() => setShowScanner(false)} />}
     </>
@@ -291,7 +291,7 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
     <>
       <div className="flex gap-4 mb-5">
         {/* 왼쪽 입력 */}
-        <div className="flex-1 flex flex-col rounded-xl overflow-hidden border border-gray-100">
+        <div className="flex-1 flex flex-col rounded-md overflow-hidden border border-gray-100">
           <div className="flex justify-between items-center py-3 px-3 bg-gray-50">
             <span className="text-gray-600 text-sm">제휴명</span>
             <span className="font-semibold text-gray-700 text-sm">{affiliateName}</span>
@@ -324,14 +324,14 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
       <div className="flex gap-3 mb-4">
         <button
           onClick={handleQuery}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
           조회
         </button>
         <button
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
-          style={{ backgroundColor: "#FFB900" }}
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
+          style={{ backgroundColor: "#1C1917" }}
         >
           적립
         </button>
@@ -341,7 +341,7 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
         스캔이 되지 않을 경우 위에 키패드로 카드/휴대폰번호 직접 입력 후 조회/적립을 눌러주세요.
       </p>
 
-      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain mt-4" />
+      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-md object-contain mt-4" />
 
       {showScanner && <CouponScanner onClose={() => setShowScanner(false)} />}
     </>
@@ -380,7 +380,7 @@ const AppBarcodePayment = ({
     <>
       {/* 브랜드 헤더 */}
       <div
-        className="flex items-center gap-3 mb-5 px-4 py-3 rounded-2xl"
+        className="flex items-center gap-3 mb-5 px-4 py-3 rounded-lg"
         style={{ backgroundColor: accentColor }}
       >
         <img src={logoIcon} alt={brand} className="w-8 h-8 object-contain rounded-lg" />
@@ -400,7 +400,7 @@ const AppBarcodePayment = ({
         )}
         <div className="flex justify-between items-center py-3 px-1">
           <span className="text-gray-600">총 결제금액</span>
-          <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
+          <span className="font-bold text-[#B45309]">{totalPrice.toLocaleString()}원</span>
         </div>
       </div>
 
@@ -409,7 +409,7 @@ const AppBarcodePayment = ({
       </p>
       <p className="text-center text-xs text-gray-400 mb-4">{remaining}초 후 자동 처리됩니다</p>
 
-      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain" />
+      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-md object-contain" />
     </>
   );
 };
@@ -479,6 +479,10 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
         quantity: i.quantity,
         unit_price: i.item.price,
         is_free: i.isFree ?? false,
+        options: [
+          ...i.options.map((o) => (o.count > 1 ? `${o.name} ×${o.count}` : o.name)),
+          ...(i.isPackaging ? ["포장"] : []),
+        ].join(", "),
       })),
     });
     setIsProcessing(false);
@@ -553,7 +557,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl w-[80%] h-[88vh] flex flex-col overflow-hidden shadow-xl"
+        className="relative bg-white rounded-lg w-[80%] h-[88vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -582,7 +586,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
                 </p>
                 <button
                   onClick={onCancel}
-                  className="px-6 py-3 rounded-xl bg-[#FFB900] text-white font-semibold active:scale-95 transition"
+                  className="px-6 py-3 rounded-md bg-stone-900 text-white font-semibold active:scale-95 transition"
                 >
                   장바구니로 돌아가기
                 </button>
@@ -596,7 +600,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
                 </p>
                 <button
                   onClick={submitOrder}
-                  className="px-6 py-3 rounded-xl bg-[#FFB900] text-white font-semibold active:scale-95 transition"
+                  className="px-6 py-3 rounded-md bg-stone-900 text-white font-semibold active:scale-95 transition"
                 >
                   다시 전송
                 </button>
@@ -608,7 +612,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
         {/* 결제 처리 중 오버레이 */}
         {isProcessing && (
           <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-5 z-10">
-            <div className="w-14 h-14 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#FFB900" }} />
+            <div className="w-14 h-14 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#1C1917" }} />
             <p className="text-gray-700 font-semibold text-lg">결제 처리 중입니다...</p>
             <p className="text-gray-400 text-sm">카드를 빼지 마세요</p>
           </div>

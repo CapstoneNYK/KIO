@@ -1,3 +1,4 @@
+import { useChatPrefs } from "../store/chatPrefsStore";
 import { LuX } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
@@ -17,6 +18,7 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
 
   const finish = () => {
     clear();
+    useChatPrefs.getState().resetChat();
     setGuideScreen(null);
     setHighlightPaymentMethod(null);
     navigate("/");
@@ -26,7 +28,10 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
     <div className="fixed inset-0 z-70 flex items-center justify-center" style={{ backgroundColor: "#d4d4d4" }}>
       <div className="relative bg-white rounded-lg w-[65%] flex flex-col overflow-hidden px-12 py-14">
         <button
-          onClick={onClose}
+          onClick={() => {
+            finish();
+            onClose();
+          }}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
         >
           <LuX className="w-5 h-5" />

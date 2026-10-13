@@ -8,8 +8,13 @@ import { useCouponStore } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { useMenuStore } from "../store/menuStore";
 import type { MenuItem, Temperature, MenuOption } from "../types/menu";
+import { useChatPrefs } from "../store/chatPrefsStore";
+import {
+  speak, stopSpeaking, summarizeForSpeech, ttsSupported,
+  GREETING_TEXT, GREETING_SPEECH, GREETING_EXAMPLES,
+} from "../utils/tts";
 
-type Message = { role: "user" | "bot"; text: string };
+type Message = { role: "user" | "bot"; text: string; recommended?: string[] };
 
 // 봇 답변 렌더링: 줄바꿈을 살리고, "1번 …"/"1. …"로 시작하는 줄은 번호 배지가 있는 목록으로 보여준다
 function BotText({ text }: { text: string }) {
@@ -17,10 +22,10 @@ function BotText({ text }: { text: string }) {
     <div className="flex flex-col gap-1.5">
       {text.split("\n").map((line, idx) => {
         const m = line.match(/^(\d+)\s*(?:번|\.)\s*(.+)$/);
-        if (!m) return <p key={idx} className="text-[15px] leading-relaxed break-keep">{line}</p>;
+        if (!m) return <p key={idx} className="text-[1em] leading-relaxed break-keep">{line}</p>;
         return (
-          <p key={idx} className="flex items-start gap-2 text-[15px] leading-relaxed break-keep">
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-pink-500 text-xs font-bold text-white">
+          <p key={idx} className="flex items-start gap-2 text-[1em] leading-relaxed break-keep">
+            <span className="mt-0.5 flex h-[1.5em] w-[1.5em] shrink-0 items-center justify-center rounded-full bg-pink-500 text-[0.8em] font-bold text-white">
               {m[1]}
             </span>
             <span className="font-semibold">{m[2]}</span>
@@ -75,6 +80,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const ttsOn = useChatPrefs((s) => s.ttsOn) && ttsSupported;
+  const spokenCount = useRef(0); // 이미 읽어 준 메시지 수
+  const greeted = useRef(false); // 이번 손님에게 첫 인사를 했는지
   const location = useLocation();
   const addItem = useCartStore((s) => s.addItem);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -120,6 +128,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         const found = lines(action.menu);
         const target = found[found.length - 1];
         if (target) updateTemperature(target.cartId, action.temperature);
+      } else if (action.type === "set_temperature_all") {
+        current
+          .filter((i) => action.menus.includes(i.item.title))
+          .forEach((i) => updateTemperature(i.cartId, action.temperature));
       } else if (action.type === "remove_line") {
         action.indexes.forEach((idx) => {
           const line = current[idx];
@@ -160,6 +172,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   };
 
   const handleButtonClick = () => {
+    stopSpeaking(); // 말하려는 순간에는 읽어 주던 소리를 멈춘다 (마이크가 안내 음성을 받아 적지 않도록)
     if (listening) {
       stopListening();
     } else if (!processing) {
@@ -276,7 +289,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         openScan("assistant");
       }
 
-      const newMessages: Message[] = [{ role: "bot", text: botText }];
+      const newMessages: Message[] = [
+        { role: "bot", text: botText, recommended: res.intent === "recommend" ? res.recommended_menus : undefined },
+      ];
       if (res.intent === "order" && res.discount_tip) {
         newMessages.push({ role: "bot", text: res.discount_tip });
       }
@@ -292,19 +307,30 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     }
   };
 
+  const resetCount = useChatPrefs((s) => s.resetCount);
   useEffect(() => {
-    if (location.pathname === "/") {
+    if (resetCount > 0 || location.pathname === "/") {
       setMessages([]);
       setLastRecommended([]);
+      greeted.current = false;
+      spokenCount.current = 0;
+      stopSpeaking();
     }
-  }, [location.pathname]);
+  }, [location.pathname, resetCount]);
 
   useEffect(() => {
     if (isOpen) {
       resetTranscript();
-      startListening();
+      if (ttsOn && !greeted.current && messages.length === 0) {
+        // 첫 인사를 먼저 읽어 주고, 다 읽은 뒤에 마이크를 켠다 (인사 소리가 음성 인식에 섞이지 않게)
+        greeted.current = true;
+        speak(GREETING_SPEECH, () => startListening());
+      } else {
+        startListening();
+      }
     } else {
       stopListening();
+      stopSpeaking();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -315,6 +341,22 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     }
   }, [listening, transcript]);
 
+  // 새로 생긴 봇 답변을 짧게 요약해서 읽어 준다 (화면에는 전체 내용이 그대로 보인다)
+  useEffect(() => {
+    if (messages.length < spokenCount.current) spokenCount.current = messages.length;
+    const fresh = messages.slice(spokenCount.current);
+    spokenCount.current = messages.length;
+    if (!isOpen || !ttsOn) return;
+    const bots = fresh.filter((m) => m.role === "bot");
+    if (bots.length === 0) return;
+    const text = bots
+      .map((m) => summarizeForSpeech(m.text, m.recommended))
+      .join(" ")
+      .slice(0, 220);
+    speak(text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, transcript]);
@@ -323,17 +365,28 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     <div className="kio-chat flex flex-col h-full">
       {/* 채팅 히스토리 영역 (스크롤, 높이 고정) */}
       <div className="flex-1 overflow-y-auto flex flex-col gap-3 p-4 min-h-0 bg-pink-50/60">
-        {messages.length === 0 && !listening && !loading && (
-          <p className="text-sm text-pink-400 text-center pt-4">
-            아래 버튼을 눌러 말씀해 주세요
-          </p>
+        {messages.length === 0 && !loading && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-pink-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-[92%] shadow-sm text-gray-900">
+              <p className="font-bold text-pink-600 text-[1em] mb-1">안녕하세요!</p>
+              <p className="text-[1em] leading-relaxed break-keep">{GREETING_TEXT.replace("안녕하세요! ", "")}</p>
+              <p className="mt-2 text-[0.85em] font-semibold text-gray-500">이렇게 말씀해 보세요</p>
+              <ul className="mt-1 flex flex-col gap-1">
+                {GREETING_EXAMPLES.map((ex) => (
+                  <li key={ex} className="rounded-lg bg-pink-50 px-3 py-1.5 text-[0.95em] text-pink-700 break-keep">
+                    “{ex}”
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         )}
 
         {messages.map((msg, i) =>
           msg.role === "user" ? (
             <div key={i} className="flex justify-end">
               <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-[85%] shadow-sm">
-                <p className="text-[15px] leading-relaxed break-keep">{msg.text}</p>
+                <p className="text-[1em] leading-relaxed break-keep">{msg.text}</p>
               </div>
             </div>
           ) : (
@@ -349,7 +402,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         {listening && transcript && (
           <div className="flex justify-end opacity-60">
             <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-[85%] shadow-sm">
-              <p className="text-[15px] leading-relaxed">{transcript}</p>
+              <p className="text-[1em] leading-relaxed">{transcript}</p>
             </div>
           </div>
         )}
@@ -370,7 +423,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       </div>
 
       {/* 마이크 버튼 (하단 고정) */}
-      <div className="flex flex-col items-center gap-2 p-3 border-t border-pink-50">
+      <div className="flex flex-col items-center gap-2 p-3 border-t border-pink-100 bg-white">
         <button
           onClick={handleButtonClick}
           disabled={processing}
@@ -410,7 +463,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           )}
         </button>
         <p
-          className={`text-sm font-medium ${
+          className={`text-[0.9em] font-medium ${
             listening ? "text-red-500" : "text-pink-500"
           }`}
         >
