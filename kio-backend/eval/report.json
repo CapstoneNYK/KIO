@@ -1,0 +1,57 @@
+{
+  "기본셋 / 주문 추출·옵션": {
+    "correct": 64,
+    "total": 64,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "기본셋 / 장바구니 취소·변경": {
+    "correct": 32,
+    "total": 32,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "기본셋 / 조건 추천": {
+    "correct": 23,
+    "total": 23,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 주문 추출·옵션": {
+    "correct": 20,
+    "total": 20,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 장바구니 취소·변경": {
+    "correct": 13,
+    "total": 14,
+    "accuracy": 92.9,
+    "failures": [
+      {
+        "text": "카페라떼 말고 아메리카노로",
+        "problems": [
+          "액션 [] (기대 [{'type': 'replace_item', 'menu': '카페라떼', 'to_menu': '아메리카노'}])"
+        ]
+      }
+    ]
+  },
+  "자연발화셋 / 조건 추천": {
+    "correct": 10,
+    "total": 10,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "overall_rules": {
+    "correct": 162,
+    "total": 163,
+    "accuracy": 99.4
+  },
+  "LLM / 의도 분류": {
+    "correct": 24,
+    "total": 24,
+    "accuracy": 100.0,
+    "confusion": {},
+    "failures": []
+  }
+}

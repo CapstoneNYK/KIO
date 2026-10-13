@@ -21,6 +21,8 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": "http://localhost:8000",
+      // 관리자 페이지에서 올린 메뉴/할인 이미지
+      "/uploads": "http://localhost:8000",
     },
   },
 });
