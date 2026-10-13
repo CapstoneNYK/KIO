@@ -6,6 +6,40 @@ import { useLearningStore } from "../store/learningStore";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+// 결제 1회당 하나의 멱등키. 네트워크 오류로 같은 주문을 다시 보내도 서버가 한 번만 저장한다.
+const newRequestId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** 주문 저장 요청. 네트워크 오류/서버 오류(5xx)는 같은 멱등키로 최대 3회 재시도하고,
+ *  요청 자체가 잘못된 경우(4xx)는 재시도해도 소용없으므로 바로 실패 처리한다. */
+type SaveResult = { ok: true } | { ok: false; rejected: boolean; message?: string };
+
+async function saveOrderWithRetry(body: unknown, maxAttempts = 3): Promise<SaveResult> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(`${API_URL}/api/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) return { ok: true };
+      if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
+        // 재고 부족(409) 등 서버가 주문을 거절한 경우: 재시도하지 않고 사유를 보여준다
+        const data = await res.json().catch(() => null);
+        return { ok: false, rejected: true, message: typeof data?.detail === "string" ? data.detail : undefined };
+      }
+    } catch {
+      // 네트워크 오류 → 재시도
+    }
+    if (attempt < maxAttempts) await sleep(500 * attempt);
+  }
+  return { ok: false, rejected: false };
+}
+
 const PAYMENT_LABELS: Record<string, string> = {
   card: "카드결제", appcard: "앱카드결제", kakao: "카카오페이",
   naver: "네이버페이", voucher: "모바일상품권", giftcard: "기프트카드",
@@ -405,6 +439,9 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
   const title = TITLES[method] ?? "결제";
   const [isProcessing, setIsProcessing] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [orderError, setOrderError] = useState<{ rejected: boolean; message?: string } | null>(null);
+  const [savedRequestId, setSavedRequestId] = useState<string | null>(null);
+  const requestIdRef = useRef<string>(newRequestId());
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const cartItems = useCartStore((s) => s.items);
@@ -419,40 +456,43 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
     if (guideScreen === "payment_complete") setShowComplete(true);
   }, [guideScreen]);
 
+  // 주문 저장 + 완료 처리. 실패하면 완료 화면으로 넘어가지 않고 재시도 안내를 보여준다
+  // (같은 멱등키를 쓰므로 재시도해도 중복 주문이 생기지 않는다).
+  const submitOrder = async () => {
+    const totalAmount = cartItems.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+    const freeDiscount = cartItems.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
+    const couponDiscount = calcDiscount(coupons, totalAmount - freeDiscount, cartItems);
+    const discountAmount = freeDiscount + couponDiscount;
+
+    setOrderError(null);
+    setIsProcessing(true);
+    const saved = await saveOrderWithRetry({
+      payment_method: PAYMENT_LABELS[method] ?? method,
+      total_amount: totalAmount,
+      discount_amount: discountAmount,
+      final_amount: totalAmount - discountAmount,
+      is_packaging: isPackaging,
+      request_id: requestIdRef.current,
+      items: cartItems.map((i) => ({
+        menu_name: i.item.title,
+        temperature: i.temperature,
+        quantity: i.quantity,
+        unit_price: i.item.price,
+        is_free: i.isFree ?? false,
+      })),
+    });
+    setIsProcessing(false);
+    if (saved.ok) {
+      setSavedRequestId(requestIdRef.current);
+      setShowComplete(true);
+    } else {
+      setOrderError({ rejected: saved.rejected, message: saved.message });
+    }
+  };
+
   const handleApprove = () => {
     setIsProcessing(true);
-    setTimeout(async () => {
-      const totalAmount = cartItems.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-      const freeDiscount = cartItems.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
-      const couponDiscount = calcDiscount(coupons, totalAmount - freeDiscount, cartItems);
-      const discountAmount = freeDiscount + couponDiscount;
-
-      try {
-        await fetch(`${API_URL}/api/orders`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            payment_method: PAYMENT_LABELS[method] ?? method,
-            total_amount: totalAmount,
-            discount_amount: discountAmount,
-            final_amount: totalAmount - discountAmount,
-            is_packaging: isPackaging,
-            items: cartItems.map((i) => ({
-              menu_name: i.item.title,
-              temperature: i.temperature,
-              quantity: i.quantity,
-              unit_price: i.item.price,
-              is_free: i.isFree ?? false,
-            })),
-          }),
-        });
-      } catch {
-        // 주문 저장 실패해도 결제 완료 화면은 정상 표시
-      }
-
-      setIsProcessing(false);
-      setShowComplete(true);
-    }, 3000);
+    setTimeout(submitOrder, 3000);
   };
 
   const renderContent = () => {
@@ -531,6 +571,40 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
           {renderContent()}
         </div>
 
+        {/* 주문 접수 실패 안내: 네트워크 문제는 같은 주문을 다시 전송하고, 서버가 거절한 경우(재고 부족 등)는 사유를 안내한다 */}
+        {orderError && !isProcessing && (
+          <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-4 z-20 px-8 text-center">
+            {orderError.rejected ? (
+              <>
+                <p className="text-gray-900 font-bold text-lg">주문을 접수할 수 없어요</p>
+                <p className="text-gray-500 text-sm break-keep">
+                  {orderError.message ?? "주문 내용을 확인할 수 없어요."} 결제는 승인되지 않았어요. 장바구니를 확인해 주세요.
+                </p>
+                <button
+                  onClick={onCancel}
+                  className="px-6 py-3 rounded-xl bg-[#FFB900] text-white font-semibold active:scale-95 transition"
+                >
+                  장바구니로 돌아가기
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-900 font-bold text-lg">주문 접수를 확인하지 못했어요</p>
+                <p className="text-gray-500 text-sm break-keep">
+                  네트워크 문제로 주문이 전달되지 않았을 수 있어요. 아래 버튼으로 다시 전송해 주세요.
+                  같은 주문이 두 번 접수되지는 않아요. 계속 안 되면 카운터 직원에게 문의해 주세요.
+                </p>
+                <button
+                  onClick={submitOrder}
+                  className="px-6 py-3 rounded-xl bg-[#FFB900] text-white font-semibold active:scale-95 transition"
+                >
+                  다시 전송
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {/* 결제 처리 중 오버레이 */}
         {isProcessing && (
           <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-5 z-10">
@@ -542,7 +616,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       </div>
 
       {showComplete && (
-        <PaymentCompleteModal onClose={() => setShowComplete(false)} />
+        <PaymentCompleteModal requestId={savedRequestId} onClose={() => setShowComplete(false)} />
       )}
     </div>
   );
