@@ -6,7 +6,6 @@ import { useLearningStore } from "../store/learningStore";
 
 interface PaymentCompleteModalProps {
   onClose: () => void;
-  /** (사용 안 함) 결제 후 취소는 직원이 관리자 화면에서만 한다. 호출부 호환용으로만 남겨 둠. */
   requestId?: string | null;
 }
 

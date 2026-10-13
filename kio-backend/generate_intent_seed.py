@@ -1,14 +1,3 @@
-"""의도 분류 파인튜닝용 초기(seed) 데이터셋 생성 스크립트.
-
-실제 사용 로그(data/intent_logs.jsonl)가 쌓이기 전, 파인튜닝을 바로 시작해볼 수 있도록
-기존 intent.py 프롬프트의 예시들을 바탕으로 다양한 변형 문장을 자동 생성한다.
-
-실행 방법 (kio-backend 폴더에서):
-    uv run python generate_intent_seed.py
-
-메뉴 목록이 바뀌면 이 스크립트를 다시 실행해서 data/intent_seed.jsonl을 갱신하면 된다.
-"""
-
 import json
 import random
 from pathlib import Path
@@ -198,7 +187,6 @@ def main() -> None:
     print(f"총 {len(data)}개 생성 -> {out_path}")
     for intent, count in counts.items():
         print(f"  {intent}: {count}")
-
 
 if __name__ == "__main__":
     main()

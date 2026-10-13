@@ -87,7 +87,6 @@ export const SalesStatus = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Period selector */}
       <div className="flex justify-end">
         <div className="flex rounded-lg overflow-hidden border border-gray-200 bg-white">
           {(["오늘", "이번 주", "이번 달"] as Period[]).map((p) => (
@@ -114,7 +113,6 @@ export const SalesStatus = () => {
         !error && <div className="flex items-center justify-center h-40 text-gray-400 text-sm">불러오는 중...</div>
       ) : (
         <>
-          {/* Stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="총 매출액" value={`₩${curr.sales.toLocaleString()}`} change={pct(curr.sales, prev.sales)} isPositive={curr.sales >= prev.sales} />
             <StatCard title="총 주문 건수" value={`${curr.orders.toLocaleString()}건`} change={pct(curr.orders, prev.orders)} isPositive={curr.orders >= prev.orders} />
@@ -128,7 +126,6 @@ export const SalesStatus = () => {
             />
           </div>
 
-          {/* 데이터 없음 안내 */}
           {curr.orders === 0 ? (
             <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 flex items-center justify-center">
               <p className="text-sm text-gray-400">해당 기간에 주문 데이터가 없습니다.</p>

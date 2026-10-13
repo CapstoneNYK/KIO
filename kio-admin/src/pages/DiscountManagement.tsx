@@ -3,8 +3,6 @@ import { FiEdit2, FiTrash2, FiUpload, FiX } from "react-icons/fi";
 import { PiToggleRightFill, PiToggleLeftFill, PiPlusBold, PiTicketBold } from "react-icons/pi";
 import { apiFetch, API, authHeaders } from "../api";
 
-// 결제 모달(PaymentModal.tsx)에 이미 버튼/아이콘으로 있는 할인수단만 선택 가능.
-// 새 결제수단 자체를 추가하려면 프론트에 버튼을 먼저 만들어야 한다.
 const METHOD_LABELS: Record<string, string> = {
   kt: "KT VIP",
   tmembership: "T멤버십",
@@ -190,7 +188,6 @@ export const DiscountManagement = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Add discount section */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <p className="text-sm font-bold text-gray-700 flex items-center gap-1.5 mb-4">
           <PiPlusBold size={14} style={{ color: "#F5A623" }} />
@@ -263,7 +260,6 @@ export const DiscountManagement = () => {
         </div>
       )}
 
-      {/* Discount list */}
       {loading ? (
         <div className="flex items-center justify-center h-40 text-gray-400 text-sm">불러오는 중...</div>
       ) : discounts.length === 0 ? (
@@ -318,7 +314,6 @@ export const DiscountManagement = () => {
         </div>
       )}
 
-      {/* Edit modal */}
       {editingId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditingId(null)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>

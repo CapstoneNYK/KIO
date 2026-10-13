@@ -36,7 +36,6 @@ export const useCartStore = create<CartStore>((set) => ({
         return a.every((opt) => b.some((o) => o.name === opt.name && o.count === opt.count));
       };
 
-      // 무료 아이템은 중복 병합 없이 항상 새 항목으로 추가
       if (!isFree) {
         const existing = state.items.find(
           (i) =>
@@ -69,7 +68,6 @@ export const useCartStore = create<CartStore>((set) => ({
     set((state) => ({
       items: state.items.map((i) => (i.cartId === cartId ? { ...i, temperature } : i)),
     })),
-  // 옵션을 바꾼 뒤 같은 구성의 다른 줄이 있으면 하나로 합친다
   updateOptions: (cartId, options) =>
     set((state) => {
       const same = (a: MenuOption[], b: MenuOption[]) =>

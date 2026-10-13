@@ -61,7 +61,6 @@ function App() {
         onClose={() => setSidebarOpen(false)}
       />
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        {/* Top bar */}
         <header className="bg-white border-b px-4 sm:px-8 flex items-center justify-between flex-shrink-0" style={{ borderColor: "#FEE685", height: "68px" }}>
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -91,7 +90,6 @@ function App() {
             </button>
           </div>
         </header>
-        {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">
           {activePage === "sales" && <SalesStatus />}
           {activePage === "analytics" && <MenuAnalytics />}

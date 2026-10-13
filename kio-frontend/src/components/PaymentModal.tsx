@@ -18,7 +18,6 @@ const DISCOUNT_METHODS = [
   { id: "uzu", label: "T우주 우주패스", icon: iconTUzu, iconSize: "w-14 h-14" },
 ];
 
-// 할인 적용 불가 시 안내 문구 (null = 모든 메뉴 적용 가능)
 const DISCOUNT_INELIGIBLE_MSG: Record<string, string | null> = {
   tmembership: "T멤버십은 아이스 아메리카노만 30% 할인 적용됩니다.",
   kt: null,
@@ -91,7 +90,6 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
         className="relative bg-white rounded-2xl w-[80%] h-[88vh] flex flex-col overflow-hidden shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
         <div className="flex items-center justify-center py-4 px-6 shrink-0">
           <h2 className="text-lg font-bold text-gray-900">결제수단 선택</h2>
           <button
@@ -103,7 +101,6 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
-          {/* 상품권 차액 결제 안내 */}
           {hasAmountCoupon && remainingPrice > 0 && (
             <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50 border border-amber-100">
               <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
@@ -119,7 +116,6 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
             </div>
           )}
 
-          {/* 할인 비대상 경고 */}
           {discountWarning && (
             <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded-2xl bg-red-50 border border-red-100">
               <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -129,7 +125,6 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
             </div>
           )}
 
-          {/* 할인수단 */}
           <p className="font-bold text-gray-800 text-lg mb-4">할인수단</p>
           <div className="grid grid-cols-2 gap-4 mb-8">
             {DISCOUNT_METHODS.map((m) => {
@@ -159,7 +154,6 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
             })}
           </div>
 
-          {/* 결제수단 */}
           <p className="font-bold text-gray-800 text-lg mb-4">결제수단</p>
           <div className="grid grid-cols-2 gap-4">
             {PAYMENT_METHODS.map((m) => {
@@ -185,7 +179,6 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
                     style={m.id === "kakao" ? { backgroundColor: "#FEE500" } : undefined}
                   >
                     {m.imgIcon
-                      // 카카오페이 로고는 둥근 사각형이라 원 안에 꽉 차도록 확대하고 로고 색(노랑)으로 바탕을 채운다
                       ? <img src={m.imgIcon} alt={m.label} className={`w-full h-full object-cover ${m.id === "kakao" ? "scale-[1.3]" : ""}`} />
                       : <span className="text-gray-500">{m.icon}</span>
                     }

@@ -21,8 +21,6 @@ router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(ge
 auth_router = APIRouter(prefix="/api/admin", tags=["admin-auth"])
 
 
-# ── Auth ───────────────────────────────────────────────────────────────────
-
 @auth_router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest):
     if not verify_admin_credentials(body.username, body.password):
@@ -36,8 +34,6 @@ def signup(body: SignupRequest):
     return TokenResponse(access_token=create_access_token(body.username))
 
 
-# ── Menus ──────────────────────────────────────────────────────────────────
-
 class MenuCreate(BaseModel):
     name: str = Field(min_length=1, max_length=50)
     price: int = Field(ge=0)
@@ -47,7 +43,7 @@ class MenuCreate(BaseModel):
     caffeine: bool = True
     tags: list[str] = []
     sizes: list[str] = ["S", "M", "L"]
-    stock: int | None = Field(default=None, ge=0)   # None 이면 재고를 관리하지 않음(무제한)
+    stock: int | None = Field(default=None, ge=0)
 
 
 class MenuUpdate(BaseModel):
@@ -61,11 +57,10 @@ class MenuUpdate(BaseModel):
     tags: list[str] | None = None
     sizes: list[str] | None = None
     stock: int | None = Field(default=None, ge=0)
-    track_stock: bool | None = None   # False 면 재고 관리 해제(무제한)
-
+    track_stock: bool | None = None
 
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 
 def _delete_image_file(image_url: str | None) -> None:
@@ -114,7 +109,6 @@ class MenuAnalyzeRequest(BaseModel):
 
 @router.post("/menus/analyze")
 def analyze_menu_attrs(body: MenuAnalyzeRequest):
-    """등록 전 폼에서 쓰는 속성 분석: 이름·카테고리로 맛 태그·카페인을 제안한다 (저장은 하지 않음)."""
     from ai.menu_analyzer import analyze_menu
     return analyze_menu(body.name.strip(), body.category, body.description)
 
@@ -147,9 +141,6 @@ def delete_menu(menu_id: int):
         raise HTTPException(status_code=404, detail="메뉴를 찾을 수 없습니다.")
     db.delete_menu(menu_id)
     _delete_image_file(existing["image_url"])
-
-
-# ── Discounts ──────────────────────────────────────────────────────────────
 
 _ALLOWED_METHOD_CODES = set(db.DISCOUNT_METHODS.keys())
 
@@ -224,15 +215,13 @@ def delete_discount(discount_id: int):
     _delete_image_file(existing["image_url"])
 
 
-# ── Orders ─────────────────────────────────────────────────────────────────
-
 class OrderItem(BaseModel):
     menu_name: str
     temperature: str = ""
     quantity: int
     unit_price: int
     is_free: bool = False
-    options: str = Field(default="", max_length=200)  # 예: "샷추가 ×2, 시럽 적게, 포장"
+    options: str = Field(default="", max_length=200)
 
 
 class OrderCreate(BaseModel):
@@ -242,10 +231,8 @@ class OrderCreate(BaseModel):
     final_amount: int
     is_packaging: bool = False
     items: list[OrderItem]
-    request_id: str | None = Field(default=None, max_length=64)  # 멱등키(중복 주문 방지)
+    request_id: str | None = Field(default=None, max_length=64)
 
-
-# kio-frontend가 호출하는 엔드포인트 (prefix 없이 /api/orders, /api/menus, /api/discounts)
 orders_router = APIRouter(prefix="/api", tags=["orders"])
 menus_public_router = APIRouter(prefix="/api", tags=["menus"])
 discounts_public_router = APIRouter(prefix="/api", tags=["discounts"])
@@ -293,8 +280,6 @@ def update_order_status(order_id: int, body: OrderStatusUpdate):
 def list_orders(date_from: str | None = None, date_to: str | None = None):
     return db.get_orders(date_from, date_to)
 
-
-# ── Sales & Analytics ──────────────────────────────────────────────────────
 
 @router.get("/sales")
 def get_sales(period: str = "today"):

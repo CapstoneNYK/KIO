@@ -1,10 +1,3 @@
-"""규칙 기반 계층 정확도 측정.  실행:  uv run python -m eval.run_eval  (kio-backend 폴더에서)
-
-- LLM/GPU 없이 돌아간다 (주문 추출, 옵션 구조화, 장바구니 명령, 조건 추천).
-- 현재 관리자 DB의 메뉴를 기준으로 평가한다 (기본 시드 메뉴 가정).
-- 결과는 콘솔과 eval/report.json 에 저장된다.
-- 의도 분류(LLM)는 --intent 로 별도 측정 (Ollama 실행 필요).
-"""
 import json
 import sys
 from pathlib import Path
@@ -54,7 +47,9 @@ def eval_order(menus):
 
 def eval_cart(menus):
     fails, ok = [], 0
+    from ai.cart_command import clear_pending
     for text, cart, exp in CART_CASES:
+        clear_pending()
         got = detect_cart_command(text, cart, menus)
         problems = []
         if exp is None:
@@ -101,7 +96,6 @@ def eval_reco(menus):
                 if m is None:
                     problems.append(f"없는 메뉴 {raw}")
                     continue
-                # 조건이 완화된 경우(relaxed)는 안내 문구가 있으므로 완화되지 않은 조건만 검사한다
                 if cond.get("caffeine") is False and m["caffeine"]:
                     problems.append(f"{name}: 카페인 있음")
                 if cond.get("caffeine") is True and not m["caffeine"]:
@@ -118,6 +112,13 @@ def eval_reco(menus):
                     problems.append(f"{name}: 제외 카테고리 {m['category']}")
                 if "cats_only" in cond and m["category"] not in cond["cats_only"]:
                     problems.append(f"{name}: 카테고리 {m['category']}")
+        if cond and "min_categories" in cond:
+            fam = {"디카페인": "커피"}
+            kinds = {fam.get(by_name[n.removeprefix("핫 ").removeprefix("아이스 ")]["category"],
+                             by_name[n.removeprefix("핫 ").removeprefix("아이스 ")]["category"])
+                     for n in rec.menus if n.removeprefix("핫 ").removeprefix("아이스 ") in by_name}
+            if len(kinds) < cond["min_categories"]:
+                problems.append(f"종류가 다양하지 않음 {sorted(kinds)}")
         if problems:
             fails.append({"text": text, "problems": problems})
         else:
@@ -142,9 +143,45 @@ def run_set(title, menus, order, cart, reco, report):
     return total_ok, total
 
 
+def eval_dialog(menus):
+    from ai.cart_command import clear_pending
+    from eval.cases_extra import DIALOG_CASES
+    fails, ok = [], 0
+    for title, turns in DIALOG_CASES:
+        clear_pending()
+        problems = []
+        for text, cart, exp in turns:
+            got = detect_cart_command(text, cart, menus)
+            if exp is None:
+                if got is not None:
+                    problems.append(f"'{text}' 명령으로 오탐: {got['cart_actions']}")
+            elif got is None:
+                problems.append(f"'{text}' 인식 못함")
+            else:
+                if got["intent"] != exp["intent"]:
+                    problems.append(f"'{text}' intent {got['intent']} (기대 {exp['intent']})")
+                acts = got["cart_actions"]
+                if len(acts) != len(exp["actions"]):
+                    problems.append(f"'{text}' 액션 {acts} (기대 {exp['actions']})")
+                else:
+                    for a, e in zip(acts, exp["actions"]):
+                        if any(a.get(k) != v for k, v in e.items()):
+                            problems.append(f"'{text}' 액션 {a} (기대 {e})")
+        if problems:
+            fails.append({"text": title, "problems": problems})
+        else:
+            ok += 1
+    clear_pending()
+    n = len(DIALOG_CASES)
+    print(f"\n=== [대화형] 되묻기 이어 받기: {ok}/{n} ({ok / n * 100:.1f}%)")
+    for f in fails:
+        print(f"  ✗ {f['text']}")
+        for p in f["problems"]:
+            print(f"      - {p}")
+    return ok, n, fails
+
+
 def eval_intent_fast(menus):
-    """LLM 없이 규칙(fast_classify)만으로 의도 분류. 확실한 것만 결정하고 나머지는 None(=LLM 담당).
-    핵심 지표: 오분류(wrong)는 0이어야 하고, 결정한 비율(coverage)이 높을수록 LLM 호출이 줄어든다."""
     from ai.fast_intent import fast_classify
     from eval.cases_intent import INTENT_CASES
     names = [m["name"] for m in menus]
@@ -167,7 +204,6 @@ def eval_intent_fast(menus):
 
 
 def eval_intent(report, menus):
-    """의도 분류 정확도. 규칙 단독 / LLM 단독 / 실제 파이프라인(규칙 → 애매하면 LLM) 세 가지를 잰다. Ollama 필요."""
     from ai.fast_intent import fast_classify
     from ai.intent import classify_intent
     from eval.cases_intent import INTENT_CASES
@@ -211,8 +247,6 @@ def eval_intent(report, menus):
 
 def main():
     from eval import cases, cases_hard, cases_extra
-    # 평가는 항상 '기본 시드 메뉴'로 한다. 실제 DB에서 품절 처리해 둔 메뉴(예: 아메리카노)가 있으면
-    # 정답이 달라지기 때문이다. 실제 DB 상태로 보고 싶으면 --live
     if "--live" not in sys.argv:
         import tempfile
         admin_db.DB_PATH = Path(tempfile.mkdtemp()) / "eval.db"
@@ -231,13 +265,14 @@ def main():
         all_n += n
     print(f"\n전체(규칙 기반): {all_ok}/{all_n} ({all_ok / all_n * 100:.1f}%)")
     report["overall_rules"] = {"correct": all_ok, "total": all_n, "accuracy": round(all_ok / all_n * 100, 1)}
+    d_ok, d_n, d_fails = eval_dialog(menus)
+    report["대화형 / 되묻기 이어 받기"] = {"correct": d_ok, "total": d_n, "accuracy": round(d_ok / d_n * 100, 1), "failures": d_fails}
     report["intent_rules"] = eval_intent_fast(menus)
     if "--intent" in sys.argv:
         eval_intent(report, menus)
     out = Path(__file__).parent / "report.json"
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"리포트 저장: {out}")
-
 
 if __name__ == "__main__":
     main()

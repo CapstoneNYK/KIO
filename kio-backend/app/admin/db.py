@@ -9,8 +9,6 @@ DB_PATH = Path(__file__).parent / "kio_admin.db"
 UPLOAD_DIR = Path(__file__).parent / "uploads" / "menu_images"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# 결제 모달(PaymentModal.tsx)에 이미 버튼/아이콘으로 존재하는 할인수단만 관리 가능.
-# 새 결제수단 자체를 추가하려면 프론트에 버튼을 먼저 만들어야 한다.
 DISCOUNT_METHODS: dict[str, str] = {
     "kt": "KT VIP",
     "tmembership": "T멤버십",
@@ -70,10 +68,6 @@ INITIAL_MENUS = [
     (22, "히비스커스",          3000, "티",      '["HOT","ICE"]', 0),
 ]
 
-
-# 맞춤형 추천용 메뉴 속성: 메뉴명 -> (카페인 유무, 맛 태그).
-# 기존 DB에 컬럼을 새로 추가할 때(또는 최초 시드 시) 한 번만 채워 넣는다.
-# 이후 관리자가 API로 수정한 값은 덮어쓰지 않는다.
 DEFAULT_SIZES = ["S", "M", "L"]
 INITIAL_MENU_ATTRS = {
     "아메리카노":          (True,  ["쌉쌀", "산미", "깔끔"]),
@@ -174,7 +168,6 @@ def init_db() -> None:
         if "image_url" not in existing_columns:
             conn.execute("ALTER TABLE menus ADD COLUMN image_url TEXT")
 
-        # 맞춤형 추천용 속성(카페인/맛 태그/사이즈). 새로 추가되는 경우에만 기본값을 채운다.
         attrs_added = False
         if "caffeine" not in existing_columns:
             conn.execute("ALTER TABLE menus ADD COLUMN caffeine INTEGER NOT NULL DEFAULT 1")
@@ -186,7 +179,6 @@ def init_db() -> None:
             conn.execute("ALTER TABLE menus ADD COLUMN sizes TEXT NOT NULL DEFAULT '[]'")
             attrs_added = True
 
-        # 주문 저장 멱등키: 네트워크 재시도로 같은 결제가 두 번 저장되지 않게 한다.
         order_columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)")}
         if "request_id" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN request_id TEXT")
@@ -195,18 +187,14 @@ def init_db() -> None:
             "ON orders(request_id) WHERE request_id IS NOT NULL"
         )
 
-        # 주문 상태: 결제 완료(PAID) 또는 CANCELLED. 실제 매장 운영을 고려해 조리 단계 상태는 두지 않는다.
-        # 기존 주문은 모두 결제가 끝난 상태로 저장되어 있었으므로 PAID 로 채운다.
         if "status" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN status TEXT NOT NULL DEFAULT 'PAID'")
         if "status_updated_at" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN status_updated_at TEXT")
 
-        # 수량 재고: NULL 이면 재고를 관리하지 않는 메뉴(무제한)
         if "stock" not in existing_columns:
             conn.execute("ALTER TABLE menus ADD COLUMN stock INTEGER")
 
-        # 주문 당시 카테고리를 저장해 두어, 이후 메뉴 이름 변경/삭제에도 카테고리 통계가 유지되도록 한다.
         item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(order_items)")}
         if "category" not in item_columns:
             conn.execute("ALTER TABLE order_items ADD COLUMN category TEXT")
@@ -252,8 +240,6 @@ def init_db() -> None:
             )
 
 
-# ── Menus ──────────────────────────────────────────────────────────────────
-
 def get_menus() -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute("SELECT * FROM menus ORDER BY id").fetchall()
@@ -285,7 +271,6 @@ def create_menu(
 
 
 def update_menu(menu_id: int, **fields) -> dict | None:
-    """clear_stock=True 이면 재고 관리를 끄고(무제한) stock 값은 무시한다."""
     allowed = {"name", "price", "category", "temps", "sold_out", "image_url", "caffeine", "tags", "sizes", "stock"}
     clear_stock = bool(fields.pop("clear_stock", False))
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
@@ -307,9 +292,9 @@ def update_menu(menu_id: int, **fields) -> dict | None:
             updates["stock"] = max(0, int(updates["stock"]))
             before = conn.execute("SELECT stock, sold_out FROM menus WHERE id=?", (menu_id,)).fetchone()
             if updates["stock"] == 0:
-                updates["sold_out"] = 1            # 재고 0 → 자동 품절
+                updates["sold_out"] = 1
             elif before and before["stock"] == 0 and before["sold_out"] and "sold_out" not in updates:
-                updates["sold_out"] = 0            # 재고를 다시 채우면 자동 품절 해제
+                updates["sold_out"] = 0
         if updates:
             set_clause = ", ".join(f"{k}=?" for k in updates)
             conn.execute(f"UPDATE menus SET {set_clause} WHERE id=?", (*updates.values(), menu_id))
@@ -350,8 +335,6 @@ def _menu_row(row: sqlite3.Row) -> dict:
     d["track_stock"] = d["stock"] is not None
     return d
 
-
-# ── Discounts ──────────────────────────────────────────────────────────────
 
 def get_discounts(active_only: bool = False) -> list[dict]:
     sql = "SELECT * FROM discounts"
@@ -410,8 +393,6 @@ def _discount_row(row: sqlite3.Row) -> dict:
     return d
 
 
-# ── Admins ─────────────────────────────────────────────────────────────────
-
 def get_admin_by_username(username: str) -> dict | None:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM admins WHERE username=?", (username,)).fetchone()
@@ -428,11 +409,7 @@ def create_admin(username: str, password_hash: str) -> dict:
     return dict(row)
 
 
-# ── Orders ─────────────────────────────────────────────────────────────────
-
 class OutOfStock(Exception):
-    """재고가 부족한 메뉴가 있을 때. names 에 부족한 메뉴명 목록."""
-
     def __init__(self, names: list[str]):
         super().__init__(", ".join(names))
         self.names = names
@@ -460,7 +437,6 @@ def _check_stock(conn: sqlite3.Connection, items: list[dict]) -> None:
 
 
 def _apply_stock(conn: sqlite3.Connection, items: list[dict], sign: int) -> None:
-    """sign=-1: 주문으로 차감, +1: 취소로 복구. 재고가 0이 되면 자동 품절, 복구되면 자동 해제."""
     for name, qty in _need_by_menu(items).items():
         row = conn.execute("SELECT stock, sold_out FROM menus WHERE name=?", (name,)).fetchone()
         if row is None or row["stock"] is None:
@@ -483,8 +459,6 @@ def save_order(
     items: list[dict],
     request_id: str | None = None,
 ) -> dict:
-    """주문을 저장한다. request_id(멱등키)가 같은 요청이 이미 저장돼 있으면 새로 저장하지 않고
-    기존 주문을 그대로 돌려준다 (네트워크 재시도로 인한 중복 주문 방지)."""
     with get_conn() as conn:
         if request_id:
             existing = conn.execute(
@@ -502,7 +476,6 @@ def save_order(
                  int(is_packaging), request_id),
             )
         except sqlite3.IntegrityError:
-            # 거의 동시에 같은 멱등키 요청이 들어온 경우
             existing = conn.execute(
                 "SELECT * FROM orders WHERE request_id=?", (request_id,)
             ).fetchone()
@@ -528,14 +501,7 @@ def save_order(
         row = conn.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
     return dict(row)
 
-
-# 주문 상태는 결제완료(PAID)와 취소(CANCELLED)만 쓴다.
-# 실제 매장에서는 직원이 조리 단계마다 버튼을 누를 수 없으므로 "조리 시작/수령 완료" 같은 상태는 두지 않는다.
-# (예전 버전에서 만든 PREPARING/READY/COMPLETED 값이 DB에 남아 있어도 표시·집계는 정상 동작한다.)
 ORDER_STATUSES = ("PAID", "CANCELLED")
-STATUS_LABELS = {"PAID": "결제 완료", "CANCELLED": "취소됨",
-                 "PREPARING": "결제 완료", "READY": "결제 완료", "COMPLETED": "결제 완료"}
-# 결제 후 취소는 직원만 관리자 화면에서 한다. (이미 조리가 시작됐을 수 있어 손님이 키오스크에서 취소하게 두지 않는다.)
 
 
 def get_order(order_id: int) -> dict | None:
@@ -549,15 +515,7 @@ def get_order(order_id: int) -> dict | None:
     return order
 
 
-def get_order_by_request_id(request_id: str) -> dict | None:
-    with get_conn() as conn:
-        row = conn.execute("SELECT id FROM orders WHERE request_id=?", (request_id,)).fetchone()
-    return get_order(row["id"]) if row else None
-
-
 def change_order_status(order_id: int, new_status: str) -> tuple[dict | None, str | None]:
-    """주문을 취소한다. (주문, 오류메시지) 를 돌려준다. 취소하면 재고를 복구한다.
-    관리자(직원)만 호출한다. 시간 제한은 없다."""
     if new_status not in ORDER_STATUSES:
         return None, "알 수 없는 주문 상태입니다."
     with get_conn() as conn:
@@ -605,8 +563,6 @@ def get_orders(date_from: str | None = None, date_to: str | None = None) -> list
     return orders
 
 
-# ── Sales stats ────────────────────────────────────────────────────────────
-
 def _period_range(period: str) -> tuple[str, str, str, str]:
     now = datetime.now()
     fmt = "%Y-%m-%d %H:%M:%S"
@@ -622,7 +578,7 @@ def _period_range(period: str) -> tuple[str, str, str, str]:
         end = now
         prev_start = start - timedelta(weeks=1)
         prev_end = start
-    else:  # month
+    else:
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end = now
         prev_start = (start - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0)
@@ -656,12 +612,10 @@ def get_sales(period: str) -> dict:
         prev = _aggregate(conn, prev_start, prev_end)
     return {"current": curr, "previous": prev}
 
-
 WEEKDAYS_KO = ["월", "화", "수", "목", "금", "토", "일"]
 
 
 def get_sales_trend(period: str) -> list[dict]:
-    """today=시간대별(0~23시), week=요일별(월~일), month=일별(1일~말일) 매출 추이. 데이터 없는 구간은 0으로 채움."""
     start, end, _, _ = _period_range(period)
     start_dt = datetime.strptime(start, "%Y-%m-%d %H:%M:%S")
 
@@ -709,14 +663,11 @@ def get_sales_trend(period: str) -> list[dict]:
     ]
 
 
-# ── Analytics ──────────────────────────────────────────────────────────────
-
 def get_analytics() -> dict:
     now = datetime.now()
     week_start = (now - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
 
     with get_conn() as conn:
-        # 판매량 TOP 메뉴
         top_rows = conn.execute(
             """SELECT oi.menu_name, SUM(oi.quantity) AS cnt
                FROM order_items oi
@@ -727,7 +678,6 @@ def get_analytics() -> dict:
             (week_start,),
         ).fetchall()
 
-        # 카테고리별 판매 수량
         cat_rows = conn.execute(
             """SELECT COALESCE(oi.category, m.category, '기타') AS category, SUM(oi.quantity) AS cnt
                FROM order_items oi
@@ -738,7 +688,6 @@ def get_analytics() -> dict:
             (week_start,),
         ).fetchall()
 
-        # 카테고리별 매출 금액 (무료 제공 제외, 취소 주문 제외)
         cat_sales_rows = conn.execute(
             """SELECT COALESCE(oi.category, m.category, '기타') AS category,
                       SUM(oi.quantity * oi.unit_price) AS amount,
@@ -752,7 +701,6 @@ def get_analytics() -> dict:
             (week_start,),
         ).fetchall()
 
-        # 온도별 비율
         temp_rows = conn.execute(
             """SELECT oi.temperature, SUM(oi.quantity) AS cnt
                FROM order_items oi
@@ -763,7 +711,6 @@ def get_analytics() -> dict:
             (week_start,),
         ).fetchall()
 
-        # 시간대별 인기 메뉴 (top 2)
         time_rows = conn.execute(
             """SELECT
                    CASE
@@ -824,6 +771,5 @@ def get_analytics() -> dict:
         "temp_data": temp_data,
         "time_menus": time_menus,
     }
-
 
 init_db()

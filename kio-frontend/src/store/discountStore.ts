@@ -36,7 +36,6 @@ export const useDiscountStore = create<DiscountState>((set) => ({
         .map((d) => ({ id: d.id, name: d.name, url: `${API_URL}${d.image_url}` }));
       set({ posters, loading: false });
     } catch {
-      // 실패해도 조용히 무시 — 첫 화면(Splash)이 번들 이미지로 대체 표시한다
       set({ loading: false });
     }
   },

@@ -1,4 +1,3 @@
-"""튜닝에 쓰지 않은 '더 자연스럽고 어려운' 발화 모음 (과적합 확인용)."""
 from eval.cases import O, C, CART, CART1
 
 ORDER_CASES = [
@@ -27,7 +26,7 @@ CART_CASES = [
     ("아까 담은 거 취소", CART, C("cancel", {"type": "remove_last"})),
     ("아메리카노는 안 마실래요", CART, C("cancel", {"type": "remove_line", "indexes": [0]})),
     ("그냥 다 지워주세요", CART, C("cancel", {"type": "remove_all"})),
-    ("아메리카노 한 잔 더 늘려줘", CART1, None),   # 명시 수량이 없으면 명령으로 보지 않음(되묻기 영역)
+    ("아메리카노 한 잔 더 늘려줘", CART1, None),
     ("라떼 하나로 줄여줘", CART, C("modify", {"type": "set_quantity", "menu": "카페라떼", "quantity": 1})),
     ("아메리카노 핫으로 변경해줘", CART, C("modify", {"type": "set_temperature", "menu": "아메리카노", "temperature": "HOT"})),
     ("카페라떼 말고 아메리카노로", CART, C("modify", {"type": "replace_item", "menu": "카페라떼", "to_menu": "아메리카노"})),

@@ -163,7 +163,6 @@ export const OrderHistory = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
           { label: "총 주문", value: `${counted.length}건${cancelledCount > 0 ? ` (취소 ${cancelledCount}건 제외)` : ""}` },
@@ -184,9 +183,7 @@ export const OrderHistory = () => {
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-lg px-4 py-2.5">{error}</div>
       )}
 
-      {/* Table card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Date filter */}
         <div className="px-5 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
           {presets.map((p) => {
             const active = dateFrom === p.from && dateTo === p.to;
@@ -226,7 +223,6 @@ export const OrderHistory = () => {
           </div>
         </div>
 
-        {/* Search bar */}
         <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[220px] flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
             <PiMagnifyingGlassBold size={14} className="text-gray-400 shrink-0" />
@@ -249,10 +245,8 @@ export const OrderHistory = () => {
           <span className="text-xs text-gray-400 shrink-0">총 {filtered.length}건 | 매출 ₩{totalRevenue.toLocaleString()}</span>
         </div>
 
-        {/* Table (가로 스크롤) */}
         <div className="overflow-x-auto">
           <div className="min-w-[640px]">
-            {/* Table header */}
             <div className="grid bg-gray-50 border-b border-gray-100 px-5 py-3" style={{ gridTemplateColumns: GRID_COLUMNS }}>
               {["주문시각", "메뉴", "결제수단", "할인 금액", "결제 금액", "상태"].map((h) => (
                 <span key={h} className="text-xs font-bold text-gray-500">{h}</span>
@@ -263,7 +257,6 @@ export const OrderHistory = () => {
               <div className="py-16 text-center text-gray-400 text-sm">불러오는 중...</div>
             )}
 
-            {/* Table rows */}
             {!loading && visible.map((order) => {
               const expanded = expandedId === order.id;
               return (

@@ -32,7 +32,6 @@ export const Sidebar = ({ activePage, onSelect, username, open, onClose }: Sideb
         className={`fixed inset-y-0 left-0 z-40 w-52 flex flex-col flex-shrink-0 bg-white border-r transition-transform lg:static lg:z-auto lg:h-full lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
         style={{ borderColor: "#FEE685" }}
       >
-        {/* Logo */}
         <div className="px-5 border-b flex items-center" style={{ borderColor: "#FEE685", height: "68px" }}>
           <div className="flex items-center gap-2.5">
             <div
@@ -48,7 +47,6 @@ export const Sidebar = ({ activePage, onSelect, username, open, onClose }: Sideb
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
             const isActive = activePage === id;
@@ -76,7 +74,6 @@ export const Sidebar = ({ activePage, onSelect, username, open, onClose }: Sideb
           })}
         </nav>
 
-        {/* Bottom */}
         <div className="px-5 py-4 border-t" style={{ borderColor: "#FEE685" }}>
           <div className="flex items-center gap-2 min-w-0">
             <PiStorefrontBold size={15} className="text-gray-400 shrink-0" />

@@ -1,21 +1,10 @@
-"""메뉴 속성(카페인·맛 태그·추천 온도) 자동 분석.
-
-역할 분담
-- 카페인처럼 사실로 정해지는 값은 카테고리·이름 규칙으로 먼저 결정한다 (LLM이 틀리면 안 되는 값).
-- 맛 태그는 LLM이 한 번 분석해서 JSON으로 돌려주고, 허용된 태그 목록 안의 값만 통과시킨다.
-- 결과는 DB(tags, caffeine)에 저장되고, 추천 때는 DB 값으로 규칙 필터링한다 → 빠르고 항상 같은 결과.
-- LLM이 실패하거나 엉뚱한 값을 내면 카테고리 기본 태그로 폴백한다 (서비스가 죽지 않게).
-"""
-
 import json
 import re
 from typing import Callable, Optional
 
-# preference.py 의 맛 태그 이름과 반드시 같아야 한다.
 ALLOWED_TAGS = ["산미", "상큼", "달콤", "고소", "쌉쌀", "진한", "부드러운", "향긋", "과일", "탄산", "깔끔", "상쾌"]
 MAX_TAGS = 4
 
-# 카테고리별 기본 태그 (LLM 실패 시 폴백)
 CATEGORY_DEFAULT_TAGS = {
     "커피": ["쌉쌀", "고소"],
     "디카페인": ["고소", "부드러운"],
@@ -29,7 +18,6 @@ _CAFFEINE_FREE_TEA = re.compile(r"허브|캐모마일|카모마일|페퍼민트|
 
 
 def decide_caffeine(name: str, category: str) -> Optional[bool]:
-    """규칙으로 확정할 수 있으면 True/False, 애매하면 None."""
     if "디카페인" in name or category == "디카페인":
         return False
     if category in ("에이드", "주스", "스무디"):
@@ -68,7 +56,7 @@ def _parse(raw: str) -> Optional[dict]:
 
 
 def _default_llm_call(prompt: str) -> str:
-    from ai.llm import get_llm  # 지연 import: 테스트·LLM 없는 환경에서도 모듈 로드 가능
+    from ai.llm import get_llm
     res = get_llm(temperature=0).invoke(prompt)
     return getattr(res, "content", str(res))
 
@@ -79,7 +67,6 @@ def analyze_menu(
     description: str = "",
     llm_call: Optional[Callable[[str], str]] = None,
 ) -> dict:
-    """{"tags": [...], "caffeine": bool, "source": "llm"|"rule"} 를 돌려준다."""
     rule_caffeine = decide_caffeine(name, category)
     tags: list = []
     llm_caffeine: Optional[bool] = None
@@ -97,7 +84,6 @@ def analyze_menu(
         tags = []
     if not tags:
         tags = list(CATEGORY_DEFAULT_TAGS.get(category, []))
-    # 규칙으로 정해지는 카페인은 규칙이 우선, 애매한 경우에만 LLM 값을 쓴다
     if rule_caffeine is not None:
         caffeine = rule_caffeine
     elif llm_caffeine is not None:

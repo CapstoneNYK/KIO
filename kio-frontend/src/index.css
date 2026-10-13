@@ -34,7 +34,9 @@ body,
   overflow: hidden;
 }
 
-/* 음성 어시스턴트 채팅창: Pretendard (CDN이 막혀 있으면 시스템 한글 폰트로 대체) */
+.kio-chat {
+  font-size: calc(17px * var(--kio-s, 1.25));
+}
 .kio-chat,
 .kio-chat * {
   font-family: "Pretendard Variable", Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;

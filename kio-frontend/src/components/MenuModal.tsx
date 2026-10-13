@@ -60,7 +60,6 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
         className="relative bg-white rounded-2xl w-[80%] h-[88vh] flex flex-col overflow-hidden shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 닫기 버튼 */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 active:scale-90 transition z-10"
@@ -68,9 +67,7 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
           <LuX className="w-5 h-5" />
         </button>
 
-        {/* 스크롤 가능한 본문 */}
         <div className="overflow-y-auto flex-1 px-8 pt-14 pb-3">
-          {/* 아이템 정보 */}
           <div className="flex items-center gap-5 mb-8">
             <img
               src={item.img}
@@ -91,7 +88,6 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
             </p>
           </div>
 
-          {/* 온도 선택 (커피/티) */}
           {hasTempSelect && <div className="flex gap-4 mb-14">
             <button
               onClick={() => setTemperature("HOT")}
@@ -115,7 +111,6 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
             </button>
           </div>}
 
-          {/* 선택옵션 */}
           {options.length > 0 && (
             <>
               <p className="font-bold text-gray-800 text-xl mb-4">선택옵션</p>
@@ -135,7 +130,6 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
           )}
         </div>
 
-        {/* 담기 버튼 */}
         <div className="px-8 py-6">
           <button
             onClick={handleOrder}

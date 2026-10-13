@@ -12,7 +12,7 @@ from app.admin import db
 
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12  # 12시간
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 
 ADMIN_SIGNUP_CODE = os.getenv("ADMIN_SIGNUP_CODE", "")
 

@@ -12,17 +12,10 @@ from app.admin import db as admin_db
 
 load_dotenv()
 
-# 유료 OpenAI API 대신 자체 호스팅(Ollama) LLM 사용
 _qa_llm = get_llm(temperature=0)
 
 
 def _normalize_with_dictionary(question: str) -> str:
-    """질문을 사전(MENU_DICTIONARY) 기준으로 표준화한다.
-
-    기존에는 이 단순 치환 작업에도 GPT를 한 번 더 호출했는데, 규칙 기반
-    문자열 치환만으로 충분한 작업이라 LLM 호출 없이 처리하도록 바꿨다.
-    (지연시간 감소 + 항상 일관된 결과)
-    """
     normalized = question
     for key in sorted(MENU_DICTIONARY.keys(), key=len, reverse=True):
         if key in normalized:
@@ -30,11 +23,6 @@ def _normalize_with_dictionary(question: str) -> str:
     return normalized
 
 
-# def _build_menu_context() -> str:
-#     menus = get_all_menu_texts()
-#     if not menus:
-#         return "현재 등록된 메뉴가 없습니다."
-#     return "\n".join(f"- {m}" for m in menus)
 def _build_menu_context() -> str:
     menus = admin_db.get_menus()
     if not menus:
@@ -45,24 +33,6 @@ def _build_menu_context() -> str:
     )
 
 
-
-
-# _POSTER_LABEL = {
-#     "poster_kt": "KT 멤버십",
-#     "poster_t": "T 멤버십 (SKT 계열)",
-#     "poster_tpass": "T우주패스 (SKT 계열)",
-# }
-
-# def _build_discount_context() -> str:
-#     grouped = get_all_discount_texts()
-#     if not grouped:
-#         return "등록된 할인 정보가 없습니다."
-#     sections: list[str] = []
-#     for screen_name, texts in sorted(grouped.items()):
-#         label = _POSTER_LABEL.get(screen_name, screen_name)
-#         body = "\n".join(f"  - {t}" for t in texts)
-#         sections.append(f"[{label}]\n{body}")
-#     return "\n\n".join(sections)
 def _build_discount_context() -> str:
     discounts = admin_db.get_discounts(active_only=True)
     if not discounts:
@@ -72,8 +42,6 @@ def _build_discount_context() -> str:
         method_label = admin_db.DISCOUNT_METHODS.get(d["method_code"], d["method_code"])
         sections.append(f"[{d['name']} - {method_label}]\n{d['description']}")
     return "\n\n".join(sections)
-
-# ── QA 체인 (OCR DB 기반) ────────────────────────────────────────────────────
 
 _qa_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 안내 전문가입니다.
@@ -108,7 +76,6 @@ def _build_cart_context(cart_items: list[str]) -> str:
         return "장바구니가 비어 있습니다."
     return "\n".join(f"- {item}" for item in cart_items)
 
-
 qa_chain = (
     {
         "question": RunnableLambda(lambda x: _normalize_with_dictionary(x["question"]) if isinstance(x, dict) else _normalize_with_dictionary(x)),
@@ -122,12 +89,9 @@ qa_chain = (
 )
 
 
-# ── 추천 체인 (OCR DB + 자체 호스팅 LLM, JSON 파싱) ──────────────────────────
-
 class RecommendOutput(BaseModel):
-    answer: str        # 손님에게 보여줄 추천 메시지
-    menus: list[str]   # 추천 메뉴명 목록 (OCR DB에 있는 이름 그대로)
-
+    answer: str
+    menus: list[str]
 
 _recommend_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음료 추천 전문가입니다.
@@ -149,10 +113,6 @@ _recommend_prompt = ChatPromptTemplate.from_template("""
 }}
 """)
 
-# 유료 OpenAI API 대신 자체 호스팅(Ollama) LLM 사용.
-# 로컬 모델은 GPT-4o의 structured output(with_structured_output)만큼 형식을
-# 안정적으로 지키지 않을 수 있어, 프롬프트로 JSON 형식을 지시하고 아래에서
-# 직접 파싱한 뒤 실패 시 안전하게 폴백한다.
 _recommend_llm = get_llm(temperature=0.7)
 
 _JSON_BLOCK_PATTERN = re.compile(r"\{.*\}", re.DOTALL)
@@ -169,9 +129,7 @@ def _parse_recommend_output(raw: str) -> RecommendOutput:
             )
         except (json.JSONDecodeError, TypeError):
             pass
-    # JSON 파싱 실패 시에도 서비스가 죽지 않도록 원문 텍스트를 그대로 답변으로 사용
     return RecommendOutput(answer=raw.strip(), menus=[])
-
 
 recommend_chain = (
     {

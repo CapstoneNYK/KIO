@@ -24,17 +24,10 @@
     "failures": []
   },
   "자연발화셋 / 장바구니 취소·변경": {
-    "correct": 13,
+    "correct": 14,
     "total": 14,
-    "accuracy": 92.9,
-    "failures": [
-      {
-        "text": "카페라떼 말고 아메리카노로",
-        "problems": [
-          "액션 [] (기대 [{'type': 'replace_item', 'menu': '카페라떼', 'to_menu': '아메리카노'}])"
-        ]
-      }
-    ]
+    "accuracy": 100.0,
+    "failures": []
   },
   "자연발화셋 / 조건 추천": {
     "correct": 10,
@@ -43,27 +36,33 @@
     "failures": []
   },
   "추가셋 / 주문 추출·옵션": {
-    "correct": 53,
-    "total": 53,
+    "correct": 58,
+    "total": 58,
     "accuracy": 100.0,
     "failures": []
   },
   "추가셋 / 장바구니 취소·변경": {
-    "correct": 36,
-    "total": 36,
+    "correct": 43,
+    "total": 43,
     "accuracy": 100.0,
     "failures": []
   },
   "추가셋 / 조건 추천": {
-    "correct": 18,
-    "total": 18,
+    "correct": 21,
+    "total": 21,
     "accuracy": 100.0,
     "failures": []
   },
   "overall_rules": {
-    "correct": 275,
-    "total": 276,
-    "accuracy": 99.6
+    "correct": 291,
+    "total": 291,
+    "accuracy": 100.0
+  },
+  "대화형 / 되묻기 이어 받기": {
+    "correct": 10,
+    "total": 10,
+    "accuracy": 100.0,
+    "failures": []
   },
   "intent_rules": {
     "decided": 99,

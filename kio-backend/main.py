@@ -3,10 +3,10 @@ import re
 import tempfile
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ai.recommend import qa_chain, recommend_chain
 from ai.intent import classify_intent
@@ -29,6 +29,7 @@ from ai.stt import transcribe as transcribe_audio
 from ai.logging_utils import log_intent_query
 from ai.order import (
     _is_noise_menu,
+    _josa,
     apply_discount_menu_fallback,
     cart_answer,
     entities_to_orders,
@@ -52,10 +53,6 @@ load_dotenv()
 
 app = FastAPI()
 
-# FRONTEND_URL에 콤마로 여러 주소를 넣을 수 있게 하고(.env: FRONTEND_URL=http://localhost:5173,http://192.168.0.17:5173),
-# 추가로 같은 와이파이(192.168.x.x)나 Tailscale(100.x.x.x)로 접속하는 흔한 케이스는
-# 정규식으로 한 번에 허용한다. PC를 서버로 쓰면서 다른 기기(노트북 등)로 접속할 때마다
-# IP가 바뀌어서 매번 .env를 고쳐야 하는 번거로움을 줄이기 위함.
 _frontend_urls = [u.strip() for u in os.getenv("FRONTEND_URL", "http://localhost:5173").split(",") if u.strip()]
 
 app.add_middleware(
@@ -76,24 +73,16 @@ app.include_router(discounts_public_router)
 
 app.mount("/uploads/menu-images", StaticFiles(directory=UPLOAD_DIR), name="menu-images")
 
-# 직전에 추천했던 메뉴 목록(순서 그대로). 카페 키오스크는 보통 한 번에 한 사람만
-# 이용하므로 세션 관리 없이 전역 변수로 "방금 추천받은 목록"만 기억해두고,
-# "그 중 1번으로 담아줘" 같은 후속 주문 발화를 해석하는 데 사용한다.
 _last_recommended_menus: list[str] = []
 
-# "T멤버십 할인되나요?"처럼 할인 관련 "질문"이 order로 잘못 분류됐을 때,
-# 무작정 메뉴를 장바구니에 담아버리지 않고 안내 답변으로 처리하기 위한 패턴.
 _DISCOUNT_QUESTION_PATTERN = re.compile(
     r"(\?|되나요|되나|돼요|되나여|가능해|가능한가|뭐야|뭐예요|뭔가요|얼마|무엇|알려줘)"
 )
 
-
-# 메뉴/결제수단을 특정하지 않은 "할인 혜택 뭐 있어?" 류 → LLM 없이 DB의 활성 할인을 그대로 안내
 _RE_DISCOUNT_INFO = re.compile(
     normalize_text(r"(?:할인|혜택).{0,8}(?:뭐|무엇|뭘|어떤|무슨|있|알려|종류)|(?:뭐|어떤|무슨).{0,6}(?:할인|혜택)")
 )
 _RE_DISCOUNT_SPECIFIC = re.compile(normalize_text(r"kt|티멤버십|t멤버십|우주|cj|씨제이|쿠폰|바코드"))
-# "제일 잘 나가는 메뉴" 류 → 판매 집계로 답한다 (LLM이 없는 메뉴를 지어내지 않도록)
 _RE_POPULAR = re.compile(
     normalize_text(r"잘나가|잘팔|베스트|많이(?:팔|시켜|주문|찾)|인기(?:메뉴|있는|많은|가많|제일|가장)|가장인기|제일인기|대표메뉴|시그니처")
 )
@@ -121,10 +110,72 @@ def _popular_answer(menus: list[dict]) -> tuple[str, list[str]]:
     return ("최근 일주일 동안 가장 많이 팔린 메뉴예요.\n" + "\n".join(lines) +
             "\n번호로 말씀하시면 바로 담아드려요.", [t["name"] for t in top])
 
+_RE_TEMP_QUESTION = re.compile(normalize_text(r"가능|되나|돼요|될까|되려나|있나|있어요|있을까|할수|\?"))
+_RE_WANT_HOT = re.compile(normalize_text(r"따뜻|뜨겁|뜨거|핫|안차갑|안시원|차갑지않|덜차갑|미지근"))
+_RE_WANT_ICE = re.compile(normalize_text(r"아이스|차갑|시원|얼음"))
+_RE_ORDER_WORDS = re.compile(normalize_text(r"주세요|줘|주라|담아|할게|주문"))
+
+
+def _temperature_answer(query: str, menus: list[dict]) -> str | None:
+    qn = normalize_text(query)
+    if not _RE_TEMP_QUESTION.search(qn) or _RE_ORDER_WORDS.search(qn):
+        return None
+    want = "HOT" if _RE_WANT_HOT.search(qn) else "ICE" if _RE_WANT_ICE.search(qn) else None
+    name = extract_menu(query, [m["name"] for m in menus])
+    if not want or not name:
+        return None
+    info = next((m for m in menus if m["name"] == name), None)
+    temps = (info or {}).get("temps") or []
+    if not temps:
+        return None
+    topic = _josa(name, "은", "는")
+    if want in temps:
+        return f"네, {topic} {'따뜻하게도' if want == 'HOT' else '아이스로도'} 주문할 수 있어요."
+    only = "아이스" if "ICE" in temps else "따뜻한"
+    return f"{topic} {only} 음료로만 주문할 수 있어요."
+
+
+def _menu_words(name: str) -> list[str]:
+    return [w for w in name.split() if len(w) >= 2]
+
+
+def _resolve_by_recommended(query: str) -> dict | None:
+    qn = normalize_text(query)
+    cands = []
+    for rec in _last_recommended_menus:
+        base = rec.removeprefix("핫 ").removeprefix("아이스 ")
+        if any(normalize_text(w) in qn for w in _menu_words(base)):
+            cands.append(rec)
+    if len(cands) != 1:
+        return None
+    return {
+        "menu": cands[0],
+        "quantity": extract_quantity(query),
+        "attributes": extract_attributes(query),
+        "options": extract_options_from_text(query),
+        "option_details": extract_option_details(query),
+        "packaging": extract_packaging(query),
+        "needs_recommendation": False,
+    }
+
+
+def _ambiguous_menu_question(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
+    qn = normalize_text(query)
+    best: tuple[str, list[str]] | None = None
+    for word in {w for m in menus for w in _menu_words(m["name"])}:
+        if normalize_text(word) not in qn:
+            continue
+        names = [m["name"] for m in menus if not m["sold_out"] and word in _menu_words(m["name"])]
+        if len(names) >= 2 and (best is None or len(names) < len(best[1])):
+            best = (word, names[:4])
+    if not best:
+        return None
+    word, names = best
+    lines = "\n".join(f"{i}번 {n}" for i, n in enumerate(names, 1))
+    return f"'{word}'가 들어간 메뉴가 여러 개예요. 어느 걸로 할까요?\n{lines}\n번호로 말씀해 주세요.", names
+
 
 def _resolve_ordinal_order(query: str) -> dict | None:
-    """"1번으로 담아줘"처럼 직전 추천 목록을 순서로 가리키는 발화를 주문 엔티티로 변환한다.
-    해당 안 되면 None."""
     ordinal = extract_ordinal(query)
     if ordinal and 1 <= ordinal <= len(_last_recommended_menus):
         chosen_menu = _last_recommended_menus[ordinal - 1]
@@ -141,7 +192,6 @@ def _resolve_ordinal_order(query: str) -> dict | None:
 
 
 def _alternatives_map(sold_out: list[str], menus: list[dict]) -> dict[str, list[str]]:
-    """품절 메뉴별 대체 메뉴(같은 카테고리의 주문 가능한 메뉴)를 찾고, 첫 번째 목록을 '직전 추천'으로 기억한다."""
     alternatives = {}
     for name in sold_out:
         alts = find_alternatives(name, menus)
@@ -153,8 +203,6 @@ def _alternatives_map(sold_out: list[str], menus: list[dict]) -> dict[str, list[
 
 
 def _recommend(query: str):
-    """맞춤형 추천. 조건(맛/온도/카페인/가격/종류)이 잡히면 실제 메뉴 DB를 규칙으로 필터링하고,
-    조건이 없는 막연한 요청만 LLM 추천으로 넘긴다."""
     by_rule = recommend_by_conditions(query, admin_db.get_menus())
     if by_rule is not None:
         return by_rule
@@ -169,11 +217,6 @@ def _order_response(
     menus: list[dict] | None = None,
     notices: list[str] | None = None,
 ) -> dict:
-    """"장바구니에 담았습니다" 형태의 일반 주문 응답을 만든다.
-    order 분기와, order_and_pay인데 실제로는 결제수단이 없거나 담을 메뉴가 없어서
-    order로 강등되는 경우에서 공용으로 쓴다.
-    품절 메뉴가 있으면 같은 카테고리의 대체 메뉴를 함께 안내하고, 그 목록을
-    '직전 추천'으로 기억해 "1번으로 담아줘" 같은 후속 발화를 받을 수 있게 한다."""
     alternatives = _alternatives_map(sold_out, menus or [])
     return {
         "question": question,
@@ -198,11 +241,6 @@ def root():
 
 @app.post("/api/stt")
 async def speech_to_text(file: UploadFile = File(...)):
-    """녹음된 오디오를 받아 자체 호스팅 Whisper 모델로 텍스트를 반환한다.
-
-    기존 브라우저 Web Speech API를 대체하는 엔드포인트로, 노이즈에 더 강인한
-    인식을 위해 서버에서 VAD 필터가 적용된 faster-whisper로 인식한다.
-    """
     audio_bytes = await file.read()
     if not audio_bytes:
         raise HTTPException(status_code=400, detail="오디오 데이터가 비어있습니다.")
@@ -232,15 +270,43 @@ async def ask_menu(request: QueryRequest):
     _last_recommended_menus[:] = result.menus
     return {"question": request.query, "answer": result.answer, "recommended_menus": result.menus}
 
+_TTS_CACHE: dict[str, bytes] = {}
+TTS_VOICE = os.getenv("TTS_VOICE", "ko-KR-SunHiNeural")
+TTS_RATE = os.getenv("TTS_RATE", "-8%")
+
+
+class TTSRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=400)
+
+
+@app.post("/api/tts")
+async def text_to_speech(body: TTSRequest):
+    text = body.text.strip()
+    if text in _TTS_CACHE:
+        return Response(_TTS_CACHE[text], media_type="audio/mpeg")
+    try:
+        import edge_tts
+    except ImportError:
+        raise HTTPException(status_code=503, detail="edge-tts가 설치되지 않았습니다.")
+    try:
+        chunks = [c["data"] async for c in edge_tts.Communicate(text, TTS_VOICE, rate=TTS_RATE).stream()
+                  if c["type"] == "audio"]
+    except Exception:
+        raise HTTPException(status_code=503, detail="음성 합성 서버에 연결하지 못했습니다.")
+    if not chunks:
+        raise HTTPException(status_code=503, detail="음성을 만들지 못했습니다.")
+    audio = b"".join(chunks)
+    if len(_TTS_CACHE) < 200:
+        _TTS_CACHE[text] = audio
+    return Response(audio, media_type="audio/mpeg")
+
 
 @app.post("/api/ask")
 async def ask_intent(request: QueryRequest):
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 
-    # 장바구니 취소·변경은 장바구니를 직접 바꾸는 동작이라 LLM 분류 전에 규칙으로 먼저 처리한다
-    # (오분류 비용이 크고, 모호하면 실행하지 않고 되묻는다).
-    request.query = fix_stt_errors(request.query)  # 음성 인식 오류(티카페인→디카페인 등) 보정
+    request.query = fix_stt_errors(request.query)
     all_menus = admin_db.get_menus()
     command = detect_cart_command(request.query, request.cart_items, all_menus)
     if command:
@@ -255,9 +321,11 @@ async def ask_intent(request: QueryRequest):
             and not extract_menu(request.query, [m["name"] for m in all_menus])):
         return {"question": request.query, "intent": "qa", "answer": _discount_info_answer()}
 
-    # 확실한 발화는 규칙으로 즉시 분류하고(LLM 호출 생략), 애매할 때만 LLM에 맡긴다.
+    temp_answer = _temperature_answer(request.query, all_menus)
+    if temp_answer:
+        return {"question": request.query, "intent": "qa", "answer": temp_answer}
+
     intent = fast_classify(request.query, [m["name"] for m in all_menus]) or classify_intent(request.query)
-    # 실사용 발화+예측 의도를 누적 기록 -> 나중에 검토 후 파인튜닝 데이터로 활용
     log_intent_query(request.query, intent)
 
     if intent == "order":
@@ -268,12 +336,15 @@ async def ask_intent(request: QueryRequest):
         entities = extract_multi_order(request.query, menu_names)
 
         if all(_is_noise_menu(e.get("menu")) for e in entities):
-            ordinal_entity = _resolve_ordinal_order(request.query)
+            ordinal_entity = _resolve_ordinal_order(request.query) or _resolve_by_recommended(request.query)
+            ambiguous = None if ordinal_entity else _ambiguous_menu_question(request.query, menus)
             if ordinal_entity:
                 entities = [ordinal_entity]
+            elif ambiguous:
+                _last_recommended_menus[:] = ambiguous[1]
+                return {"question": request.query, "intent": "recommend", "answer": ambiguous[0],
+                        "recommended_menus": ambiguous[1]}
             elif _DISCOUNT_QUESTION_PATTERN.search(request.query):
-                # 의도 분류가 "order"로 잘못 나왔더라도, 문장이 질문형이면
-                # (예: "T멤버십 할인되나요?") 장바구니에 담지 말고 정보로 답변한다.
                 answer = qa_chain.invoke({"question": request.query, "cart_items": request.cart_items})
                 return {"question": request.query, "intent": "qa", "answer": answer}
             else:
@@ -320,13 +391,9 @@ async def ask_intent(request: QueryRequest):
         _, payment_method = get_payment_response(request.query)
 
         if not payment_method:
-            # 결제수단이 실제로 언급되지 않았는데도 로컬 LLM이 order_and_pay로
-            # 잘못 분류하는 경우가 있다. 결제 화면으로 강제 이동시키지 않고
-            # 그냥 주문(order)처럼 장바구니에만 담는다.
             return _order_response(request.query, orders, named, sold_out, menus, notices)
 
         if sold_out and not named:
-            # 담을 수 있는 메뉴가 없으면 결제 화면으로 넘어가지 않도록 일반 주문 응답으로 돌려준다
             return _order_response(request.query, orders, named, sold_out, menus, notices)
 
         method_label = {

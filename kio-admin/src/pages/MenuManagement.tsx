@@ -31,7 +31,6 @@ interface AnalyzeResult extends AttrValue {
   source: "llm" | "rule";
 }
 
-/** 추천에 쓰이는 메뉴 속성(카페인·맛 태그) 입력란 + AI 자동 분석 버튼 */
 const AttrFields = ({ name, category, value, onChange }: {
   name: string;
   category: string;
@@ -105,7 +104,6 @@ const AttrFields = ({ name, category, value, onChange }: {
   );
 };
 
-/** 수량 재고 입력. 끄면 재고를 관리하지 않는 메뉴(무제한)이고, 켠 뒤 수량이 0이 되면 자동으로 품절 처리된다. */
 const StockFields = ({ track, stock, onChange }: {
   track: boolean;
   stock: string;
@@ -377,7 +375,6 @@ export const MenuManagement = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Add menu section — 상단 */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <p className="text-sm font-bold text-gray-700 flex items-center gap-1.5 mb-4">
           <PiPlusBold size={14} style={{ color: "#F5A623" }} />
@@ -473,7 +470,6 @@ export const MenuManagement = () => {
         </div>
       )}
 
-      {/* Filter row */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map((cat) => (
@@ -490,7 +486,6 @@ export const MenuManagement = () => {
         </span>
       </div>
 
-      {/* Menu grid */}
       {loading ? (
         <div className="flex items-center justify-center h-40 text-gray-400 text-sm">불러오는 중...</div>
       ) : (
@@ -546,7 +541,6 @@ export const MenuManagement = () => {
         </div>
       )}
 
-      {/* Edit modal */}
       {editingId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditingId(null)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>

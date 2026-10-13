@@ -6,8 +6,6 @@ DISCOUNT_MENU_MAP = {
 
 NOISE_TOKENS = {"T", "KT", "CJ", "SKT"}
 
-# 옵션 종류별로 선택할 수 있는 메뉴 카테고리. 여기에 없는 조합은 "옵션 설정 불가" 예외로 처리한다.
-# (사이즈는 메뉴 DB의 sizes 값으로 따로 검증한다.)
 OPTION_ALLOWED_CATEGORIES = {
     "shot": {"커피", "디카페인"},
     "light": {"커피", "디카페인"},
@@ -24,8 +22,6 @@ OPTION_LABELS = {
 
 
 def _josa(word: str, with_final: str, without_final: str) -> str:
-    """받침 유무에 맞는 조사를 붙인다. 한글로 끝나지 않으면(예: ")") 'A(B)' 형태로 표기한다."""
-    # "아이스 카페라떼 (시럽 적게)"처럼 괄호로 끝나면 괄호 앞 단어 기준으로 받침을 본다
     stripped = re.sub(r"\s*\([^)]*\)\s*$", "", word).rstrip(") ")
     code = ord(stripped[-1]) if stripped else 0
     if 0xAC00 <= code <= 0xD7A3:
@@ -41,7 +37,6 @@ def _is_noise_menu(menu: str | None) -> bool:
 
 
 def apply_discount_menu_fallback(entities: list[dict], query: str, menu_names: list[str]) -> list[dict]:
-    """할인 수단만 언급하고 메뉴를 추출하지 못한 경우, 그 할인의 대상 메뉴로 보완한다."""
     if not all(_is_noise_menu(e.get("menu")) for e in entities):
         return entities
     q_norm = query.replace(" ", "")
@@ -61,7 +56,6 @@ def apply_discount_menu_fallback(entities: list[dict], query: str, menu_names: l
 
 
 def _merge_option_details(entity: dict) -> list[dict]:
-    """구조화된 옵션(option_details)에 기존 키워드 옵션(options)을 합친다. 이름 기준 중복 제거."""
     details = [dict(d) for d in entity.get("option_details", [])]
     seen = {d["name"] for d in details}
     for name in entity.get("options", []):
@@ -105,7 +99,6 @@ def entities_to_orders(entities: list[dict]) -> list[dict]:
 
 
 def split_sold_out(orders: list[dict], sold_out_names: set[str]) -> tuple[list[dict], list[str]]:
-    """품절 메뉴는 담을 목록에서 빼고, 품절 메뉴명 목록을 따로 돌려준다."""
     available = [o for o in orders if o["menu"] not in sold_out_names]
     sold_out: list[str] = []
     for o in orders:
@@ -115,7 +108,6 @@ def split_sold_out(orders: list[dict], sold_out_names: set[str]) -> tuple[list[d
 
 
 def allowed_option_labels(menu_info: dict) -> list[str]:
-    """해당 메뉴에서 선택할 수 있는 옵션 이름 목록 (안내 문구용)."""
     labels = [OPTION_LABELS[k] for k, cats in OPTION_ALLOWED_CATEGORIES.items()
               if k != "light" and menu_info.get("category") in cats]
     if menu_info.get("sizes"):
@@ -124,12 +116,9 @@ def allowed_option_labels(menu_info: dict) -> list[str]:
 
 
 def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict], list[str]]:
-    """메뉴별로 선택 불가능한 옵션을 걸러내고, 안내 문구를 돌려준다.
-    (예: 에이드·주스에 '샷 추가'는 불가, 주스에 '크림'은 불가, 메뉴가 지원하지 않는 사이즈)
-    불가한 옵션만 빼고 메뉴는 그대로 담는다."""
     by_name = {m["name"]: m for m in menus}
     notices: list[str] = []
-    defaulted: list[str] = []  # 온도를 말하지 않아 아이스로 담은 메뉴 (따뜻하게도 가능한 것만)
+    defaulted: list[str] = []
     for order in orders:
         info = by_name.get(order["menu"]) if order["menu"] else None
         if info is None:
@@ -137,7 +126,6 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
         if (not order.get("temp_explicit", True) and order["temperature"] == "ICE"
                 and "HOT" in (info.get("temps") or []) and order["menu"] not in defaulted):
             defaulted.append(order["menu"])
-        # 메뉴가 지원하지 않는 온도면 지원하는 온도로 맞춘다 (예: 에스프레소는 HOT만, 스무디는 ICE만)
         temps = info.get("temps") or []
         if temps and order["temperature"] not in temps and len(temps) == 1:
             order["temperature"] = temps[0]
@@ -165,7 +153,6 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
     if defaulted:
         names = ", ".join(defaulted)
         notices.append(f"온도를 말씀하지 않으셔서 {_josa(names, '은', '는')} 아이스로 담았어요. 따뜻하게 드시려면 '다 핫으로 바꿔줘'라고 말씀해 주세요.")
-    # 같은 안내가 중복되지 않게
     return orders, list(dict.fromkeys(notices))
 
 

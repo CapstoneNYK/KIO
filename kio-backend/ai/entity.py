@@ -28,8 +28,6 @@ QUANTITY_MAP = {
     "열": 10,
 }
 
-# 추천 목록에서 "1번/첫번째로 담아줘"처럼 순서로 메뉴를 고르는 발화를 해석하기 위한 매핑.
-# recommend 응답으로 받은 메뉴 리스트의 인덱스(1부터 시작)를 가리킨다.
 ORDINAL_KEYWORDS: dict[str, int] = {
     "첫번째": 1, "첫 번째": 1, "1번째": 1, "1번": 1, "일번": 1,
     "두번째": 2, "두 번째": 2, "2번째": 2, "2번": 2,
@@ -40,44 +38,28 @@ ORDINAL_KEYWORDS: dict[str, int] = {
 
 
 def _unify_ae_e(ch: str) -> str:
-    """한글 음절 하나를 받아 애/에(ㅐ/ㅔ), 얘/예(ㅒ/ㅖ) 모음 차이를 하나로 합친다.
-
-    한국어는 ㅐ와 ㅔ 발음이 실제로 거의 구분되지 않아서, STT가 "카페라떼"를
-    "카페라 때"처럼 다른 철자로 옮겨 적는 경우가 흔하다. 이 때문에 정확한
-    철자로만 매칭하던 메뉴 사전이 오인식된 텍스트를 못 찾는 문제가 있었다.
-    음절을 초성/중성/종성으로 분해해서 중성이 ㅐ/ㅒ면 각각 ㅔ/ㅖ로 바꾼 뒤
-    다시 조합하면, "때"와 "떼" 같은 쌍이 정규화 후 동일한 문자가 되어
-    메뉴 매칭이 발음 기준으로 관대해진다.
-    """
     code = ord(ch)
     if 0xAC00 <= code <= 0xD7A3:
         offset = code - 0xAC00
         initial = offset // (21 * 28)
         medial = (offset % (21 * 28)) // 28
         final = offset % 28
-        if medial == 1:      # ㅐ -> ㅔ
+        if medial == 1:
             medial = 5
-        elif medial == 3:    # ㅒ -> ㅖ
+        elif medial == 3:
             medial = 7
         return chr(0xAC00 + (initial * 21 + medial) * 28 + final)
     return ch
 
-
-# STT가 "디카페인"을 자주 잘못 받아 적는 변형들 (티카페인, 디카패인, 디 카페인 ...)
 _STT_DECAF = re.compile(r"디\s*카\s*[페패]\s*인|티카\s*[페패]\s*인")
 
-
-# "샷 추가"를 "찹 추가/샵 추가/삿 추가"로 잘못 받아 적는 경우 ("추가" 바로 앞일 때만 보정해 오탐을 막는다)
 _STT_SHOT = re.compile(r"(?:찹|챱|샵|삿|셧|샤)(?=\s*(?:을|를)?\s*(?:더\s*)?추가)")
 
-
-# 영어 알파벳 T로 적힌 "티"("T로 된 거"), "할인에 등/할인 해택" 같은 오인식
 _STT_TEA_T = re.compile(r"(?<![A-Za-z])[Tt](?![A-Za-z])(?=\s*(?:로|가|를|는|은|종류|류|말고|계열|\b))")
 _STT_DISCOUNT = re.compile(r"할인\s*(?:에\s*등|해택|헤택|혜택|에\s*택)")
 
 
 def fix_stt_errors(text: str) -> str:
-    """음성 인식(STT)이 자주 틀리는 단어를 바로잡는다. 메뉴 추출 전에 한 번 적용."""
     text = _STT_DECAF.sub("디카페인", text)
     text = _STT_TEA_T.sub("티", text)
     text = _STT_DISCOUNT.sub("할인혜택", text)
@@ -90,22 +72,16 @@ def normalize_text(text: str) -> str:
     text = "".join(_unify_ae_e(ch) for ch in text)
     return text
 
-
-# "샷 두 번 추가", "2샷 추가"의 숫자는 메뉴 수량이 아니라 옵션(샷) 개수다
 _SHOT_NUM_STRIP = re.compile(r"(?:샷|샤)\s*(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:개|번|잔|샷|게)?|(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:샷|샤)")
 
 
 def extract_quantity(text: str) -> int:
     text = _SHOT_NUM_STRIP.sub(" ", text)
-    # 숫자 + 단위 (예: "2잔", "3개")
     m = re.search(r"(\d+)\s*(?:잔|개|게|컵)", text)
     if m:
         return int(m.group(1))
 
-    # 한글 수사 + 단위 (예: "두 잔", "세잔")
     for word, num in sorted(QUANTITY_MAP.items(), key=lambda x: -len(x[0])):
-        # 단위가 붙은 경우("세 잔")는 그대로 인정하고, 단위가 없으면 독립된 단어일 때만 인정한다
-        # ("주세요"의 '세', "한잔 해요"가 아닌 "하나 주세요" 등 오탐 방지)
         pattern = word + r"\s*(?:잔|개|게|컵)|(?<![가-힣])" + word + r"(?![가-힣])"
         if re.search(pattern, text):
             return num
@@ -114,8 +90,6 @@ def extract_quantity(text: str) -> int:
 
 
 def extract_ordinal(text: str) -> Optional[int]:
-    """"1번으로 담아줘", "두번째로 줘" 같은 순서 참조 표현에서 순번을 추출한다.
-    직전에 추천받은 메뉴 목록 중 몇 번째를 고르려는 건지 알아낼 때 쓴다."""
     text_norm = normalize_text(text)
     for key in sorted(ORDINAL_KEYWORDS.keys(), key=len, reverse=True):
         if normalize_text(key) in text_norm:
@@ -124,8 +98,6 @@ def extract_ordinal(text: str) -> Optional[int]:
 
 
 def active_keywords(menu_names: Optional[list]) -> dict[str, str]:
-    """축약어 사전 중 실제로 존재하는 메뉴를 가리키는 항목만 남긴다 (삭제/이름 변경된 메뉴 제외).
-    사전 값은 관리자 메뉴의 실제 표기로 바꿔 돌려준다. menu_names가 None이면 필터링하지 않는다."""
     if menu_names is None:
         return MENU_KEYWORDS
     by_norm = {normalize_text(m): m for m in menu_names}
@@ -151,8 +123,6 @@ def _longest_menu_containing_text(text_norm: str, menu_names: list) -> Optional[
 
 
 def _menu_by_split_tokens(text_norm: str, menu_names: list) -> Optional[str]:
-    """"에이드 중에 레몬으로", "스무디는 딸기로"처럼 메뉴명의 첫·끝 단어가 떨어져 나온 발화를 매칭한다.
-    후보가 정확히 하나일 때만 인정한다(애매하면 None)."""
     cands = []
     for name in menu_names:
         toks = name.split()
@@ -168,8 +138,6 @@ def extract_menu(text: str, menu_names: list = None) -> Optional[str]:
     keywords = active_keywords(menu_names)
     text_norm = normalize_text(text)
 
-    # 1단계: 관리자 메뉴명 직접 매칭 (가장 긴 매칭 우선).
-    # 축약어보다 먼저 봐야 '헤이즐넛라떼'가 '라떼' → '카페라떼'로 잘못 치환되지 않는다.
     if menu_names:
         match = _longest_menu_in_text(text_norm, menu_names)
         if match:
@@ -180,12 +148,10 @@ def extract_menu(text: str, menu_names: list = None) -> Optional[str]:
         if match:
             return match
 
-    # 2단계: 축약어 → 정식 메뉴명 ("아아" → "아메리카노")
     for key in sorted(keywords.keys(), key=len, reverse=True):
         if normalize_text(key) in text_norm:
             return keywords[key]
 
-    # 3단계: 발화 전체가 메뉴명의 일부인 경우 ("바닐라" → "바닐라라떼")
     if menu_names:
         return _longest_menu_containing_text(text_norm, menu_names)
 
@@ -201,14 +167,8 @@ def extract_options_from_text(text: str) -> list:
     return found
 
 
-# ── 옵션 구조화 (샷 개수 / 시럽·크림 양 / 사이즈 / 포장) ─────────────────────────
-# 단순 키워드("샷추가")만 잡던 방식에서 나아가, "샷 두 번 추가", "시럽은 조금만",
-# "크림은 절반만", "작은 사이즈로" 같은 표현을 {kind, name, count}로 구조화한다.
-# 패턴은 normalize_text 기준(공백 제거, ㅐ→ㅔ 통일)으로 컴파일한다.
-
 def _rx(pattern: str) -> "re.Pattern":
     return re.compile(normalize_text(pattern))
-
 
 _NUM_WORDS = {"한": 1, "하나": 1, "두": 2, "둘": 2, "세": 3, "셋": 3, "네": 4, "넷": 4, "다섯": 5}
 _NUM = r"(\d+|한|하나|두|둘|세|셋|네|넷|다섯)"
@@ -218,7 +178,6 @@ _SHOT_COUNT_RES = [
     _rx(_NUM + r"(?:샷|샤)(?:만)?(?:더)?(?:추가|넣|더)"),
 ]
 _SHOT_PLAIN_RE = _rx(r"(?:샷|샤|셔츠)(?:을|를)?(?:더)?(?:추가|넣|더)|추가샷")
-# 더블샷 = 기본 1샷 + 추가 1샷, 트리플샷 = 추가 2샷 (기존 "더블샷 → 샷추가" 동작과 일치)
 _SHOT_MULTI = {"더블샷": 1, "트리플샷": 2}
 
 _LEVEL_NONE = _rx(r"빼|없이|넣지|제외|말고|안넣|안줘|안주")
@@ -241,7 +200,6 @@ _DINE_RE = _rx(r"매장|먹고갈|먹고가|드시고|여기서")
 
 
 def _level_of(segment: str) -> str:
-    """시럽/크림 구간 텍스트에서 양 표현을 추출한다. 우선순위: 절반 > 없음 > 적게 > 많이."""
     if _LEVEL_HALF.search(segment):
         return "절반"
     if _LEVEL_NONE.search(segment):
@@ -254,12 +212,9 @@ def _level_of(segment: str) -> str:
 
 
 def extract_option_details(text: str) -> list:
-    """발화에서 옵션을 구조화해 돌려준다.
-    각 항목: {"kind": shot|light|syrup|cream|size, "name": 표시 이름, "count": 수량(샷 개수 등)}"""
     text_norm = normalize_text(text)
     details = []
 
-    # 샷: "샷 두 번 추가", "2샷 추가", "더블샷", "샷 추가"
     shot_count = None
     for word, n in _SHOT_MULTI.items():
         if normalize_text(word) in text_norm:
@@ -276,14 +231,11 @@ def extract_option_details(text: str) -> list:
     if shot_count is not None and shot_count >= 1:
         details.append({"kind": "shot", "name": "샷추가", "count": shot_count})
 
-    # 연하게 (기존 키워드 유지)
     for key in ("연하게", "약하게"):
         if normalize_text(key) in text_norm:
             details.append({"kind": "light", "name": "연하게", "count": 1})
             break
 
-    # 시럽/크림: 해당 단어부터 다음 시럽/크림 단어 직전까지를 그 옵션의 구간으로 본다
-    # (예: "크림은 기본의 절반만 넣고 시럽은 조금만 넣어 줘" → 크림=절반, 시럽=적게)
     markers = []
     for word in _SYRUP_WORDS:
         for m in re.finditer(normalize_text(word), text_norm):
@@ -295,7 +247,6 @@ def extract_option_details(text: str) -> list:
     for i, (pos, kind, label) in enumerate(markers):
         if any(d["kind"] == kind for d in details):
             continue
-        # 같은 종류 단어(예: "크림 휘핑")가 붙어 있으면 한 구간으로 묶는다
         end = len(text_norm)
         for next_pos, next_kind, _ in markers[i + 1:]:
             if next_kind != kind:
@@ -304,7 +255,6 @@ def extract_option_details(text: str) -> list:
         level = _level_of(text_norm[pos:end])
         details.append({"kind": kind, "name": f"{label} {level}", "count": 1})
 
-    # 사이즈
     if _SIZE_WORD_RE.search(text_norm) or any(rx.search(text_norm) for _, rx in _SIZE_PATTERNS[:2]):
         for size, rx in _SIZE_PATTERNS:
             if rx.search(text_norm):
@@ -315,7 +265,6 @@ def extract_option_details(text: str) -> list:
 
 
 def extract_packaging(text: str) -> Optional[bool]:
-    """포장이면 True, 매장 식사면 False, 언급 없으면 None."""
     text_norm = normalize_text(text)
     if _PACK_RE.search(text_norm):
         return True
@@ -354,7 +303,6 @@ def extract_entity(text: str, menu_names: list = None) -> Dict:
             "confidence": 0.0
         }
 
-    # "디카페인으로"처럼 디카페인 지정이 있고 해당 메뉴의 디카페인 버전이 존재하면 그쪽으로 치환
     if menu_names and "디카페인" in text.replace(" ", "") and not menu.startswith("디카페인"):
         decaf_name = f"디카페인 {menu}"
         for name in menu_names:
@@ -362,7 +310,6 @@ def extract_entity(text: str, menu_names: list = None) -> Dict:
                 menu = name
                 break
 
-    # 메뉴명에 이미 온도가 포함돼 있으면 중복해서 붙이지 않는다
     menu_norm = normalize_text(menu)
     if "ice" in attrs and not any(w in menu_norm for w in ["아이스", "ice"]):
         menu = "아이스 " + menu
@@ -381,18 +328,13 @@ def extract_entity(text: str, menu_names: list = None) -> Dict:
         "confidence": 0.9 if menu_names else 0.7
     }
 
-
 MULTI_SPLIT_PATTERN = re.compile(r'\s*(?:이랑|랑|하고|그리고|과|와|,|，)\s*')
 
 
 def extract_all_menus_from_text(text: str, menu_names: list = None) -> list:
-    """구분자 없이 나열된 텍스트에서 등장 순서대로 모든 메뉴 추출.
-    축약어 치환을 먼저 하면 '바닐라라떼'→'바닐라카페라떼'처럼 깨지므로,
-    풀 메뉴명으로 직접 매칭만 수행한다."""
     text_norm = normalize_text(text)
     keywords = active_keywords(menu_names)
 
-    # 후보: 관리자 메뉴 + 축약어 사전 값(풀 메뉴명) + 키(축약어), 길이 내림차순
     candidates = []
     if menu_names:
         candidates += [(normalize_text(m), m) for m in menu_names]
@@ -422,12 +364,11 @@ def extract_all_menus_from_text(text: str, menu_names: list = None) -> list:
                 best_pos = pos
                 best = (norm, original)
             elif best and 0 <= pos == best_pos and len(norm) > len(best[0]):
-                best = (norm, original)  # 같은 위치면 긴 것 우선
+                best = (norm, original)
         if best is None:
             break
         norm, original = best
 
-        # 메뉴 이후 ~ 다음 메뉴 시작 전 구간에서 수량·옵션 추출
         after_menu = remaining[best_pos + len(norm):]
         next_menu_pos = len(after_menu)
         for n2, _ in unique:
@@ -444,12 +385,10 @@ def extract_all_menus_from_text(text: str, menu_names: list = None) -> list:
 
     return found
 
-
 _DISTRIBUTIVE = re.compile(normalize_text(r"씩|둘다|모두|전부|다같이"))
 
 
 def _share_trailing_temperature(results: list, last_part: str) -> None:
-    """"얼그레이랑 캐모마일 따뜻하게 하나씩"처럼 마지막에 온 온도·'씩' 표현은 앞 메뉴에도 적용한다."""
     if len(results) < 2 or not _DISTRIBUTIVE.search(normalize_text(last_part)):
         return
     last = results[-1]
@@ -464,8 +403,6 @@ def _share_trailing_temperature(results: list, last_part: str) -> None:
         if prev["menu"] and not prev["menu"].startswith(("핫 ", "아이스 ")):
             prev["menu"] = prefix + prev["menu"]
 
-
-# "라떼 세 잔, 하나는 샷 추가하고 하나는 시럽 추가" — 같은 메뉴를 잔마다 다른 옵션으로 나눠 주문
 _UNIT_START = re.compile(r"(?<![가-힣0-9])(\d+|한|하나|두|둘|세|셋|네|넷)\s*(?:잔|개)?\s*(?:은|는|만)(?=\s)")
 _UNIT_NUM = {"한": 1, "하나": 1, "두": 2, "둘": 2, "세": 3, "셋": 3, "네": 4, "넷": 4}
 
@@ -504,7 +441,6 @@ def extract_multi_order(text: str, menu_names: list = None) -> list:
     per_unit = _per_unit_orders(text, menu_names)
     if per_unit:
         return per_unit
-    # 1단계: 구분자로 분리 시도
     parts = MULTI_SPLIT_PATTERN.split(text)
     if len(parts) > 1:
         results = []
@@ -516,8 +452,6 @@ def extract_multi_order(text: str, menu_names: list = None) -> list:
             if entity["menu"]:
                 results.append(entity)
             elif results:
-                # "샷 추가하고 시럽은 조금만 해서 포장해 줘"처럼 '하고/랑'으로 끊겼지만 메뉴가 없는 조각은
-                # 새 주문이 아니라 직전 메뉴의 옵션/포장 요청이다. 버리지 않고 직전 메뉴에 합친다.
                 prev = results[-1]
                 have = {d["kind"] for d in prev["option_details"]}
                 for d in entity["option_details"]:
@@ -533,7 +467,6 @@ def extract_multi_order(text: str, menu_names: list = None) -> list:
             _share_trailing_temperature(results, parts[-1])
             return results
 
-    # 2단계: 구분자 없이 나열된 경우 전체 텍스트 스캔
     menu_qty_pairs = extract_all_menus_from_text(text, menu_names)
     if len(menu_qty_pairs) > 1:
         attrs = extract_attributes(text)

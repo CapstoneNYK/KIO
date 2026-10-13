@@ -24,8 +24,6 @@ export const CartBar = () => {
   const orderOverlayOpen = useLearningStore((s) => s.orderOverlayOpen);
   const setOrderOverlayOpen = useLearningStore((s) => s.setOrderOverlayOpen);
 
-  // 담은 메뉴 목록 가로 슬라이드: 마우스 드래그 / 휠 / 좌우 버튼 (터치는 기본 스크롤)
-  // (전역 CSS가 스크롤바를 숨기고 있어서, 마우스로는 따로 지원하지 않으면 넘길 방법이 없다)
   const listRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false });
   const [canLeft, setCanLeft] = useState(false);
@@ -61,7 +59,6 @@ export const CartBar = () => {
 
   return (
     <div className="border-t border-gray-200 bg-white px-4 pt-3 pb-4 shrink-0">
-      {/* 헤더 */}
       <div className="flex items-center gap-1 mb-2">
         <PiShoppingCartSimple className="w-5 h-5" style={{ color: "#E17100" }} />
         <span className="text-sm font-semibold text-gray-700">
@@ -69,7 +66,6 @@ export const CartBar = () => {
         </span>
       </div>
 
-      {/* 아이템 목록 - 가로 스크롤 */}
       <div className="relative">
       {canLeft && (
         <button
@@ -106,7 +102,6 @@ export const CartBar = () => {
         }}
         onMouseUp={() => { dragRef.current.down = false; }}
         onMouseLeave={() => { dragRef.current.down = false; }}
-        // 드래그로 넘긴 직후에 버튼(수량·삭제)이 눌리지 않게 막는다
         onClickCapture={(e) => {
           if (dragRef.current.moved) {
             e.stopPropagation();
@@ -122,7 +117,6 @@ export const CartBar = () => {
             className="relative shrink-0 flex items-center gap-2 rounded-xl p-2 pr-6"
             style={{ backgroundColor: "#FFFBEB", border: "1.5px solid #FEE685" }}
           >
-            {/* X 버튼 - 카드 안 우상단 */}
             <button
               onClick={() => removeItem(cartItem.cartId)}
               className="absolute top-1.5 right-1.5 text-gray-400 active:text-gray-600"
@@ -154,10 +148,8 @@ export const CartBar = () => {
       </div>
       </div>
 
-      {/* 구분선 */}
       <div className="mb-3" style={{ borderTop: "1.5px solid #FEF3C6" }} />
 
-      {/* 합계 + 주문 버튼 */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-gray-600">총 {totalQty}개</span>
         <div className="flex flex-col items-end gap-0.5">

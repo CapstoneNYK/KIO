@@ -6,7 +6,6 @@ import { useLearningStore } from "../store/learningStore";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
-// 결제 1회당 하나의 멱등키. 네트워크 오류로 같은 주문을 다시 보내도 서버가 한 번만 저장한다.
 const newRequestId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -14,8 +13,6 @@ const newRequestId = () =>
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** 주문 저장 요청. 네트워크 오류/서버 오류(5xx)는 같은 멱등키로 최대 3회 재시도하고,
- *  요청 자체가 잘못된 경우(4xx)는 재시도해도 소용없으므로 바로 실패 처리한다. */
 type SaveResult = { ok: true } | { ok: false; rejected: boolean; message?: string };
 
 async function saveOrderWithRetry(body: unknown, maxAttempts = 3): Promise<SaveResult> {
@@ -28,12 +25,10 @@ async function saveOrderWithRetry(body: unknown, maxAttempts = 3): Promise<SaveR
       });
       if (res.ok) return { ok: true };
       if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
-        // 재고 부족(409) 등 서버가 주문을 거절한 경우: 재시도하지 않고 사유를 보여준다
         const data = await res.json().catch(() => null);
         return { ok: false, rejected: true, message: typeof data?.detail === "string" ? data.detail : undefined };
       }
     } catch {
-      // 네트워크 오류 → 재시도
     }
     if (attempt < maxAttempts) await sleep(500 * attempt);
   }
@@ -56,7 +51,6 @@ interface PaymentDetailModalProps {
   onComplete: () => void;
 }
 
-// 숫자패드 컴포넌트
 const NumPad = ({ onPress }: { onPress: (val: string) => void }) => {
   const keys = ["1","2","3","4","5","6","7","8","9","0","00","000"];
   return (
@@ -86,7 +80,6 @@ const NumPad = ({ onPress }: { onPress: (val: string) => void }) => {
   );
 };
 
-// 카드결제 / 앱카드 공통
 const CardPayment = ({
   description,
   image,
@@ -161,7 +154,6 @@ const CardPayment = ({
   );
 };
 
-// 모바일 상품권
 const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete: () => void }) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
@@ -173,7 +165,6 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
   const [showScanner, setShowScanner] = useState(false);
   const initialCouponLen = useRef(coupons.length);
 
-  // 쿠폰이 새로 추가되면 잔액에 따라 차액 결제 or 완료 처리
   useEffect(() => {
     if (coupons.length > initialCouponLen.current) {
       if (totalPrice <= 0) {
@@ -200,7 +191,6 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
   return (
     <>
       <div className="flex gap-4 mb-5">
-        {/* 왼쪽 입력 */}
         <div className="flex-1 flex flex-col gap-3">
           <div className="py-3 border-b border-gray-100">
             <input
@@ -229,7 +219,6 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
             <span className="font-bold text-[#B45309] text-sm">{totalPrice.toLocaleString()}원</span>
           </div>
         </div>
-        {/* 오른쪽 숫자패드 */}
         <div className="w-40 shrink-0">
           <NumPad onPress={handleNumPress} />
         </div>
@@ -262,7 +251,6 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
   );
 };
 
-// 제휴멤버십 (CJ ONE 등)
 const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; onBack?: () => void }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -290,7 +278,6 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
   return (
     <>
       <div className="flex gap-4 mb-5">
-        {/* 왼쪽 입력 */}
         <div className="flex-1 flex flex-col rounded-md overflow-hidden border border-gray-100">
           <div className="flex justify-between items-center py-3 px-3 bg-gray-50">
             <span className="text-gray-600 text-sm">제휴명</span>
@@ -315,7 +302,6 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
             />
           </div>
         </div>
-        {/* 오른쪽 숫자패드 */}
         <div className="w-40 shrink-0">
           <NumPad onPress={handleNumPress} />
         </div>
@@ -348,7 +334,6 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
   );
 };
 
-// 카카오페이 / 네이버페이 공통 바코드 결제
 const AppBarcodePayment = ({
   brand,
   accentColor,
@@ -378,7 +363,6 @@ const AppBarcodePayment = ({
 
   return (
     <>
-      {/* 브랜드 헤더 */}
       <div
         className="flex items-center gap-3 mb-5 px-4 py-3 rounded-lg"
         style={{ backgroundColor: accentColor }}
@@ -387,7 +371,6 @@ const AppBarcodePayment = ({
         <span className="font-bold text-lg" style={{ color: textColor }}>{brand}</span>
       </div>
 
-      {/* 결제 금액 */}
       <div className="flex flex-col border-b border-gray-100 mb-5">
         {discount > 0 && (
           <div className="flex justify-between items-center py-2 px-1">
@@ -414,7 +397,6 @@ const AppBarcodePayment = ({
   );
 };
 
-// 제목 매핑
 const TITLES: Record<string, string> = {
   card: "카드결제",
   appcard: "앱카드결제",
@@ -456,8 +438,6 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
     if (guideScreen === "payment_complete") setShowComplete(true);
   }, [guideScreen]);
 
-  // 주문 저장 + 완료 처리. 실패하면 완료 화면으로 넘어가지 않고 재시도 안내를 보여준다
-  // (같은 멱등키를 쓰므로 재시도해도 중복 주문이 생기지 않는다).
   const submitOrder = async () => {
     const totalAmount = cartItems.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
     const freeDiscount = cartItems.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
@@ -560,7 +540,6 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
         className="relative bg-white rounded-lg w-[80%] h-[88vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
         <div className="flex items-center justify-center py-4 px-6 shrink-0">
           <h2 className="text-lg font-bold text-gray-900">{title}</h2>
           <button
@@ -575,7 +554,6 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
           {renderContent()}
         </div>
 
-        {/* 주문 접수 실패 안내: 네트워크 문제는 같은 주문을 다시 전송하고, 서버가 거절한 경우(재고 부족 등)는 사유를 안내한다 */}
         {orderError && !isProcessing && (
           <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-4 z-20 px-8 text-center">
             {orderError.rejected ? (
@@ -609,7 +587,6 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
           </div>
         )}
 
-        {/* 결제 처리 중 오버레이 */}
         {isProcessing && (
           <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-5 z-10">
             <div className="w-14 h-14 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#1C1917" }} />

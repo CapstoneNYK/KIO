@@ -7,8 +7,6 @@ import {
   imgHibiscus, imgChamomile, imgEarlgrey, imgPeppermint,
 } from "../assets";
 
-// 백엔드 menus 테이블에는 아직 이미지 필드가 없어서, 이름으로 기존 번들 이미지를 매칭한다.
-// 관리자 페이지에서 새로 추가한 메뉴는 매칭되는 이미지가 없으므로 DEFAULT_MENU_IMAGE로 대체된다.
 const MENU_IMAGES: Record<string, string> = {
   "아메리카노": coffee1,
   "카페라떼": imgCafeLatte,

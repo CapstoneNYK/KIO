@@ -5,15 +5,10 @@ from ai.llm import get_llm, OLLAMA_INTENT_MODEL
 
 load_dotenv()
 
-# 유료 OpenAI API 대신 자체 호스팅(Ollama) LLM 사용.
-# 의도 분류는 6지선다 단순 작업이라 무거운 기본 모델 대신 가벼운 전용 모델을
-# 쓸 수 있게 분리(OLLAMA_INTENT_MODEL 미설정 시 기본 모델과 동일).
 llm = get_llm(temperature=0, model=OLLAMA_INTENT_MODEL, num_predict=12)
 
-# 의도 종류
 INTENTS = ["recommend", "qa", "order", "coupon", "payment", "order_and_pay"]
 
-# 의도 분류 프롬프트
 intent_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음성 주문 시스템의 AI입니다.
 
@@ -56,14 +51,12 @@ recommend / qa / order / coupon / payment / order_and_pay
 사용자 입력: {question}
 """)
 
-# 의도 분류 체인
 intent_chain = (
     intent_prompt
     | llm
     | StrOutputParser()
 )
 
-# 의도 분류 함수
 def classify_intent(question: str) -> str:
     try:
         result = intent_chain.invoke({"question": question})
@@ -78,8 +71,6 @@ def classify_intent(question: str) -> str:
         print("Intent 분류 오류:", e)
         return "qa"
 
-
-# 실행 테스트
 if __name__ == "__main__":
     test_inputs = [
         "당 떨어지는데 음료 추천해줘",
