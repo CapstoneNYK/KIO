@@ -28,7 +28,8 @@ def _build_menu_context() -> str:
     if not menus:
         return "현재 등록된 메뉴가 없습니다."
     return "\n".join(
-        f"- {m['name']} ({m['price']}원, {m['category']}){' [품절]' if m['sold_out'] else ''}"
+        f"- {m['name']} ({m['price']}원, {m['category']}, 맛: {'·'.join(m.get('tags') or []) or '정보 없음'}, "
+        f"{'카페인 있음' if m.get('caffeine', True) else '카페인 없음'}){' [품절]' if m['sold_out'] else ''}"
         for m in menus
     )
 
@@ -102,7 +103,8 @@ _recommend_prompt = ChatPromptTemplate.from_template("""
 손님 요청: {question}
 
 위 메뉴 목록에서만 골라 손님의 취향에 맞는 음료를 1~2가지 추천해 주세요.
-각 메뉴가 왜 어울리는지 맛 특징을 한 줄로 설명해 주세요.
+각 메뉴가 왜 어울리는지 한 줄로 설명하되, 맛 설명은 목록에 적힌 '맛' 항목의 단어만 사용하세요.
+목록에 없는 향·재료(바닐라, 카라멜, 시럽 등)를 지어내거나 다른 메뉴의 특징을 섞지 마세요.
 목록에 없는 메뉴는 절대 추천하지 마세요.
 메뉴 목록이 비어 있거나 요청에 맞는 메뉴가 없으면, answer에 "죄송합니다, 현재 해당 조건에 맞는 메뉴를 찾을 수 없습니다."라고 적고 menus는 빈 목록으로 응답하세요.
 

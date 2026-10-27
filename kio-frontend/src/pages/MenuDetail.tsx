@@ -37,7 +37,7 @@ export const MenuDetail = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#FFEFCE]">
+    <div className="flex flex-col h-dvh bg-[#FFEFCE]">
       <TopBar />
 
       <div className="flex-1 bg-white mx-4 mt-3 rounded-t-2xl shadow-sm flex flex-col min-h-0">

@@ -52,7 +52,7 @@ export const Splash = () => {
 
   return (
     <div
-      className="relative flex flex-col h-screen w-full overflow-hidden"
+      className="relative flex flex-col h-dvh w-full overflow-hidden"
       style={{ backgroundColor: "#FFEFCE" }}
     >
       <div className="relative z-10 flex items-center justify-center gap-4 pt-6 pb-3 shrink-0">

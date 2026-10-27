@@ -65,11 +65,18 @@ ORDER_CASES = [
 
 TEMP_CART = ["아이스 얼그레이 ×3", "아이스 히비스커스 ×2"]
 LINES = ["아이스 아메리카노", "따뜻한 카페라떼 ×2", "아이스 바닐라라떼 (시럽 적게)"]
+DECAF_LINES = ["아이스 디카페인 라떼 ×2"]
 CART_CASES = [
+    ("디카페인 라떼 하수로 바꿔줘", DECAF_LINES, C("modify", {"type": "set_temperature", "menu": "디카페인 라떼", "temperature": "HOT"})),
+    ("키카페인 라떼 핫으로 바꿔줘", DECAF_LINES, C("modify", {"type": "set_temperature", "menu": "디카페인 라떼", "temperature": "HOT"})),
+    ("티카페인 라떼 핫으로 바꿔줘", DECAF_LINES, C("modify", {"type": "set_temperature", "menu": "디카페인 라떼", "temperature": "HOT"})),
     ("아이스가 아니라 다 핫이라고", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     ("아이스가 아니라 다 하시라고", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     ("아이스가 아니라 다 하신대", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     ("다 따뜻하게 바꿔줘", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("다 뜨끈하게 바꿔줘", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("전부 따땃한 걸로 해주세요", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
+    ("아이스 말고 따끈하게 바꿔줘", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     ("전부 뜨거운 걸로 해주세요", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     ("핫 말고 다 아이스로 해줘", LINES, C("modify", {"type": "set_temperature_all", "temperature": "ICE"})),
     ("아이스 말고 핫으로 바꿔줘", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
