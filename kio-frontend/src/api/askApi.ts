@@ -37,6 +37,14 @@ export interface AskResponse {
   cart_actions?: CartAction[];
 }
 
+export const sendFeedback = async (query: string, answer: string, intent: string): Promise<void> => {
+  await fetch("/api/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, answer, intent }),
+  });
+};
+
 export const askApi = async (query: string, cartItems: string[] = []): Promise<AskResponse> => {
   const response = await fetch("/api/ask", {
     method: "POST",

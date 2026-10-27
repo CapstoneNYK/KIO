@@ -1,7 +1,7 @@
 import { useServerSTT } from "../utils/serverSttUtil";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { askApi } from "../api/askApi";
+import { askApi, sendFeedback } from "../api/askApi";
 import type { CartAction } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
@@ -14,7 +14,14 @@ import {
   GREETING_TEXT, GREETING_SPEECH, GREETING_EXAMPLES,
 } from "../utils/tts";
 
-type Message = { role: "user" | "bot"; text: string; recommended?: string[] };
+type Message = {
+  role: "user" | "bot";
+  text: string;
+  recommended?: string[];
+  asked?: string;
+  intent?: string;
+  reported?: boolean;
+};
 
 function BotText({ text }: { text: string }) {
   return (
@@ -174,6 +181,13 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     }
   };
 
+  const reportWrong = (index: number) => {
+    const msg = messages[index];
+    if (!msg?.asked || msg.reported) return;
+    setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, reported: true } : m)));
+    sendFeedback(msg.asked, msg.text, msg.intent ?? "").catch(() => {});
+  };
+
   const handleAsk = async (query: string) => {
     if (!query.trim()) return;
     setLoading(true);
@@ -199,7 +213,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
 
       if (res.intent === "cancel" || res.intent === "modify") {
         applyCartActions(res.cart_actions ?? []);
-        setMessages((prev) => [...prev, { role: "bot", text: botText }]);
+        setMessages((prev) => [...prev, { role: "bot", text: botText, asked: query, intent: res.intent }]);
         return;
       }
 
@@ -281,7 +295,13 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       }
 
       const newMessages: Message[] = [
-        { role: "bot", text: botText, recommended: res.intent === "recommend" ? res.recommended_menus : undefined },
+        {
+          role: "bot",
+          text: botText,
+          recommended: res.intent === "recommend" ? res.recommended_menus : undefined,
+          asked: query,
+          intent: res.intent,
+        },
       ];
       setMessages((prev) => [...prev, ...newMessages]);
     } catch (error) {
@@ -378,6 +398,15 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
             <div key={i} className="flex justify-start">
               <div className="bg-white border border-pink-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-[90%] shadow-sm text-gray-900">
                 <BotText text={msg.text} />
+                {msg.asked && (
+                  <button
+                    onClick={() => reportWrong(i)}
+                    disabled={msg.reported}
+                    className="mt-2 text-[0.7em] text-gray-400 underline disabled:no-underline disabled:text-gray-300"
+                  >
+                    {msg.reported ? "의견이 접수됐어요" : "잘못 알아들었어요"}
+                  </button>
+                )}
               </div>
             </div>
           )

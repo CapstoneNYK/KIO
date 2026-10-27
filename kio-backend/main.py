@@ -25,7 +25,7 @@ from ai.entity import (
 )
 from ai.payment import get_payment_response
 from ai.stt import transcribe as transcribe_audio
-from ai.logging_utils import log_intent_query
+from ai.logging_utils import log_feedback, log_intent_query, log_interaction
 from ai.order import (
     _is_noise_menu,
     _josa,
@@ -307,8 +307,26 @@ async def text_to_speech(body: TTSRequest):
     return Response(audio, media_type="audio/mpeg")
 
 
+class FeedbackRequest(BaseModel):
+    query: str
+    answer: str = ""
+    intent: str | None = None
+
+
+@app.post("/api/feedback", status_code=204)
+def feedback(body: FeedbackRequest):
+    log_feedback(body.query[:300], body.answer[:500], body.intent)
+
+
 @app.post("/api/ask")
 async def ask_intent(request: QueryRequest):
+    raw = request.query
+    result = await _handle_ask(request)
+    log_interaction(raw, request.cart_items, result)
+    return result
+
+
+async def _handle_ask(request: QueryRequest) -> dict:
     if not request.query.strip():
         raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
 

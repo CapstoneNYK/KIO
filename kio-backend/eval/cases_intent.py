@@ -178,3 +178,15 @@ INTENT_CASES = (
     + _pack(QA, "qa")
     + _pack(COUPON, "coupon")
 )
+
+
+def _logged_cases():
+    import json
+    from pathlib import Path
+    path = Path(__file__).parent / "cases_logged.json"
+    if not path.exists():
+        return []
+    return [(c["text"], c["intent"]) for c in json.loads(path.read_text(encoding="utf-8"))]
+
+
+INTENT_CASES = INTENT_CASES + [c for c in _logged_cases() if c not in INTENT_CASES]
