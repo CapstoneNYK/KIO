@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PiShoppingCartSimple } from "react-icons/pi";
-import { LuX } from "react-icons/lu";
-import { useCartStore } from "../store/cartStore";
+import { LuX, LuChevronLeft, LuChevronRight } from "react-icons/lu";
+import { useCartStore, remainingStock } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
@@ -24,6 +24,26 @@ export const CartBar = () => {
   const orderOverlayOpen = useLearningStore((s) => s.orderOverlayOpen);
   const setOrderOverlayOpen = useLearningStore((s) => s.setOrderOverlayOpen);
 
+  const listRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ down: false, startX: 0, startScroll: 0, moved: false });
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const updateArrows = () => {
+    const el = listRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+  useEffect(() => {
+    updateArrows();
+    window.addEventListener("resize", updateArrows);
+    return () => window.removeEventListener("resize", updateArrows);
+  }, [items.length]);
+
+  const slide = (dir: -1 | 1) =>
+    listRef.current?.scrollBy({ left: dir * 240, behavior: "smooth" });
+
   const showConfirm = orderOverlayOpen
     || CONFIRM_SCREENS.includes(learningScreen ?? "")
     || CONFIRM_SCREENS.includes(guideScreen ?? "");
@@ -39,7 +59,6 @@ export const CartBar = () => {
 
   return (
     <div className="border-t border-gray-200 bg-white px-4 pt-3 pb-4 shrink-0">
-      {/* 헤더 */}
       <div className="flex items-center gap-1 mb-2">
         <PiShoppingCartSimple className="w-5 h-5" style={{ color: "#E17100" }} />
         <span className="text-sm font-semibold text-gray-700">
@@ -47,15 +66,57 @@ export const CartBar = () => {
         </span>
       </div>
 
-      {/* 아이템 목록 - 가로 스크롤 */}
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+      <div className="relative">
+      {canLeft && (
+        <button
+          onClick={() => slide(-1)}
+          className="absolute left-0 top-1/2 z-10 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 active:bg-gray-100"
+        >
+          <LuChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+      {canRight && (
+        <button
+          onClick={() => slide(1)}
+          className="absolute right-0 top-1/2 z-10 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-600 active:bg-gray-100"
+        >
+          <LuChevronRight className="w-5 h-5" />
+        </button>
+      )}
+      <div
+        ref={listRef}
+        onScroll={updateArrows}
+        onWheel={(e) => {
+          if (listRef.current && Math.abs(e.deltaY) > Math.abs(e.deltaX)) listRef.current.scrollLeft += e.deltaY;
+        }}
+        onMouseDown={(e) => {
+          if (!listRef.current) return;
+          dragRef.current = { down: true, startX: e.clientX, startScroll: listRef.current.scrollLeft, moved: false };
+        }}
+        onMouseMove={(e) => {
+          const d = dragRef.current;
+          if (!d.down || !listRef.current) return;
+          const dx = e.clientX - d.startX;
+          if (Math.abs(dx) > 5) d.moved = true;
+          listRef.current.scrollLeft = d.startScroll - dx;
+        }}
+        onMouseUp={() => { dragRef.current.down = false; }}
+        onMouseLeave={() => { dragRef.current.down = false; }}
+        onClickCapture={(e) => {
+          if (dragRef.current.moved) {
+            e.stopPropagation();
+            e.preventDefault();
+            dragRef.current.moved = false;
+          }
+        }}
+        className="flex gap-2 overflow-x-auto pb-2 mb-3 select-none cursor-grab active:cursor-grabbing"
+      >
         {items.map((cartItem) => (
           <div
             key={cartItem.cartId}
             className="relative shrink-0 flex items-center gap-2 rounded-xl p-2 pr-6"
             style={{ backgroundColor: "#FFFBEB", border: "1.5px solid #FEE685" }}
           >
-            {/* X 버튼 - 카드 안 우상단 */}
             <button
               onClick={() => removeItem(cartItem.cartId)}
               className="absolute top-1.5 right-1.5 text-gray-400 active:text-gray-600"
@@ -78,6 +139,7 @@ export const CartBar = () => {
               <OptionCounter
                 count={cartItem.quantity}
                 min={1}
+                max={cartItem.quantity + remainingStock(items, cartItem.item)}
                 onDecrement={() => updateQuantity(cartItem.cartId, cartItem.quantity - 1)}
                 onIncrement={() => updateQuantity(cartItem.cartId, cartItem.quantity + 1)}
               />
@@ -85,11 +147,10 @@ export const CartBar = () => {
           </div>
         ))}
       </div>
+      </div>
 
-      {/* 구분선 */}
       <div className="mb-3" style={{ borderTop: "1.5px solid #FEF3C6" }} />
 
-      {/* 합계 + 주문 버튼 */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-gray-600">총 {totalQty}개</span>
         <div className="flex flex-col items-end gap-0.5">

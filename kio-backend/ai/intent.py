@@ -1,19 +1,14 @@
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from ai.llm import get_llm, OLLAMA_INTENT_MODEL
 
 load_dotenv()
 
-llm = ChatOpenAI(
-    model="gpt-4o",
-    temperature=0 
-)
+llm = get_llm(temperature=0, model=OLLAMA_INTENT_MODEL, num_predict=12)
 
-# 의도 종류
 INTENTS = ["recommend", "qa", "order", "coupon", "payment", "order_and_pay"]
 
-# 의도 분류 프롬프트
 intent_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음성 주문 시스템의 AI입니다.
 
@@ -21,6 +16,8 @@ intent_prompt = ChatPromptTemplate.from_template("""
 
 1. recommend → 메뉴 추천 요청
    - 예: "당 떨어지는데 음료 추천해줘", "달달한 거 뭐 있어?"
+   - 주의: 문장이 잡음/오인식처럼 불분명하거나 무슨 의미인지 판단하기 어려우면
+     recommend로 추측하지 말고 qa로 분류하세요.
 
 2. qa → 메뉴 정보 질문
    - 예: "아메리카노 얼마야?", "카페라떼 칼로리 뭐야?"
@@ -54,14 +51,12 @@ recommend / qa / order / coupon / payment / order_and_pay
 사용자 입력: {question}
 """)
 
-# 의도 분류 체인
 intent_chain = (
     intent_prompt
     | llm
     | StrOutputParser()
 )
 
-# 의도 분류 함수
 def classify_intent(question: str) -> str:
     try:
         result = intent_chain.invoke({"question": question})
@@ -76,8 +71,6 @@ def classify_intent(question: str) -> str:
         print("Intent 분류 오류:", e)
         return "qa"
 
-
-# 실행 테스트
 if __name__ == "__main__":
     test_inputs = [
         "당 떨어지는데 음료 추천해줘",

@@ -9,8 +9,6 @@ DB_PATH = Path(__file__).parent / "kio_admin.db"
 UPLOAD_DIR = Path(__file__).parent / "uploads" / "menu_images"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# 결제 모달(PaymentModal.tsx)에 이미 버튼/아이콘으로 존재하는 할인수단만 관리 가능.
-# 새 결제수단 자체를 추가하려면 프론트에 버튼을 먼저 만들어야 한다.
 DISCOUNT_METHODS: dict[str, str] = {
     "kt": "KT VIP",
     "tmembership": "T멤버십",
@@ -70,6 +68,32 @@ INITIAL_MENUS = [
     (22, "히비스커스",          3000, "티",      '["HOT","ICE"]', 0),
 ]
 
+DEFAULT_SIZES = ["S", "M", "L"]
+INITIAL_MENU_ATTRS = {
+    "아메리카노":          (True,  ["쌉쌀", "산미", "깔끔"]),
+    "카페라떼":            (True,  ["고소", "부드러운"]),
+    "카푸치노":            (True,  ["고소", "부드러운", "진한"]),
+    "바닐라라떼":          (True,  ["달콤", "부드러운"]),
+    "카라멜마키아토":      (True,  ["달콤", "진한"]),
+    "에스프레소":          (True,  ["진한", "쌉쌀", "산미"]),
+    "디카페인 아메리카노": (False, ["쌉쌀", "깔끔"]),
+    "디카페인 라떼":       (False, ["고소", "부드러운"]),
+    "디카페인 바닐라라떼": (False, ["달콤", "부드러운"]),
+    "딸기 스무디":         (False, ["달콤", "상큼", "과일"]),
+    "망고 요거트 스무디":  (False, ["달콤", "상큼", "과일", "부드러운"]),
+    "블루베리 스무디":     (False, ["달콤", "상큼", "과일"]),
+    "레몬 에이드":         (False, ["상큼", "탄산", "과일"]),
+    "자몽 에이드":         (False, ["상큼", "쌉쌀", "탄산", "과일"]),
+    "청포도 에이드":       (False, ["상큼", "달콤", "탄산", "과일"]),
+    "오렌지 주스":         (False, ["상큼", "달콤", "과일"]),
+    "망고 주스":           (False, ["달콤", "과일"]),
+    "딸기 바나나 주스":    (False, ["달콤", "과일", "부드러운"]),
+    "얼그레이":            (True,  ["향긋", "깔끔"]),
+    "캐모마일":            (False, ["향긋", "부드러운"]),
+    "페퍼민트":            (False, ["향긋", "상쾌"]),
+    "히비스커스":          (False, ["상큼", "향긋"]),
+}
+
 
 def get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
@@ -89,6 +113,9 @@ def init_db() -> None:
                 temps       TEXT    NOT NULL DEFAULT '[]',
                 sold_out    INTEGER NOT NULL DEFAULT 0,
                 image_url   TEXT,
+                caffeine    INTEGER NOT NULL DEFAULT 1,
+                tags        TEXT    NOT NULL DEFAULT '[]',
+                sizes       TEXT    NOT NULL DEFAULT '[]',
                 created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
@@ -99,6 +126,7 @@ def init_db() -> None:
                 discount_amount INTEGER NOT NULL DEFAULT 0,
                 final_amount    INTEGER NOT NULL,
                 is_packaging    INTEGER NOT NULL DEFAULT 0,
+                request_id      TEXT,
                 created_at      TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
@@ -110,7 +138,8 @@ def init_db() -> None:
                 quantity    INTEGER NOT NULL DEFAULT 1,
                 unit_price  INTEGER NOT NULL,
                 is_free     INTEGER NOT NULL DEFAULT 0,
-                category    TEXT
+                category    TEXT,
+                options     TEXT NOT NULL DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS admins (
@@ -139,10 +168,38 @@ def init_db() -> None:
         if "image_url" not in existing_columns:
             conn.execute("ALTER TABLE menus ADD COLUMN image_url TEXT")
 
-        # 주문 당시 카테고리를 저장해 두어, 이후 메뉴 이름 변경/삭제에도 카테고리 통계가 유지되도록 한다.
+        attrs_added = False
+        if "caffeine" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN caffeine INTEGER NOT NULL DEFAULT 1")
+            attrs_added = True
+        if "tags" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'")
+            attrs_added = True
+        if "sizes" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN sizes TEXT NOT NULL DEFAULT '[]'")
+            attrs_added = True
+
+        order_columns = {row["name"] for row in conn.execute("PRAGMA table_info(orders)")}
+        if "request_id" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN request_id TEXT")
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_request_id "
+            "ON orders(request_id) WHERE request_id IS NOT NULL"
+        )
+
+        if "status" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN status TEXT NOT NULL DEFAULT 'PAID'")
+        if "status_updated_at" not in order_columns:
+            conn.execute("ALTER TABLE orders ADD COLUMN status_updated_at TEXT")
+
+        if "stock" not in existing_columns:
+            conn.execute("ALTER TABLE menus ADD COLUMN stock INTEGER")
+
         item_columns = {row["name"] for row in conn.execute("PRAGMA table_info(order_items)")}
         if "category" not in item_columns:
             conn.execute("ALTER TABLE order_items ADD COLUMN category TEXT")
+        if "options" not in item_columns:
+            conn.execute("ALTER TABLE order_items ADD COLUMN options TEXT NOT NULL DEFAULT ''")
         conn.execute(
             """UPDATE order_items
                SET category = (SELECT m.category FROM menus m WHERE m.name = order_items.menu_name)
@@ -155,6 +212,15 @@ def init_db() -> None:
                 "INSERT INTO menus (id, name, price, category, temps, sold_out) VALUES (?,?,?,?,?,?)",
                 INITIAL_MENUS,
             )
+            attrs_added = True
+
+        if attrs_added:
+            for name, (caffeine, tags) in INITIAL_MENU_ATTRS.items():
+                conn.execute(
+                    "UPDATE menus SET caffeine=?, tags=?, sizes=? WHERE name=?",
+                    (int(caffeine), json.dumps(tags, ensure_ascii=False),
+                     json.dumps(DEFAULT_SIZES), name),
+                )
 
         admin_count = conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0]
         if admin_count == 0:
@@ -174,37 +240,64 @@ def init_db() -> None:
             )
 
 
-# ── Menus ──────────────────────────────────────────────────────────────────
-
 def get_menus() -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute("SELECT * FROM menus ORDER BY id").fetchall()
     return [_menu_row(r) for r in rows]
 
 
-def create_menu(name: str, price: int, category: str, temps: list[str], image_url: str | None = None) -> dict:
+def create_menu(
+    name: str,
+    price: int,
+    category: str,
+    temps: list[str],
+    image_url: str | None = None,
+    caffeine: bool = True,
+    tags: list[str] | None = None,
+    sizes: list[str] | None = None,
+    stock: int | None = None,
+) -> dict:
     with get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO menus (name, price, category, temps, image_url) VALUES (?,?,?,?,?)",
-            (name, price, category, json.dumps(temps, ensure_ascii=False), image_url),
+            "INSERT INTO menus (name, price, category, temps, image_url, caffeine, tags, sizes, stock, sold_out) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (name, price, category, json.dumps(temps, ensure_ascii=False), image_url,
+             int(caffeine), json.dumps(tags or [], ensure_ascii=False),
+             json.dumps(sizes if sizes is not None else DEFAULT_SIZES),
+             stock, int(stock is not None and stock <= 0)),
         )
         row = conn.execute("SELECT * FROM menus WHERE id=?", (cur.lastrowid,)).fetchone()
     return _menu_row(row)
 
 
 def update_menu(menu_id: int, **fields) -> dict | None:
-    allowed = {"name", "price", "category", "temps", "sold_out", "image_url"}
+    allowed = {"name", "price", "category", "temps", "sold_out", "image_url", "caffeine", "tags", "sizes", "stock"}
+    clear_stock = bool(fields.pop("clear_stock", False))
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
-    if not updates:
+    if clear_stock:
+        updates.pop("stock", None)
+    if not updates and not clear_stock:
         return None
-    if "temps" in updates:
-        updates["temps"] = json.dumps(updates["temps"], ensure_ascii=False)
-    set_clause = ", ".join(f"{k}=?" for k in updates)
+    for key in ("temps", "tags", "sizes"):
+        if key in updates:
+            updates[key] = json.dumps(updates[key], ensure_ascii=False)
+    if "caffeine" in updates:
+        updates["caffeine"] = int(updates["caffeine"])
+    if "sold_out" in updates:
+        updates["sold_out"] = int(updates["sold_out"])
     with get_conn() as conn:
-        conn.execute(
-            f"UPDATE menus SET {set_clause} WHERE id=?",
-            (*updates.values(), menu_id),
-        )
+        if clear_stock:
+            conn.execute("UPDATE menus SET stock=NULL WHERE id=?", (menu_id,))
+        if "stock" in updates:
+            updates["stock"] = max(0, int(updates["stock"]))
+            before = conn.execute("SELECT stock, sold_out FROM menus WHERE id=?", (menu_id,)).fetchone()
+            if updates["stock"] == 0:
+                updates["sold_out"] = 1
+            elif before and before["stock"] == 0 and before["sold_out"] and "sold_out" not in updates:
+                updates["sold_out"] = 0
+        if updates:
+            set_clause = ", ".join(f"{k}=?" for k in updates)
+            conn.execute(f"UPDATE menus SET {set_clause} WHERE id=?", (*updates.values(), menu_id))
         row = conn.execute("SELECT * FROM menus WHERE id=?", (menu_id,)).fetchone()
     return _menu_row(row) if row else None
 
@@ -235,10 +328,13 @@ def _menu_row(row: sqlite3.Row) -> dict:
     d = dict(row)
     d["temps"] = json.loads(d["temps"])
     d["sold_out"] = bool(d["sold_out"])
+    d["caffeine"] = bool(d.get("caffeine", 1))
+    d["tags"] = json.loads(d.get("tags") or "[]")
+    d["sizes"] = json.loads(d.get("sizes") or "[]")
+    d["stock"] = d.get("stock")
+    d["track_stock"] = d["stock"] is not None
     return d
 
-
-# ── Discounts ──────────────────────────────────────────────────────────────
 
 def get_discounts(active_only: bool = False) -> list[dict]:
     sql = "SELECT * FROM discounts"
@@ -297,8 +393,6 @@ def _discount_row(row: sqlite3.Row) -> dict:
     return d
 
 
-# ── Admins ─────────────────────────────────────────────────────────────────
-
 def get_admin_by_username(username: str) -> dict | None:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM admins WHERE username=?", (username,)).fetchone()
@@ -315,7 +409,46 @@ def create_admin(username: str, password_hash: str) -> dict:
     return dict(row)
 
 
-# ── Orders ─────────────────────────────────────────────────────────────────
+class OutOfStock(Exception):
+    def __init__(self, names: list[str]):
+        super().__init__(", ".join(names))
+        self.names = names
+
+
+def _need_by_menu(items: list[dict]) -> dict[str, int]:
+    need: dict[str, int] = {}
+    for i in items:
+        if i.get("is_free"):
+            continue
+        need[i["menu_name"]] = need.get(i["menu_name"], 0) + i["quantity"]
+    return need
+
+
+def _check_stock(conn: sqlite3.Connection, items: list[dict]) -> None:
+    short = []
+    for name, qty in _need_by_menu(items).items():
+        row = conn.execute("SELECT stock, sold_out FROM menus WHERE name=?", (name,)).fetchone()
+        if row is None:
+            continue
+        if row["sold_out"] or (row["stock"] is not None and row["stock"] < qty):
+            short.append(name)
+    if short:
+        raise OutOfStock(short)
+
+
+def _apply_stock(conn: sqlite3.Connection, items: list[dict], sign: int) -> None:
+    for name, qty in _need_by_menu(items).items():
+        row = conn.execute("SELECT stock, sold_out FROM menus WHERE name=?", (name,)).fetchone()
+        if row is None or row["stock"] is None:
+            continue
+        new_stock = max(0, row["stock"] + sign * qty)
+        sold_out = row["sold_out"]
+        if new_stock == 0:
+            sold_out = 1
+        elif row["stock"] == 0 and sign > 0:
+            sold_out = 0
+        conn.execute("UPDATE menus SET stock=?, sold_out=? WHERE name=?", (new_stock, sold_out, name))
+
 
 def save_order(
     payment_method: str,
@@ -324,31 +457,87 @@ def save_order(
     final_amount: int,
     is_packaging: bool,
     items: list[dict],
+    request_id: str | None = None,
 ) -> dict:
     with get_conn() as conn:
-        cur = conn.execute(
-            """INSERT INTO orders
-               (payment_method, total_amount, discount_amount, final_amount, is_packaging)
-               VALUES (?,?,?,?,?)""",
-            (payment_method, total_amount, discount_amount, final_amount, int(is_packaging)),
-        )
+        if request_id:
+            existing = conn.execute(
+                "SELECT * FROM orders WHERE request_id=?", (request_id,)
+            ).fetchone()
+            if existing:
+                return dict(existing)
+        _check_stock(conn, items)
+        try:
+            cur = conn.execute(
+                """INSERT INTO orders
+                   (payment_method, total_amount, discount_amount, final_amount, is_packaging, request_id)
+                   VALUES (?,?,?,?,?,?)""",
+                (payment_method, total_amount, discount_amount, final_amount,
+                 int(is_packaging), request_id),
+            )
+        except sqlite3.IntegrityError:
+            existing = conn.execute(
+                "SELECT * FROM orders WHERE request_id=?", (request_id,)
+            ).fetchone()
+            if existing:
+                return dict(existing)
+            raise
         order_id = cur.lastrowid
+        _apply_stock(conn, items, sign=-1)
         category_by_name = {
             r["name"]: r["category"] for r in conn.execute("SELECT name, category FROM menus")
         }
         conn.executemany(
             """INSERT INTO order_items
-               (order_id, menu_name, temperature, quantity, unit_price, is_free, category)
-               VALUES (?,?,?,?,?,?,?)""",
+               (order_id, menu_name, temperature, quantity, unit_price, is_free, category, options)
+               VALUES (?,?,?,?,?,?,?,?)""",
             [
                 (order_id, i["menu_name"], i.get("temperature", ""),
                  i["quantity"], i["unit_price"], int(i.get("is_free", False)),
-                 category_by_name.get(i["menu_name"]))
+                 category_by_name.get(i["menu_name"]), (i.get("options") or "")[:200])
                 for i in items
             ],
         )
         row = conn.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
     return dict(row)
+
+ORDER_STATUSES = ("PAID", "CANCELLED")
+
+
+def get_order(order_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+        if row is None:
+            return None
+        order = dict(row)
+        order["items"] = [dict(r) for r in conn.execute(
+            "SELECT * FROM order_items WHERE order_id=?", (order_id,))]
+    return order
+
+
+def change_order_status(order_id: int, new_status: str) -> tuple[dict | None, str | None]:
+    if new_status not in ORDER_STATUSES:
+        return None, "알 수 없는 주문 상태입니다."
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+        if row is None:
+            return None, "주문을 찾을 수 없습니다."
+        current = row["status"]
+        if new_status == current:
+            return get_order(order_id), None
+        if current == "CANCELLED":
+            return None, "이미 취소된 주문입니다."
+        if new_status == "PAID":
+            return None, "취소된 주문은 되돌릴 수 없습니다."
+        conn.execute(
+            "UPDATE orders SET status=?, status_updated_at=datetime('now','localtime') WHERE id=?",
+            (new_status, order_id),
+        )
+        items = [dict(r) for r in conn.execute("SELECT * FROM order_items WHERE order_id=?", (order_id,))]
+        _apply_stock(conn, [{"menu_name": i["menu_name"], "quantity": i["quantity"],
+                             "is_free": i["is_free"]} for i in items], sign=+1)
+    return get_order(order_id), None
 
 
 def get_orders(date_from: str | None = None, date_to: str | None = None) -> list[dict]:
@@ -374,8 +563,6 @@ def get_orders(date_from: str | None = None, date_to: str | None = None) -> list
     return orders
 
 
-# ── Sales stats ────────────────────────────────────────────────────────────
-
 def _period_range(period: str) -> tuple[str, str, str, str]:
     now = datetime.now()
     fmt = "%Y-%m-%d %H:%M:%S"
@@ -391,7 +578,7 @@ def _period_range(period: str) -> tuple[str, str, str, str]:
         end = now
         prev_start = start - timedelta(weeks=1)
         prev_end = start
-    else:  # month
+    else:
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         end = now
         prev_start = (start - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0)
@@ -407,7 +594,7 @@ def _aggregate(conn: sqlite3.Connection, start: str, end: str) -> dict:
                COALESCE(SUM(final_amount),0) AS sales,
                COALESCE(AVG(final_amount),0) AS avg,
                COALESCE(SUM(CASE WHEN discount_amount > 0 THEN 1 ELSE 0 END),0) AS coupons
-           FROM orders WHERE created_at >= ? AND created_at <= ?""",
+           FROM orders WHERE created_at >= ? AND created_at <= ? AND status != 'CANCELLED'""",
         (start, end),
     ).fetchone()
     return {
@@ -425,12 +612,10 @@ def get_sales(period: str) -> dict:
         prev = _aggregate(conn, prev_start, prev_end)
     return {"current": curr, "previous": prev}
 
-
 WEEKDAYS_KO = ["월", "화", "수", "목", "금", "토", "일"]
 
 
 def get_sales_trend(period: str) -> list[dict]:
-    """today=시간대별(0~23시), week=요일별(월~일), month=일별(1일~말일) 매출 추이. 데이터 없는 구간은 0으로 채움."""
     start, end, _, _ = _period_range(period)
     start_dt = datetime.strptime(start, "%Y-%m-%d %H:%M:%S")
 
@@ -461,7 +646,7 @@ def get_sales_trend(period: str) -> list[dict]:
                        COALESCE(SUM(final_amount),0) AS sales,
                        COUNT(*) AS orders
                 FROM orders
-                WHERE created_at >= ? AND created_at <= ?
+                WHERE created_at >= ? AND created_at <= ? AND status != 'CANCELLED'
                 GROUP BY bucket""",
             (start, end),
         ).fetchall()
@@ -478,47 +663,54 @@ def get_sales_trend(period: str) -> list[dict]:
     ]
 
 
-# ── Analytics ──────────────────────────────────────────────────────────────
-
 def get_analytics() -> dict:
     now = datetime.now()
     week_start = (now - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
 
     with get_conn() as conn:
-        # 판매량 TOP 메뉴
         top_rows = conn.execute(
             """SELECT oi.menu_name, SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                GROUP BY oi.menu_name
                ORDER BY cnt DESC LIMIT 5""",
             (week_start,),
         ).fetchall()
 
-        # 카테고리별 판매 수량
         cat_rows = conn.execute(
             """SELECT COALESCE(oi.category, m.category, '기타') AS category, SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
                LEFT JOIN menus m ON m.name = oi.menu_name
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                GROUP BY COALESCE(oi.category, m.category, '기타')""",
             (week_start,),
         ).fetchall()
 
-        # 온도별 비율
+        cat_sales_rows = conn.execute(
+            """SELECT COALESCE(oi.category, m.category, '기타') AS category,
+                      SUM(oi.quantity * oi.unit_price) AS amount,
+                      SUM(oi.quantity) AS cnt
+               FROM order_items oi
+               JOIN orders o ON o.id = oi.order_id
+               LEFT JOIN menus m ON m.name = oi.menu_name
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
+               GROUP BY COALESCE(oi.category, m.category, '기타')
+               ORDER BY amount DESC""",
+            (week_start,),
+        ).fetchall()
+
         temp_rows = conn.execute(
             """SELECT oi.temperature, SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                  AND oi.temperature IN ('HOT','ICE')
                GROUP BY oi.temperature""",
             (week_start,),
         ).fetchall()
 
-        # 시간대별 인기 메뉴 (top 2)
         time_rows = conn.execute(
             """SELECT
                    CASE
@@ -531,7 +723,7 @@ def get_analytics() -> dict:
                    SUM(oi.quantity) AS cnt
                FROM order_items oi
                JOIN orders o ON o.id = oi.order_id
-               WHERE o.created_at >= ? AND oi.is_free = 0
+               WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
                GROUP BY time_slot, oi.menu_name
                ORDER BY time_slot, cnt DESC""",
             (week_start,),
@@ -565,12 +757,19 @@ def get_analytics() -> dict:
         for slot in time_slots
     ]
 
+    total_amount = sum(r["amount"] for r in cat_sales_rows) or 1
+    category_sales = [
+        {"name": r["category"], "amount": r["amount"], "count": r["cnt"],
+         "share": round(r["amount"] / total_amount * 100)}
+        for r in cat_sales_rows
+    ]
+
     return {
+        "category_sales": category_sales,
         "top_menus": top_menus,
         "category_data": category_data,
         "temp_data": temp_data,
         "time_menus": time_menus,
     }
-
 
 init_db()

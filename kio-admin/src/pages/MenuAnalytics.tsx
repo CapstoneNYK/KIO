@@ -14,6 +14,7 @@ const TEMP_COLORS: Record<string, string> = { ICE: "#60A5FA", HOT: "#F97316" };
 interface AnalyticsData {
   top_menus: { name: string; count: number }[];
   category_data: { name: string; value: number }[];
+  category_sales: { name: string; amount: number; count: number; share: number }[];
   temp_data: { name: string; value: number }[];
   time_menus: { time: string; top: string; second: string }[];
 }
@@ -63,9 +64,7 @@ export const MenuAnalytics = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* TOP 5 + Pies side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* TOP 5 */}
         <div className="lg:col-span-3 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <p className="text-sm font-bold text-gray-800 mb-1">판매량 TOP 5</p>
           <p className="text-xs text-gray-400 mb-5">최근 7일 기준</p>
@@ -79,7 +78,6 @@ export const MenuAnalytics = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Pies */}
         <div className="lg:col-span-2 flex flex-col gap-4">
           <div className="flex-1 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
             <p className="text-xs font-bold text-gray-800 mb-3">카테고리별 비율</p>
@@ -123,7 +121,29 @@ export const MenuAnalytics = () => {
         </div>
       </div>
 
-      {/* Time-based */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-baseline justify-between mb-4">
+          <p className="text-sm font-bold text-gray-800">카테고리별 매출</p>
+          <p className="text-xs text-gray-400">합계 ₩{(data.category_sales ?? []).reduce((a, c) => a + c.amount, 0).toLocaleString()}</p>
+        </div>
+        {(data.category_sales ?? []).length === 0 ? (
+          <p className="text-sm text-gray-400">집계할 주문이 없습니다.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {(data.category_sales ?? []).map((c) => (
+              <div key={c.name} className="flex items-center gap-3">
+                <span className="w-16 text-sm text-gray-600 shrink-0">{c.name}</span>
+                <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${c.share}%`, backgroundColor: CATEGORY_COLORS[c.name] ?? "#F5A623" }} />
+                </div>
+                <span className="w-10 text-right text-xs text-gray-400 tabular-nums shrink-0">{c.share}%</span>
+                <span className="w-24 text-right text-sm font-bold text-gray-800 tabular-nums shrink-0">₩{c.amount.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <p className="text-sm font-bold text-gray-800 mb-4">시간대별 인기 메뉴</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

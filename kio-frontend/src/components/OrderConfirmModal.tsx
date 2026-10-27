@@ -1,6 +1,5 @@
-// no useState needed — overlay state managed by learningStore
 import { LuX } from "react-icons/lu";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, remainingStock } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
@@ -34,9 +33,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
 
   const getOptionSummary = (cartItem: typeof items[number]) => {
     const parts: string[] = [];
-    // 온도 표시
     parts.push(`${cartItem.item.title}(${cartItem.temperature})`);
-    // 선택된 옵션만
     const activeOptions = cartItem.options.filter((o) => o.count > 0);
     activeOptions.forEach((o) => parts.push(`+${o.name}`));
     return parts;
@@ -48,10 +45,9 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl w-[80%] h-[88vh] flex flex-col overflow-hidden shadow-xl"
+        className="relative bg-white rounded-2xl w-[80%] h-[88dvh] flex flex-col overflow-hidden shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
         <div className="flex items-center justify-center py-4 px-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">주문확인</h2>
           <button
@@ -62,14 +58,12 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           </button>
         </div>
 
-        {/* 아이템 목록 */}
         <div className="flex-1 overflow-y-auto">
           {items.map((cartItem, idx) => {
             const summaryLines = getOptionSummary(cartItem);
             return (
               <div key={cartItem.cartId}>
                 <div className="flex items-start gap-4 px-6 py-5">
-                  {/* 이미지 + 카운터 */}
                   <div className="flex flex-col items-center gap-2 shrink-0">
                     <img
                       src={cartItem.item.img}
@@ -79,12 +73,12 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
                     <OptionCounter
                       count={cartItem.quantity}
                       min={1}
+                      max={cartItem.quantity + remainingStock(items, cartItem.item)}
                       onDecrement={() => updateQuantity(cartItem.cartId, cartItem.quantity - 1)}
                       onIncrement={() => updateQuantity(cartItem.cartId, cartItem.quantity + 1)}
                     />
                   </div>
 
-                  {/* 이름 + 옵션 */}
                   <div className="flex-1 min-w-0 pt-1">
                     <p className="font-semibold text-gray-900 text-base mb-1">
                       {cartItem.item.title}
@@ -104,7 +98,6 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
                     </div>
                   </div>
 
-                  {/* 가격 */}
                   <p className="text-orange-500 font-bold text-base shrink-0 pt-1">
                     {(cartItem.item.price * cartItem.quantity).toLocaleString()}원
                   </p>
@@ -118,7 +111,6 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           })}
         </div>
 
-        {/* 금액 요약 */}
         <div className="px-6 py-5" style={{ backgroundColor: "#FFFBEB" }}>
           <div className="flex justify-between mb-2">
             <span className="text-gray-700">주문 금액</span>
@@ -138,7 +130,6 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           </div>
         </div>
 
-        {/* 버튼 */}
         <div className="flex gap-2 px-6 py-4 bg-white">
           <button
             onClick={onCancelAll}

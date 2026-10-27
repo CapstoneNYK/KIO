@@ -1,0 +1,171 @@
+{
+  "기본셋 / 주문 추출·옵션": {
+    "correct": 64,
+    "total": 64,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "기본셋 / 장바구니 취소·변경": {
+    "correct": 38,
+    "total": 38,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "기본셋 / 조건 추천": {
+    "correct": 23,
+    "total": 23,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 주문 추출·옵션": {
+    "correct": 20,
+    "total": 20,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 장바구니 취소·변경": {
+    "correct": 14,
+    "total": 14,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 조건 추천": {
+    "correct": 10,
+    "total": 10,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "추가셋 / 주문 추출·옵션": {
+    "correct": 58,
+    "total": 58,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "추가셋 / 장바구니 취소·변경": {
+    "correct": 43,
+    "total": 43,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "추가셋 / 조건 추천": {
+    "correct": 21,
+    "total": 21,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "overall_rules": {
+    "correct": 291,
+    "total": 291,
+    "accuracy": 100.0
+  },
+  "대화형 / 되묻기 이어 받기": {
+    "correct": 10,
+    "total": 10,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "intent_rules": {
+    "decided": 99,
+    "total": 147,
+    "right": 99,
+    "wrong": []
+  },
+  "LLM / 의도 분류(LLM 단독)": {
+    "correct": 141,
+    "total": 147,
+    "accuracy": 95.9,
+    "failures": [
+      {
+        "text": "2번으로 할게요",
+        "problems": [
+          "예측 payment (정답 order)"
+        ]
+      },
+      {
+        "text": "음... 바닐라라떼로 할게요",
+        "problems": [
+          "예측 order_and_pay (정답 order)"
+        ]
+      },
+      {
+        "text": "샷 두 번 추가해서 아메리카노 주세요",
+        "problems": [
+          "예측 order_and_pay (정답 order)"
+        ]
+      },
+      {
+        "text": "청포도 에이드로 할게요",
+        "problems": [
+          "예측 order_and_pay (정답 order)"
+        ]
+      },
+      {
+        "text": "KT 할인 되는 메뉴로 하나 줘",
+        "problems": [
+          "예측 order_and_pay (정답 order)"
+        ]
+      },
+      {
+        "text": "카드 결제하면 영수증 나와요",
+        "problems": [
+          "예측 payment (정답 qa)"
+        ]
+      }
+    ]
+  },
+  "LLM / 의도 분류(파이프라인)": {
+    "correct": 145,
+    "total": 147,
+    "accuracy": 98.6,
+    "confusion": {
+      "order->order_and_pay": 1,
+      "qa->payment": 1
+    },
+    "per_class": {
+      "order": {
+        "n": 40,
+        "llm": 35,
+        "pipeline": 39
+      },
+      "order_and_pay": {
+        "n": 18,
+        "llm": 18,
+        "pipeline": 18
+      },
+      "payment": {
+        "n": 22,
+        "llm": 22,
+        "pipeline": 22
+      },
+      "recommend": {
+        "n": 25,
+        "llm": 25,
+        "pipeline": 25
+      },
+      "qa": {
+        "n": 30,
+        "llm": 29,
+        "pipeline": 29
+      },
+      "coupon": {
+        "n": 12,
+        "llm": 12,
+        "pipeline": 12
+      }
+    },
+    "failures": [
+      {
+        "text": "KT 할인 되는 메뉴로 하나 줘",
+        "problems": [
+          "예측 order_and_pay (정답 order) [LLM]"
+        ]
+      },
+      {
+        "text": "카드 결제하면 영수증 나와요",
+        "problems": [
+          "예측 payment (정답 qa) [LLM]"
+        ]
+      }
+    ]
+  }
+}

@@ -21,8 +21,6 @@ router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(ge
 auth_router = APIRouter(prefix="/api/admin", tags=["admin-auth"])
 
 
-# ── Auth ───────────────────────────────────────────────────────────────────
-
 @auth_router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest):
     if not verify_admin_credentials(body.username, body.password):
@@ -36,14 +34,16 @@ def signup(body: SignupRequest):
     return TokenResponse(access_token=create_access_token(body.username))
 
 
-# ── Menus ──────────────────────────────────────────────────────────────────
-
 class MenuCreate(BaseModel):
     name: str = Field(min_length=1, max_length=50)
     price: int = Field(ge=0)
     category: str
     temps: list[str] = []
     image_url: str | None = None
+    caffeine: bool = True
+    tags: list[str] = []
+    sizes: list[str] = ["S", "M", "L"]
+    stock: int | None = Field(default=None, ge=0)
 
 
 class MenuUpdate(BaseModel):
@@ -53,10 +53,14 @@ class MenuUpdate(BaseModel):
     temps: list[str] | None = None
     sold_out: bool | None = None
     image_url: str | None = None
-
+    caffeine: bool | None = None
+    tags: list[str] | None = None
+    sizes: list[str] | None = None
+    stock: int | None = Field(default=None, ge=0)
+    track_stock: bool | None = None
 
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 
 def _delete_image_file(image_url: str | None) -> None:
@@ -91,7 +95,22 @@ def create_menu(body: MenuCreate):
         raise HTTPException(status_code=422, detail="메뉴명을 입력해주세요.")
     if db.menu_name_exists(name):
         raise HTTPException(status_code=409, detail="이미 존재하는 메뉴명입니다.")
-    return db.create_menu(name, body.price, body.category, body.temps, body.image_url)
+    return db.create_menu(
+        name, body.price, body.category, body.temps, body.image_url,
+        caffeine=body.caffeine, tags=body.tags, sizes=body.sizes, stock=body.stock,
+    )
+
+
+class MenuAnalyzeRequest(BaseModel):
+    name: str
+    category: str
+    description: str = ""
+
+
+@router.post("/menus/analyze")
+def analyze_menu_attrs(body: MenuAnalyzeRequest):
+    from ai.menu_analyzer import analyze_menu
+    return analyze_menu(body.name.strip(), body.category, body.description)
 
 
 @router.put("/menus/{menu_id}")
@@ -100,6 +119,9 @@ def update_menu(menu_id: int, body: MenuUpdate):
     if existing is None:
         raise HTTPException(status_code=404, detail="메뉴를 찾을 수 없습니다.")
     fields = body.model_dump(exclude_none=True)
+    if fields.pop("track_stock", None) is False:
+        fields["clear_stock"] = True
+        fields.pop("stock", None)
     if "name" in fields:
         fields["name"] = fields["name"].strip()
         if not fields["name"]:
@@ -119,9 +141,6 @@ def delete_menu(menu_id: int):
         raise HTTPException(status_code=404, detail="메뉴를 찾을 수 없습니다.")
     db.delete_menu(menu_id)
     _delete_image_file(existing["image_url"])
-
-
-# ── Discounts ──────────────────────────────────────────────────────────────
 
 _ALLOWED_METHOD_CODES = set(db.DISCOUNT_METHODS.keys())
 
@@ -196,14 +215,13 @@ def delete_discount(discount_id: int):
     _delete_image_file(existing["image_url"])
 
 
-# ── Orders ─────────────────────────────────────────────────────────────────
-
 class OrderItem(BaseModel):
     menu_name: str
     temperature: str = ""
     quantity: int
     unit_price: int
     is_free: bool = False
+    options: str = Field(default="", max_length=200)
 
 
 class OrderCreate(BaseModel):
@@ -213,9 +231,8 @@ class OrderCreate(BaseModel):
     final_amount: int
     is_packaging: bool = False
     items: list[OrderItem]
+    request_id: str | None = Field(default=None, max_length=64)
 
-
-# kio-frontend가 호출하는 엔드포인트 (prefix 없이 /api/orders, /api/menus, /api/discounts)
 orders_router = APIRouter(prefix="/api", tags=["orders"])
 menus_public_router = APIRouter(prefix="/api", tags=["menus"])
 discounts_public_router = APIRouter(prefix="/api", tags=["discounts"])
@@ -233,22 +250,36 @@ def list_discounts_public():
 
 @orders_router.post("/orders", status_code=201)
 def create_order(body: OrderCreate):
-    return db.save_order(
-        payment_method=body.payment_method,
-        total_amount=body.total_amount,
-        discount_amount=body.discount_amount,
-        final_amount=body.final_amount,
-        is_packaging=body.is_packaging,
-        items=[i.model_dump() for i in body.items],
-    )
+    try:
+        return db.save_order(
+            payment_method=body.payment_method,
+            total_amount=body.total_amount,
+            discount_amount=body.discount_amount,
+            final_amount=body.final_amount,
+            is_packaging=body.is_packaging,
+            items=[i.model_dump() for i in body.items],
+            request_id=body.request_id,
+        )
+    except db.OutOfStock as e:
+        raise HTTPException(status_code=409, detail=f"{', '.join(e.names)}의 재고가 부족합니다.")
+
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+
+@router.patch("/orders/{order_id}/status")
+def update_order_status(order_id: int, body: OrderStatusUpdate):
+    result, error = db.change_order_status(order_id, body.status)
+    if error:
+        raise HTTPException(status_code=404 if "찾을 수 없" in error else 409, detail=error)
+    return result
 
 
 @router.get("/orders")
 def list_orders(date_from: str | None = None, date_to: str | None = None):
     return db.get_orders(date_from, date_to)
 
-
-# ── Sales & Analytics ──────────────────────────────────────────────────────
 
 @router.get("/sales")
 def get_sales(period: str = "today"):

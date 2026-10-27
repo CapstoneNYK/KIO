@@ -6,6 +6,7 @@ export interface MenuItem {
   category?: string;
   temps?: string[];
   soldOut?: boolean;
+  stock?: number | null;
 }
 
 export type Temperature = "HOT" | "ICE";

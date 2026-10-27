@@ -1,3 +1,4 @@
+import { useChatPrefs } from "../store/chatPrefsStore";
 import { LuX } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
@@ -5,6 +6,7 @@ import { useLearningStore } from "../store/learningStore";
 
 interface PaymentCompleteModalProps {
   onClose: () => void;
+  requestId?: string | null;
 }
 
 export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => {
@@ -15,6 +17,7 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
 
   const finish = () => {
     clear();
+    useChatPrefs.getState().resetChat();
     setGuideScreen(null);
     setHighlightPaymentMethod(null);
     navigate("/");
@@ -22,9 +25,12 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center" style={{ backgroundColor: "#d4d4d4" }}>
-      <div className="relative bg-white rounded-2xl w-[65%] flex flex-col overflow-hidden shadow-xl px-12 py-14">
+      <div className="relative bg-white rounded-lg w-[65%] flex flex-col overflow-hidden px-12 py-14">
         <button
-          onClick={onClose}
+          onClick={() => {
+            finish();
+            onClose();
+          }}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
         >
           <LuX className="w-5 h-5" />
@@ -37,15 +43,15 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
         <div className="flex gap-4">
           <button
             onClick={finish}
-            className="flex-1 py-4 rounded-xl font-bold text-white text-base active:brightness-95 transition"
+            className="flex-1 py-4 rounded-md font-bold text-white text-base active:brightness-95 transition"
             style={{ backgroundColor: "#888" }}
           >
             미출력
           </button>
           <button
             onClick={finish}
-            className="flex-1 py-4 rounded-xl font-bold text-white text-base active:brightness-95 transition"
-            style={{ backgroundColor: "#FFB900" }}
+            className="flex-1 py-4 rounded-md font-bold text-white text-base active:brightness-95 transition"
+            style={{ backgroundColor: "#1C1917" }}
           >
             출력
           </button>

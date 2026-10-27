@@ -75,7 +75,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
   return (
     <div className="fixed inset-0 z-9997 bg-black/70 flex items-center justify-center">
       <div className="relative bg-white rounded-2xl w-[90%] max-w-md overflow-hidden shadow-2xl">
-        {/* 헤더 */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <p className="font-bold text-gray-800">쿠폰 스캔</p>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -83,7 +82,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
           </button>
         </div>
 
-        {/* 카메라 뷰 */}
         {!result && !error && (
           <>
             <div
@@ -99,7 +97,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
           </>
         )}
 
-        {/* 음료 상품권 결과 */}
         {result?.type === "product" && (
           <div className="px-5 py-6 flex flex-col items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-3xl">🎉</div>
@@ -125,7 +122,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
           </div>
         )}
 
-        {/* 멤버십 % 할인 결과 */}
         {result?.type === "discount" && (
           <div className="px-5 py-6 flex flex-col gap-4">
             <div>
@@ -155,7 +151,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
           </div>
         )}
 
-        {/* 금액 상품권 결과 */}
         {result?.type === "amount" && (
           <div className="px-5 py-6 flex flex-col gap-4">
             <div>
@@ -199,7 +194,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
           </div>
         )}
 
-        {/* 오류 */}
         {error && (
           <div className="px-5 py-6 flex flex-col items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-3xl">❌</div>

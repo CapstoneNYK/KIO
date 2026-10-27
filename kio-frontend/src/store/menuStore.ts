@@ -13,6 +13,7 @@ interface BackendMenu {
   category: string;
   temps: string[];
   sold_out: boolean;
+  stock: number | null;
   image_url: string | null;
 }
 
@@ -40,6 +41,7 @@ export const useMenuStore = create<MenuState>((set) => ({
         category: m.category,
         temps: m.temps,
         soldOut: m.sold_out,
+        stock: m.stock ?? null,
       }));
       set({ menus, loading: false, error: null });
     } catch (err) {

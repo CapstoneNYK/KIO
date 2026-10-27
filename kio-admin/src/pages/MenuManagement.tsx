@@ -13,7 +13,124 @@ interface Menu {
   temps: string[];
   sold_out: boolean;
   image_url: string | null;
+  caffeine: boolean;
+  tags: string[];
+  sizes: string[];
+  stock: number | null;
+  track_stock: boolean;
 }
+
+const TAG_OPTIONS = ["산미", "상큼", "달콤", "고소", "쌉쌀", "진한", "부드러운", "향긋", "과일", "탄산", "깔끔", "상쾌"];
+
+interface AttrValue {
+  caffeine: boolean;
+  tags: string[];
+}
+
+interface AnalyzeResult extends AttrValue {
+  source: "llm" | "rule";
+}
+
+const AttrFields = ({ name, category, value, onChange }: {
+  name: string;
+  category: string;
+  value: AttrValue;
+  onChange: (v: AttrValue) => void;
+}) => {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const analyze = async () => {
+    if (!name.trim()) {
+      setMessage("메뉴명을 먼저 입력해주세요.");
+      return;
+    }
+    setAnalyzing(true);
+    setMessage("");
+    try {
+      const res = await apiFetch<AnalyzeResult>("/api/admin/menus/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), category }),
+      });
+      onChange({ caffeine: res.caffeine, tags: res.tags });
+      setMessage(res.source === "llm" ? "AI가 분석했어요. 확인 후 수정해서 저장하세요." : "AI 응답이 없어 카테고리 기본값을 넣었어요. 직접 확인해주세요.");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "분석하지 못했습니다.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const toggleTag = (tag: string) =>
+    onChange({ ...value, tags: value.tags.includes(tag) ? value.tags.filter((t) => t !== tag) : [...value.tags, tag] });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-3 flex-wrap">
+        <label className="text-xs font-semibold text-gray-500">맛·카페인 (추천에 사용)</label>
+        <button type="button" onClick={analyze} disabled={analyzing}
+          className="px-3 py-1 rounded-lg text-xs font-bold border border-amber-300 text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50">
+          {analyzing ? "분석 중..." : "AI로 속성 분석"}
+        </button>
+        {message && <span className="text-xs text-gray-400">{message}</span>}
+      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {[true, false].map((c) => (
+          <button key={String(c)} type="button" onClick={() => onChange({ ...value, caffeine: c })}
+            className="px-3 py-1 rounded-lg text-xs font-bold border transition-colors"
+            style={{
+              backgroundColor: value.caffeine === c ? "#F5A623" : "white",
+              color: value.caffeine === c ? "white" : "#9CA3AF",
+              borderColor: value.caffeine === c ? "#F5A623" : "#E5E7EB",
+            }}>
+            {c ? "카페인 있음" : "카페인 없음"}
+          </button>
+        ))}
+        <span className="w-px h-4 bg-gray-200 mx-1" />
+        {TAG_OPTIONS.map((tag) => (
+          <button key={tag} type="button" onClick={() => toggleTag(tag)}
+            className="px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors"
+            style={{
+              backgroundColor: value.tags.includes(tag) ? "#FEF3C6" : "white",
+              color: value.tags.includes(tag) ? "#D97706" : "#9CA3AF",
+              borderColor: value.tags.includes(tag) ? "#FCD34D" : "#E5E7EB",
+            }}>
+            {tag}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const StockFields = ({ track, stock, onChange }: {
+  track: boolean;
+  stock: string;
+  onChange: (v: { trackStock: boolean; stock: string }) => void;
+}) => (
+  <div className="flex items-center gap-3 flex-wrap mt-2">
+    <label className="text-xs font-semibold text-gray-500">재고 관리</label>
+    <button type="button" onClick={() => onChange({ trackStock: !track, stock })}
+      className="px-3 py-1 rounded-lg text-xs font-bold border transition-colors"
+      style={{
+        backgroundColor: track ? "#F5A623" : "white",
+        color: track ? "white" : "#9CA3AF",
+        borderColor: track ? "#F5A623" : "#E5E7EB",
+      }}>
+      {track ? "수량 관리 중" : "관리 안 함"}
+    </button>
+    {track && (
+      <>
+        <input type="number" min={0} value={stock}
+          onChange={(e) => onChange({ trackStock: track, stock: e.target.value })}
+          className="w-24 border border-gray-200 rounded-lg px-2.5 py-1 text-sm outline-none focus:border-amber-400"
+          placeholder="수량" aria-label="재고 수량" />
+        <span className="text-xs text-gray-400">0이 되면 자동 품절, 주문이 취소되면 다시 채워집니다.</span>
+      </>
+    )}
+  </div>
+);
 
 const imageSrc = (imageUrl: string | null) => (imageUrl ? `${API}${imageUrl}` : null);
 
@@ -27,6 +144,10 @@ export const MenuManagement = () => {
     category: "커피",
     temps: [] as string[],
     imageUrl: null as string | null,
+    caffeine: true,
+    tags: [] as string[],
+    trackStock: false,
+    stock: "",
   });
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -40,6 +161,10 @@ export const MenuManagement = () => {
     category: "커피",
     temps: [] as string[],
     imageUrl: null as string | null,
+    caffeine: true,
+    tags: [] as string[],
+    trackStock: false,
+    stock: "",
   });
   const [editUploading, setEditUploading] = useState(false);
   const [editError, setEditError] = useState("");
@@ -126,6 +251,14 @@ export const MenuManagement = () => {
       setUploadError("가격은 0원 이상의 숫자로 입력해주세요.");
       return;
     }
+    let stockValue: number | null = null;
+    if (newMenu.trackStock) {
+      stockValue = parseInt(newMenu.stock);
+      if (Number.isNaN(stockValue) || stockValue < 0) {
+        setUploadError("재고 수량은 0 이상의 숫자로 입력해주세요.");
+        return;
+      }
+    }
     setUploadError("");
     try {
       const created = await apiFetch<Menu>("/api/admin/menus", {
@@ -137,10 +270,13 @@ export const MenuManagement = () => {
           category: newMenu.category,
           temps: newMenu.temps,
           image_url: newMenu.imageUrl,
+          caffeine: newMenu.caffeine,
+          tags: newMenu.tags,
+          stock: stockValue,
         }),
       });
       setMenus((prev) => [...prev, created]);
-      setNewMenu({ name: "", price: "", category: "커피", temps: [], imageUrl: null });
+      setNewMenu({ name: "", price: "", category: "커피", temps: [], imageUrl: null, caffeine: true, tags: [], trackStock: false, stock: "" });
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "메뉴를 추가하지 못했습니다.");
     }
@@ -154,6 +290,10 @@ export const MenuManagement = () => {
       category: menu.category,
       temps: menu.temps,
       imageUrl: menu.image_url,
+      caffeine: menu.caffeine ?? true,
+      tags: menu.tags ?? [],
+      trackStock: menu.track_stock ?? false,
+      stock: menu.stock == null ? "" : String(menu.stock),
     });
     setEditError("");
   };
@@ -201,6 +341,14 @@ export const MenuManagement = () => {
       setEditError("가격은 0원 이상의 숫자로 입력해주세요.");
       return;
     }
+    let stockValue: number | undefined;
+    if (editForm.trackStock) {
+      stockValue = parseInt(editForm.stock);
+      if (Number.isNaN(stockValue) || stockValue < 0) {
+        setEditError("재고 수량은 0 이상의 숫자로 입력해주세요.");
+        return;
+      }
+    }
     setEditError("");
     try {
       const updated = await apiFetch<Menu>(`/api/admin/menus/${editingId}`, {
@@ -212,6 +360,10 @@ export const MenuManagement = () => {
           category: editForm.category,
           temps: editForm.temps,
           image_url: editForm.imageUrl,
+          caffeine: editForm.caffeine,
+          tags: editForm.tags,
+          track_stock: editForm.trackStock,
+          stock: stockValue,
         }),
       });
       setMenus((prev) => prev.map((m) => m.id === editingId ? updated : m));
@@ -223,7 +375,6 @@ export const MenuManagement = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Add menu section — 상단 */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <p className="text-sm font-bold text-gray-700 flex items-center gap-1.5 mb-4">
           <PiPlusBold size={14} style={{ color: "#F5A623" }} />
@@ -299,6 +450,13 @@ export const MenuManagement = () => {
             </button>
           </div>
         </div>
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <AttrFields name={newMenu.name} category={newMenu.category}
+            value={{ caffeine: newMenu.caffeine, tags: newMenu.tags }}
+            onChange={(v) => setNewMenu((p) => ({ ...p, ...v }))} />
+          <StockFields track={newMenu.trackStock} stock={newMenu.stock}
+            onChange={(v) => setNewMenu((p) => ({ ...p, ...v }))} />
+        </div>
         {uploading && <p className="text-xs text-gray-400 mt-2">이미지 업로드 중...</p>}
         {uploadError && <p className="text-xs font-semibold text-red-500 mt-2">{uploadError}</p>}
       </div>
@@ -312,7 +470,6 @@ export const MenuManagement = () => {
         </div>
       )}
 
-      {/* Filter row */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map((cat) => (
@@ -329,7 +486,6 @@ export const MenuManagement = () => {
         </span>
       </div>
 
-      {/* Menu grid */}
       {loading ? (
         <div className="flex items-center justify-center h-40 text-gray-400 text-sm">불러오는 중...</div>
       ) : (
@@ -341,6 +497,13 @@ export const MenuManagement = () => {
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="font-bold text-gray-800 text-sm">{menu.name}</p>
+                  {menu.track_stock && (
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                      (menu.stock ?? 0) <= 3 ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-700"
+                    }`}>
+                      재고 {menu.stock}
+                    </span>
+                  )}
                   {menu.sold_out && (
                     <span className="bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">품절</span>
                   )}
@@ -349,7 +512,13 @@ export const MenuManagement = () => {
               </div>
               <p className="text-base font-black mb-3" style={{ color: "#F5A623" }}>₩{menu.price.toLocaleString()}</p>
               <div className="flex items-center justify-between">
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
+                  {!menu.caffeine && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-50 text-green-600">카페인 없음</span>
+                  )}
+                  {(menu.tags ?? []).slice(0, 3).map((tag) => (
+                    <span key={tag} className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{tag}</span>
+                  ))}
                   {menu.temps.map((t) => (
                     <span key={t} className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                       style={{ backgroundColor: t === "HOT" ? "#FEF3C6" : "#DBEAFE", color: t === "HOT" ? "#D97706" : "#1D4ED8" }}>
@@ -372,7 +541,6 @@ export const MenuManagement = () => {
         </div>
       )}
 
-      {/* Edit modal */}
       {editingId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditingId(null)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
@@ -435,6 +603,11 @@ export const MenuManagement = () => {
                   </button>
                 </div>
               </div>
+              <AttrFields name={editForm.name} category={editForm.category}
+                value={{ caffeine: editForm.caffeine, tags: editForm.tags }}
+                onChange={(v) => setEditForm((p) => ({ ...p, ...v }))} />
+              <StockFields track={editForm.trackStock} stock={editForm.stock}
+                onChange={(v) => setEditForm((p) => ({ ...p, ...v }))} />
               {editError && <p className="text-xs font-semibold text-red-500">{editError}</p>}
               <div className="flex gap-2 mt-2">
                 <button onClick={() => setEditingId(null)}

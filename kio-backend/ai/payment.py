@@ -1,5 +1,4 @@
 _METHOD_KEYWORDS: dict[str, str] = {
-    # 결제수단 (긴 키워드 먼저)
     "카카오페이": "kakao",
     "카카오": "kakao",
     "네이버페이": "naver",
@@ -10,12 +9,14 @@ _METHOD_KEYWORDS: dict[str, str] = {
     "모바일상품권": "voucher",
     "기프트카드": "giftcard",
     "기프트": "giftcard",
-    # 할인수단
     "KT VIP": "kt",
     "kt vip": "kt",
     "케이티": "kt",
     "KT": "kt",
     "kt": "kt",
+    "KT멤버십": "kt",
+    "kt멤버십": "kt",
+    "케이티멤버십": "kt",
     "T멤버십": "tmembership",
     "티멤버십": "tmembership",
     "t멤버십": "tmembership",

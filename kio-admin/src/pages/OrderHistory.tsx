@@ -8,6 +8,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   is_free: number;
+  options?: string;
 }
 
 interface Order {
@@ -18,11 +19,20 @@ interface Order {
   discount_amount: number;
   final_amount: number;
   is_packaging: number;
+  status: string;
   items: OrderItem[];
 }
 
 const PAGE_SIZE = 50;
-const GRID_COLUMNS = "150px 1fr 120px 110px 100px";
+const GRID_COLUMNS = "140px 1fr 110px 100px 90px 100px";
+
+const STATUS_LABEL: Record<string, string> = { PAID: "결제 완료", CANCELLED: "취소됨" };
+
+const StatusBadge = ({ status }: { status: string }) =>
+  status === "CANCELLED" ? (
+    <span className="text-xs font-semibold px-2 py-0.5 rounded-full border w-fit"
+      style={{ color: "#B91C1C", borderColor: "#FECACA", backgroundColor: "#FEF2F2" }}>취소됨</span>
+  ) : null;
 
 const formatDateTime = (s: string) => `${s.slice(5, 7)}.${s.slice(8, 10)} ${s.slice(11, 19)}`;
 
@@ -42,14 +52,15 @@ const csvCell = (value: string | number) => {
 };
 
 const downloadCsv = (orders: Order[]) => {
-  const header = ["주문번호", "주문시각", "결제수단", "구분", "메뉴", "주문금액", "할인금액", "결제금액"];
+  const header = ["주문번호", "주문시각", "상태", "결제수단", "구분", "메뉴", "주문금액", "할인금액", "결제금액"];
   const rows = orders.map((o) => [
     o.id,
     o.created_at,
+    STATUS_LABEL[o.status] ?? "결제 완료",
     o.payment_method,
     o.is_packaging ? "포장" : "매장",
     o.items
-      .map((i) => `${i.menu_name}${i.temperature ? `(${i.temperature})` : ""} x${i.quantity}${i.is_free ? " [무료]" : ""}`)
+      .map((i) => `${i.menu_name}${i.temperature ? `(${i.temperature})` : ""} x${i.quantity}${i.options ? ` {${i.options}}` : ""}${i.is_free ? " [무료]" : ""}`)
       .join(" / "),
     o.total_amount,
     o.discount_amount,
@@ -73,6 +84,7 @@ export const OrderHistory = () => {
   const [dateTo, setDateTo] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     const load = () => {
@@ -98,6 +110,20 @@ export const OrderHistory = () => {
     setVisibleCount(PAGE_SIZE);
   }, [search, dateFrom, dateTo]);
 
+  const cancelOrder = async (order: Order) => {
+    setActionError("");
+    try {
+      const updated = await apiFetch<Order>(`/api/admin/orders/${order.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: updated.status } : o)));
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "주문을 취소하지 못했습니다.");
+    }
+  };
+
   const applyPreset = (from: string, to: string) => {
     setDateFrom(from);
     setDateTo(to);
@@ -122,23 +148,24 @@ export const OrderHistory = () => {
   const keyword = search.trim();
   const filtered = orders.filter(
     (o) =>
-      keyword === "" ||
+      (keyword === "" ||
       o.items.some((i) => i.menu_name.includes(keyword)) ||
       String(o.id).includes(keyword) ||
-      o.payment_method.includes(keyword)
+      o.payment_method.includes(keyword))
   );
   const visible = filtered.slice(0, visibleCount);
 
-  const totalRevenue = filtered.reduce((s, o) => s + o.final_amount, 0);
-  const totalDiscount = filtered.reduce((s, o) => s + o.discount_amount, 0);
-  const couponCount = filtered.filter((o) => o.discount_amount > 0).length;
+  const counted = filtered.filter((o) => o.status !== "CANCELLED");
+  const totalRevenue = counted.reduce((s, o) => s + o.final_amount, 0);
+  const totalDiscount = counted.reduce((s, o) => s + o.discount_amount, 0);
+  const couponCount = counted.filter((o) => o.discount_amount > 0).length;
+  const cancelledCount = filtered.length - counted.length;
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "총 주문", value: `${filtered.length}건` },
+          { label: "총 주문", value: `${counted.length}건${cancelledCount > 0 ? ` (취소 ${cancelledCount}건 제외)` : ""}` },
           { label: "쿠폰 할인 사용", value: `${couponCount}건` },
           { label: "총 할인 금액", value: `-₩${totalDiscount.toLocaleString()}` },
         ].map((s) => (
@@ -149,13 +176,14 @@ export const OrderHistory = () => {
         ))}
       </div>
 
+      {actionError && (
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-lg px-4 py-2.5">{actionError}</div>
+      )}
       {error && (
         <div className="bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-lg px-4 py-2.5">{error}</div>
       )}
 
-      {/* Table card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        {/* Date filter */}
         <div className="px-5 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
           {presets.map((p) => {
             const active = dateFrom === p.from && dateTo === p.to;
@@ -195,7 +223,6 @@ export const OrderHistory = () => {
           </div>
         </div>
 
-        {/* Search bar */}
         <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[220px] flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
             <PiMagnifyingGlassBold size={14} className="text-gray-400 shrink-0" />
@@ -218,12 +245,10 @@ export const OrderHistory = () => {
           <span className="text-xs text-gray-400 shrink-0">총 {filtered.length}건 | 매출 ₩{totalRevenue.toLocaleString()}</span>
         </div>
 
-        {/* Table (가로 스크롤) */}
         <div className="overflow-x-auto">
           <div className="min-w-[640px]">
-            {/* Table header */}
             <div className="grid bg-gray-50 border-b border-gray-100 px-5 py-3" style={{ gridTemplateColumns: GRID_COLUMNS }}>
-              {["주문시각", "메뉴", "결제수단", "할인 금액", "결제 금액"].map((h) => (
+              {["주문시각", "메뉴", "결제수단", "할인 금액", "결제 금액", "상태"].map((h) => (
                 <span key={h} className="text-xs font-bold text-gray-500">{h}</span>
               ))}
             </div>
@@ -232,7 +257,6 @@ export const OrderHistory = () => {
               <div className="py-16 text-center text-gray-400 text-sm">불러오는 중...</div>
             )}
 
-            {/* Table rows */}
             {!loading && visible.map((order) => {
               const expanded = expandedId === order.id;
               return (
@@ -252,7 +276,8 @@ export const OrderHistory = () => {
                     <span className="text-sm font-semibold" style={{ color: order.discount_amount > 0 ? "#16A34A" : "#D1D5DB" }}>
                       {order.discount_amount > 0 ? `-₩${order.discount_amount.toLocaleString()}` : "—"}
                     </span>
-                    <span className="text-sm font-bold text-gray-800 tabular-nums">₩{order.final_amount.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-gray-800 tabular-nums" style={{ textDecoration: order.status === "CANCELLED" ? "line-through" : undefined, opacity: order.status === "CANCELLED" ? 0.5 : 1 }}>₩{order.final_amount.toLocaleString()}</span>
+                    <StatusBadge status={order.status} />
                   </button>
 
                   {expanded && (
@@ -276,6 +301,9 @@ export const OrderHistory = () => {
                             )}
                             <span className="font-medium text-gray-800">{item.menu_name}</span>
                             <span className="text-gray-400">× {item.quantity}</span>
+                            {item.options ? (
+                              <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{item.options}</span>
+                            ) : null}
                             {item.is_free ? (
                               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-50 text-green-600">무료(쿠폰)</span>
                             ) : null}
@@ -285,6 +313,15 @@ export const OrderHistory = () => {
                           </div>
                         ))}
                       </div>
+                      {order.status !== "CANCELLED" && (
+                        <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
+                          <button
+                            onClick={() => { if (window.confirm(`주문 #${order.id}을 취소할까요? 재고가 복구되고 매출에서 제외됩니다.`)) cancelOrder(order); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
+                            주문 취소
+                          </button>
+                        </div>
+                      )}
                       <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap justify-end gap-x-6 gap-y-1 text-xs text-gray-500">
                         <span>주문 금액 ₩{order.total_amount.toLocaleString()}</span>
                         <span>할인 -₩{order.discount_amount.toLocaleString()}</span>

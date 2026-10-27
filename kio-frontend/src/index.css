@@ -1,3 +1,4 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
 @keyframes kio-bounce {
@@ -31,4 +32,17 @@ body,
   padding: 0;
   height: 100%;
   overflow: hidden;
+}
+
+#root {
+  height: 100dvh;
+}
+
+.kio-chat {
+  font-size: calc(17px * var(--kio-s, 1.25));
+}
+.kio-chat,
+.kio-chat * {
+  font-family: "Pretendard Variable", Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  letter-spacing: -0.01em;
 }

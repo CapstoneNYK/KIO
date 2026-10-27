@@ -42,9 +42,10 @@ export function calcDiscount(coupons: AppliedCoupon[], cartTotal: number, cartIt
     } else if (c.type === "amount") {
       total += c.balance;
     } else if (c.type === "discount" && cartItems) {
-      const matching = cartItems.filter((i) => i.item.title === c.menu && !i.isFree);
-      const menuTotal = matching.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-      total += Math.round(menuTotal * c.rate);
+      const unitPrices = cartItems
+        .filter((i) => i.item.title === c.menu && !i.isFree && i.quantity > 0)
+        .map((i) => i.item.price);
+      if (unitPrices.length > 0) total += Math.round(Math.max(...unitPrices) * c.rate);
     }
   }
   return Math.min(total, cartTotal);

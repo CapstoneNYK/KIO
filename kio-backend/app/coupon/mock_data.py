@@ -13,6 +13,6 @@ COUPONS = {
         "type": "discount",
         "menu": "아메리카노",
         "rate": 0.3,
-        "description": "T멤버십 아메리카노 30% 할인",
+        "description": "T멤버십 아메리카노 1잔 30% 할인",
     },
 }

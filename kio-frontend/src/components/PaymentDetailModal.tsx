@@ -6,6 +6,35 @@ import { useLearningStore } from "../store/learningStore";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+const newRequestId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+type SaveResult = { ok: true } | { ok: false; rejected: boolean; message?: string };
+
+async function saveOrderWithRetry(body: unknown, maxAttempts = 3): Promise<SaveResult> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(`${API_URL}/api/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) return { ok: true };
+      if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
+        const data = await res.json().catch(() => null);
+        return { ok: false, rejected: true, message: typeof data?.detail === "string" ? data.detail : undefined };
+      }
+    } catch {
+    }
+    if (attempt < maxAttempts) await sleep(500 * attempt);
+  }
+  return { ok: false, rejected: false };
+}
+
 const PAYMENT_LABELS: Record<string, string> = {
   card: "카드결제", appcard: "앱카드결제", kakao: "카카오페이",
   naver: "네이버페이", voucher: "모바일상품권", giftcard: "기프트카드",
@@ -22,7 +51,6 @@ interface PaymentDetailModalProps {
   onComplete: () => void;
 }
 
-// 숫자패드 컴포넌트
 const NumPad = ({ onPress }: { onPress: (val: string) => void }) => {
   const keys = ["1","2","3","4","5","6","7","8","9","0","00","000"];
   return (
@@ -52,7 +80,6 @@ const NumPad = ({ onPress }: { onPress: (val: string) => void }) => {
   );
 };
 
-// 카드결제 / 앱카드 공통
 const CardPayment = ({
   description,
   image,
@@ -74,7 +101,7 @@ const CardPayment = ({
 
   return (
     <>
-      <div className="flex flex-col mb-5 rounded-xl overflow-hidden border border-gray-100">
+      <div className="flex flex-col mb-5 rounded-md overflow-hidden border border-gray-100">
         {discount > 0 && (
           <div className="flex justify-between items-center py-2.5 px-4 bg-emerald-50">
             <div className="flex items-center gap-1.5">
@@ -86,7 +113,7 @@ const CardPayment = ({
         )}
         <div className="flex justify-between items-center py-3 px-4 bg-gray-50">
           <span className="text-gray-600">총 결제금액</span>
-          <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
+          <span className="font-bold text-[#B45309]">{totalPrice.toLocaleString()}원</span>
         </div>
         <div className="flex justify-between items-center py-3 px-4 bg-white">
           <span className="text-gray-600">할부개월</span>
@@ -106,15 +133,15 @@ const CardPayment = ({
       <div className="flex gap-3 mb-5">
         <button
           onClick={onCancel}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
           취소
         </button>
         <button
           onClick={onApprove}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
-          style={{ backgroundColor: "#FFB900" }}
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
+          style={{ backgroundColor: "#1C1917" }}
         >
           승인 요청
         </button>
@@ -122,12 +149,11 @@ const CardPayment = ({
 
       <p className="text-center text-sm text-gray-500 mb-4 leading-relaxed">{description}</p>
 
-      <img src={image} alt="리더기" className="w-full rounded-xl object-contain" />
+      <img src={image} alt="리더기" className="w-full rounded-md object-contain" />
     </>
   );
 };
 
-// 모바일 상품권
 const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete: () => void }) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
@@ -139,7 +165,6 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
   const [showScanner, setShowScanner] = useState(false);
   const initialCouponLen = useRef(coupons.length);
 
-  // 쿠폰이 새로 추가되면 잔액에 따라 차액 결제 or 완료 처리
   useEffect(() => {
     if (coupons.length > initialCouponLen.current) {
       if (totalPrice <= 0) {
@@ -166,7 +191,6 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
   return (
     <>
       <div className="flex gap-4 mb-5">
-        {/* 왼쪽 입력 */}
         <div className="flex-1 flex flex-col gap-3">
           <div className="py-3 border-b border-gray-100">
             <input
@@ -179,7 +203,7 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
           </div>
           <div className="flex justify-between items-center py-3 border-b border-gray-100">
             <span className="text-gray-600 text-sm">받음금액</span>
-            <span className="font-bold text-orange-500 text-sm">{cartTotal.toLocaleString()}원</span>
+            <span className="font-bold text-[#B45309] text-sm">{cartTotal.toLocaleString()}원</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between items-center py-2.5 border-b border-gray-100">
@@ -192,10 +216,9 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
           )}
           <div className="flex justify-between items-center py-3 border-b border-gray-100">
             <span className="text-gray-600 text-sm">결제금액</span>
-            <span className="font-bold text-orange-500 text-sm">{totalPrice.toLocaleString()}원</span>
+            <span className="font-bold text-[#B45309] text-sm">{totalPrice.toLocaleString()}원</span>
           </div>
         </div>
-        {/* 오른쪽 숫자패드 */}
         <div className="w-40 shrink-0">
           <NumPad onPress={handleNumPress} />
         </div>
@@ -204,14 +227,14 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
       <div className="flex gap-3 mb-4">
         <button
           onClick={handleQuery}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
           조회
         </button>
         <button
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
-          style={{ backgroundColor: "#FFB900" }}
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
+          style={{ backgroundColor: "#1C1917" }}
         >
           사용
         </button>
@@ -221,14 +244,13 @@ const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete
         스캔이 되지 않을 경우 위에 키패드로 번호를 직접 입력해주세요.
       </p>
 
-      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain" />
+      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-md object-contain" />
 
       {showScanner && <CouponScanner onClose={() => setShowScanner(false)} />}
     </>
   );
 };
 
-// 제휴멤버십 (CJ ONE 등)
 const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; onBack?: () => void }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -256,8 +278,7 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
   return (
     <>
       <div className="flex gap-4 mb-5">
-        {/* 왼쪽 입력 */}
-        <div className="flex-1 flex flex-col rounded-xl overflow-hidden border border-gray-100">
+        <div className="flex-1 flex flex-col rounded-md overflow-hidden border border-gray-100">
           <div className="flex justify-between items-center py-3 px-3 bg-gray-50">
             <span className="text-gray-600 text-sm">제휴명</span>
             <span className="font-semibold text-gray-700 text-sm">{affiliateName}</span>
@@ -281,7 +302,6 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
             />
           </div>
         </div>
-        {/* 오른쪽 숫자패드 */}
         <div className="w-40 shrink-0">
           <NumPad onPress={handleNumPress} />
         </div>
@@ -290,14 +310,14 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
       <div className="flex gap-3 mb-4">
         <button
           onClick={handleQuery}
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
           style={{ backgroundColor: "#555" }}
         >
           조회
         </button>
         <button
-          className="flex-1 py-3 rounded-xl font-bold text-white active:brightness-95"
-          style={{ backgroundColor: "#FFB900" }}
+          className="flex-1 py-3 rounded-md font-bold text-white active:brightness-95"
+          style={{ backgroundColor: "#1C1917" }}
         >
           적립
         </button>
@@ -307,14 +327,13 @@ const MembershipPayment = ({ affiliateName, onBack }: { affiliateName: string; o
         스캔이 되지 않을 경우 위에 키패드로 카드/휴대폰번호 직접 입력 후 조회/적립을 눌러주세요.
       </p>
 
-      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain mt-4" />
+      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-md object-contain mt-4" />
 
       {showScanner && <CouponScanner onClose={() => setShowScanner(false)} />}
     </>
   );
 };
 
-// 카카오페이 / 네이버페이 공통 바코드 결제
 const AppBarcodePayment = ({
   brand,
   accentColor,
@@ -344,16 +363,14 @@ const AppBarcodePayment = ({
 
   return (
     <>
-      {/* 브랜드 헤더 */}
       <div
-        className="flex items-center gap-3 mb-5 px-4 py-3 rounded-2xl"
+        className="flex items-center gap-3 mb-5 px-4 py-3 rounded-lg"
         style={{ backgroundColor: accentColor }}
       >
         <img src={logoIcon} alt={brand} className="w-8 h-8 object-contain rounded-lg" />
         <span className="font-bold text-lg" style={{ color: textColor }}>{brand}</span>
       </div>
 
-      {/* 결제 금액 */}
       <div className="flex flex-col border-b border-gray-100 mb-5">
         {discount > 0 && (
           <div className="flex justify-between items-center py-2 px-1">
@@ -366,7 +383,7 @@ const AppBarcodePayment = ({
         )}
         <div className="flex justify-between items-center py-3 px-1">
           <span className="text-gray-600">총 결제금액</span>
-          <span className="font-bold text-orange-500">{totalPrice.toLocaleString()}원</span>
+          <span className="font-bold text-[#B45309]">{totalPrice.toLocaleString()}원</span>
         </div>
       </div>
 
@@ -375,12 +392,11 @@ const AppBarcodePayment = ({
       </p>
       <p className="text-center text-xs text-gray-400 mb-4">{remaining}초 후 자동 처리됩니다</p>
 
-      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-xl object-contain" />
+      <img src={imgBarcode} alt="바코드 리더기" className="w-full rounded-md object-contain" />
     </>
   );
 };
 
-// 제목 매핑
 const TITLES: Record<string, string> = {
   card: "카드결제",
   appcard: "앱카드결제",
@@ -405,6 +421,9 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
   const title = TITLES[method] ?? "결제";
   const [isProcessing, setIsProcessing] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
+  const [orderError, setOrderError] = useState<{ rejected: boolean; message?: string } | null>(null);
+  const [savedRequestId, setSavedRequestId] = useState<string | null>(null);
+  const requestIdRef = useRef<string>(newRequestId());
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const cartItems = useCartStore((s) => s.items);
@@ -419,40 +438,45 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
     if (guideScreen === "payment_complete") setShowComplete(true);
   }, [guideScreen]);
 
+  const submitOrder = async () => {
+    const totalAmount = cartItems.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+    const freeDiscount = cartItems.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
+    const couponDiscount = calcDiscount(coupons, totalAmount - freeDiscount, cartItems);
+    const discountAmount = freeDiscount + couponDiscount;
+
+    setOrderError(null);
+    setIsProcessing(true);
+    const saved = await saveOrderWithRetry({
+      payment_method: PAYMENT_LABELS[method] ?? method,
+      total_amount: totalAmount,
+      discount_amount: discountAmount,
+      final_amount: totalAmount - discountAmount,
+      is_packaging: isPackaging,
+      request_id: requestIdRef.current,
+      items: cartItems.map((i) => ({
+        menu_name: i.item.title,
+        temperature: i.temperature,
+        quantity: i.quantity,
+        unit_price: i.item.price,
+        is_free: i.isFree ?? false,
+        options: [
+          ...i.options.map((o) => (o.count > 1 ? `${o.name} ×${o.count}` : o.name)),
+          ...(i.isPackaging ? ["포장"] : []),
+        ].join(", "),
+      })),
+    });
+    setIsProcessing(false);
+    if (saved.ok) {
+      setSavedRequestId(requestIdRef.current);
+      setShowComplete(true);
+    } else {
+      setOrderError({ rejected: saved.rejected, message: saved.message });
+    }
+  };
+
   const handleApprove = () => {
     setIsProcessing(true);
-    setTimeout(async () => {
-      const totalAmount = cartItems.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
-      const freeDiscount = cartItems.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
-      const couponDiscount = calcDiscount(coupons, totalAmount - freeDiscount, cartItems);
-      const discountAmount = freeDiscount + couponDiscount;
-
-      try {
-        await fetch(`${API_URL}/api/orders`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            payment_method: PAYMENT_LABELS[method] ?? method,
-            total_amount: totalAmount,
-            discount_amount: discountAmount,
-            final_amount: totalAmount - discountAmount,
-            is_packaging: isPackaging,
-            items: cartItems.map((i) => ({
-              menu_name: i.item.title,
-              temperature: i.temperature,
-              quantity: i.quantity,
-              unit_price: i.item.price,
-              is_free: i.isFree ?? false,
-            })),
-          }),
-        });
-      } catch {
-        // 주문 저장 실패해도 결제 완료 화면은 정상 표시
-      }
-
-      setIsProcessing(false);
-      setShowComplete(true);
-    }, 3000);
+    setTimeout(submitOrder, 3000);
   };
 
   const renderContent = () => {
@@ -513,10 +537,9 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl w-[80%] h-[88vh] flex flex-col overflow-hidden shadow-xl"
+        className="relative bg-white rounded-lg w-[80%] h-[88dvh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
         <div className="flex items-center justify-center py-4 px-6 shrink-0">
           <h2 className="text-lg font-bold text-gray-900">{title}</h2>
           <button
@@ -531,10 +554,42 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
           {renderContent()}
         </div>
 
-        {/* 결제 처리 중 오버레이 */}
+        {orderError && !isProcessing && (
+          <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center gap-4 z-20 px-8 text-center">
+            {orderError.rejected ? (
+              <>
+                <p className="text-gray-900 font-bold text-lg">주문을 접수할 수 없어요</p>
+                <p className="text-gray-500 text-sm break-keep">
+                  {orderError.message ?? "주문 내용을 확인할 수 없어요."} 결제는 승인되지 않았어요. 장바구니를 확인해 주세요.
+                </p>
+                <button
+                  onClick={onCancel}
+                  className="px-6 py-3 rounded-md bg-stone-900 text-white font-semibold active:scale-95 transition"
+                >
+                  장바구니로 돌아가기
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-900 font-bold text-lg">주문 접수를 확인하지 못했어요</p>
+                <p className="text-gray-500 text-sm break-keep">
+                  네트워크 문제로 주문이 전달되지 않았을 수 있어요. 아래 버튼으로 다시 전송해 주세요.
+                  같은 주문이 두 번 접수되지는 않아요. 계속 안 되면 카운터 직원에게 문의해 주세요.
+                </p>
+                <button
+                  onClick={submitOrder}
+                  className="px-6 py-3 rounded-md bg-stone-900 text-white font-semibold active:scale-95 transition"
+                >
+                  다시 전송
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {isProcessing && (
           <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-5 z-10">
-            <div className="w-14 h-14 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#FFB900" }} />
+            <div className="w-14 h-14 border-4 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: "#1C1917" }} />
             <p className="text-gray-700 font-semibold text-lg">결제 처리 중입니다...</p>
             <p className="text-gray-400 text-sm">카드를 빼지 마세요</p>
           </div>
@@ -542,7 +597,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       </div>
 
       {showComplete && (
-        <PaymentCompleteModal onClose={() => setShowComplete(false)} />
+        <PaymentCompleteModal requestId={savedRequestId} onClose={() => setShowComplete(false)} />
       )}
     </div>
   );

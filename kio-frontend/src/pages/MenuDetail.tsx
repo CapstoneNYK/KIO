@@ -37,16 +37,13 @@ export const MenuDetail = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#FFEFCE]">
+    <div className="flex flex-col h-dvh bg-[#FFEFCE]">
       <TopBar />
 
       <div className="flex-1 bg-white mx-4 mt-3 rounded-t-2xl shadow-sm flex flex-col min-h-0">
-        {/* 페이지 타이틀 */}
         <p className="text-center text-orange-400 font-semibold pt-4 pb-2 shrink-0">결제수단 선택</p>
 
-        {/* 스크롤 영역 */}
         <div className="flex-1 overflow-y-auto px-5">
-          {/* 아이템 정보 */}
           <div className="flex items-center gap-4 mb-5">
             <img
               src={item.img}
@@ -67,7 +64,6 @@ export const MenuDetail = () => {
             </p>
           </div>
 
-          {/* 온도 선택 */}
           <div className="flex gap-3 mb-6">
             <button
               onClick={() => setTemperature("HOT")}
@@ -91,7 +87,6 @@ export const MenuDetail = () => {
             </button>
           </div>
 
-          {/* 선택옵션 */}
           <p className="text-sm font-semibold text-gray-700 mb-3">선택옵션</p>
           <div className="flex flex-col gap-4 pb-4">
             {options.map((opt, idx) => (
@@ -107,7 +102,6 @@ export const MenuDetail = () => {
           </div>
         </div>
 
-        {/* 주문 버튼 */}
         <div className="flex gap-3 px-5 py-4 shrink-0">
           <button
             onClick={() => navigate(-1)}

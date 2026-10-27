@@ -58,7 +58,7 @@ export const Home = () => {
     : menus.filter((m) => m.category === activeCategory);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-dvh">
       <TopBar />
       <NavBar
         categories={CATEGORIES}

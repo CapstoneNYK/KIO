@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { tpass_poster, t_poster, kt_poster, cafe_logo } from "../assets";
 import { useDiscountStore } from "../store/discountStore";
 
-// 관리자 페이지에 등록된 포스터가 없거나 아직 못 불러왔을 때 쓰는 기본 이미지
 const FALLBACK_POSTERS = [tpass_poster, t_poster, kt_poster];
 const SLIDE_INTERVAL = 3500;
 
@@ -20,7 +19,6 @@ export const Splash = () => {
   );
   const EXTENDED_POSTERS = useMemo(() => [...POSTERS, POSTERS[0]], [POSTERS]);
 
-  // 관리자 포스터가 늦게 도착해서 개수가 바뀌면 슬라이드 위치를 0으로 되돌린다
   useEffect(() => {
     setCurrentIndex(0);
   }, [POSTERS.length]);
@@ -33,7 +31,6 @@ export const Splash = () => {
     return () => clearInterval(timer);
   }, [postersLoading, POSTERS.length]);
 
-  // 복제 슬라이드(마지막 index)에 도달하면 애니메이션 후 조용히 0으로 초기화
   useEffect(() => {
     if (currentIndex === POSTERS.length) {
       const timeout = setTimeout(() => {
@@ -44,7 +41,6 @@ export const Splash = () => {
     }
   }, [currentIndex, POSTERS.length]);
 
-  // transition 비활성화 후 다음 틱에 다시 활성화
   useEffect(() => {
     if (!transitionEnabled) {
       const timeout = setTimeout(() => setTransitionEnabled(true), 50);
@@ -56,18 +52,17 @@ export const Splash = () => {
 
   return (
     <div
-      className="relative flex flex-col h-screen w-full overflow-hidden"
+      className="relative flex flex-col h-dvh w-full overflow-hidden"
       style={{ backgroundColor: "#FFEFCE" }}
     >
       <div className="relative z-10 flex items-center justify-center gap-4 pt-6 pb-3 shrink-0">
         <img src={cafe_logo} alt="NYK CAFE" className="h-14 w-auto" />
       </div>
 
-      {/* 포스터 슬라이드 */}
       <div className="relative z-10 flex flex-1 min-h-0 flex-col items-center justify-center px-8 py-2">
-        <div className="w-full max-w-lg overflow-hidden rounded-3xl shadow-2xl">
+        <div className="w-full max-w-lg flex-1 min-h-0 overflow-hidden">
           <div
-            className="flex"
+            className="flex h-full"
             style={{
               transform: `translateX(-${currentIndex * 100}%)`,
               transition: transitionEnabled
@@ -76,18 +71,18 @@ export const Splash = () => {
             }}
           >
             {EXTENDED_POSTERS.map((poster, index) => (
-              <img
-                key={index}
-                src={poster}
-                alt={`포스터 ${(index % POSTERS.length) + 1}`}
-                className="w-full shrink-0 object-cover"
-                draggable={false}
-              />
+              <div key={index} className="flex h-full w-full shrink-0 items-center justify-center">
+                <img
+                  src={poster}
+                  alt={`포스터 ${(index % POSTERS.length) + 1}`}
+                  className="max-h-full max-w-full rounded-3xl object-contain shadow-2xl"
+                  draggable={false}
+                />
+              </div>
             ))}
           </div>
         </div>
 
-        {/* 도트 인디케이터 */}
         <div className="flex items-center gap-2 mt-4">
           {POSTERS.map((_, index) => (
             <button
@@ -103,7 +98,6 @@ export const Splash = () => {
         </div>
       </div>
 
-      {/* 하단 주문 유형 버튼 */}
       <div className="relative z-10 flex gap-4 px-8 pb-10 pt-4 shrink-0">
         <button
           onClick={() => navigate("/home", { state: { orderType: "eat-in" } })}
