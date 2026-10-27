@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from ai.cart_command import detect_cart_command
-from ai.entity import extract_multi_order
+from ai.entity import extract_multi_order, fix_stt_errors
 from ai.order import entities_to_orders, validate_options
 from ai.preference import recommend_by_conditions
 from app.admin import db as admin_db
@@ -50,7 +50,7 @@ def eval_cart(menus):
     from ai.cart_command import clear_pending
     for text, cart, exp in CART_CASES:
         clear_pending()
-        got = detect_cart_command(text, cart, menus)
+        got = detect_cart_command(fix_stt_errors(text), cart, menus)
         problems = []
         if exp is None:
             if got is not None:
@@ -153,7 +153,7 @@ def eval_dialog(menus):
         clear_pending()
         problems = []
         for text, cart, exp in turns:
-            got = detect_cart_command(text, cart, menus)
+            got = detect_cart_command(fix_stt_errors(text), cart, menus)
             if exp is None:
                 if got is not None:
                     problems.append(f"'{text}' 명령으로 오탐: {got['cart_actions']}")
