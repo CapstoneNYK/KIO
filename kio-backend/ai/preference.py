@@ -29,7 +29,7 @@ _NEGATED_TAGS = [
     (_rx(r"안시|시지않|안새콤|안상큼"), "상큼"),
 ]
 
-_RE_HOT = _rx(r"따뜻|뜨거|뜨겁|핫|hot|뜨아|뜨라")
+_RE_HOT = _rx(r"따뜻|따듯|따스|따숩|따땃|따끈|뜨끈|뜨듯|뜨신|뜨거|뜨겁|핫|hot|뜨아|뜨라")
 _RE_ICE = _rx(r"차가|차갑|시원|아이스|ice|얼음|아아|아라|냉")
 
 _RE_NO_CAFFEINE = _rx(r"카페인(?:이|은|을|도)?(?:없|빼|안|적|낮|약|프리)|디카페인|잠못자|잠이안")
@@ -200,6 +200,10 @@ def _rank(menus: list, c: Conditions) -> list:
         return sorted(menus, key=lambda m: (m["price"], m["id"]))
     return sorted(menus, key=lambda m: m["id"])
 
+def _is_decaf(menu: dict) -> bool:
+    return menu["category"] == "디카페인" or menu["name"].startswith("디카페인")
+
+
 _FAMILY = {"디카페인": "커피"}
 
 
@@ -252,6 +256,11 @@ def recommend_by_conditions(text: str, menus: list) -> Optional[Recommendation]:
                    "온도나 종류를 바꿔서 다시 말씀해 주시겠어요?",
             menus=[], found=False,
         )
+
+    if c.caffeine is False and not c.categories:
+        decaf = [m for m in matched if _is_decaf(m)]
+        if decaf:
+            matched = decaf
 
     picked = _rank(matched, c)
     if required and not c.cheap:
