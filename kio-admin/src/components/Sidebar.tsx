@@ -54,18 +54,11 @@ export const Sidebar = ({ activePage, onSelect, username, open, onClose }: Sideb
               <button
                 key={id}
                 onClick={() => onSelect(id)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-left transition-colors"
-                style={{
-                  backgroundColor: isActive ? "#FFF3DC" : "transparent",
-                  color: isActive ? "#D97706" : "#9CA3AF",
-                  borderLeft: `3px solid ${isActive ? "#F5A623" : "transparent"}`,
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = "#FFFBEB";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-                }}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg w-full text-left transition-colors ${
+                  isActive
+                    ? "bg-amber-100 text-amber-700"
+                    : "text-gray-400 hover:bg-amber-50 hover:text-gray-600"
+                }`}
               >
                 <Icon size={17} />
                 <span className="text-sm font-semibold">{label}</span>
