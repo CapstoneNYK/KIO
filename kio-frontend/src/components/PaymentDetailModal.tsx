@@ -537,7 +537,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-lg w-[80%] h-[88vh] flex flex-col overflow-hidden"
+        className="relative bg-white rounded-lg w-[80%] h-[88dvh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-center py-4 px-6 shrink-0">

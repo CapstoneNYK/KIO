@@ -34,6 +34,10 @@ body,
   overflow: hidden;
 }
 
+#root {
+  height: 100dvh;
+}
+
 .kio-chat {
   font-size: calc(17px * var(--kio-s, 1.25));
 }

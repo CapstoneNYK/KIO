@@ -21,9 +21,9 @@ export default function App() {
   }, [fetchDiscounts]);
 
   return (
-    <div className="min-h-screen w-full bg-[#FFEFCE]">
+    <div className="min-h-dvh w-full bg-[#FFEFCE]">
       <AssistantButton />
-      <div className="w-full min-h-screen flex flex-col">
+      <div className="w-full min-h-dvh flex flex-col">
         <Outlet />
       </div>
     </div>
