@@ -107,6 +107,33 @@ def split_sold_out(orders: list[dict], sold_out_names: set[str]) -> tuple[list[d
     return available, sold_out
 
 
+def limit_by_stock(orders: list[dict], menus: list[dict], in_cart: dict[str, int]) -> tuple[list[dict], list[str]]:
+    by_name = {m["name"]: m for m in menus}
+    taken: dict[str, int] = {}
+    kept: list[dict] = []
+    notices: list[str] = []
+    for order in orders:
+        info = by_name.get(order["menu"]) if order["menu"] else None
+        stock = info.get("stock") if info else None
+        if stock is None:
+            kept.append(order)
+            continue
+        name = order["menu"]
+        remaining = max(0, stock - in_cart.get(name, 0) - taken.get(name, 0))
+        want = order.get("quantity", 1)
+        have = in_cart.get(name, 0)
+        why = f"재고가 {stock}개뿐이고 이미 {have}개 담겨 있어서" if have else f"재고가 {stock}개뿐이라"
+        if remaining <= 0:
+            notices.append(f"{_josa(name, '은', '는')} {why} 더 담을 수 없어요.")
+            continue
+        if want > remaining:
+            order["quantity"] = remaining
+            notices.append(f"{_josa(name, '은', '는')} {why} {remaining}개만 담았어요.")
+        taken[name] = taken.get(name, 0) + order["quantity"]
+        kept.append(order)
+    return kept, list(dict.fromkeys(notices))
+
+
 def allowed_option_labels(menu_info: dict) -> list[str]:
     labels = [OPTION_LABELS[k] for k, cats in OPTION_ALLOWED_CATEGORIES.items()
               if k != "light" and menu_info.get("category") in cats]
@@ -123,15 +150,15 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
         info = by_name.get(order["menu"]) if order["menu"] else None
         if info is None:
             continue
-        if (not order.get("temp_explicit", True) and order["temperature"] == "ICE"
-                and "HOT" in (info.get("temps") or []) and order["menu"] not in defaulted):
-            defaulted.append(order["menu"])
         temps = info.get("temps") or []
         if temps and order["temperature"] not in temps and len(temps) == 1:
             order["temperature"] = temps[0]
             only = "따뜻한" if temps[0] == "HOT" else "아이스"
             how = "따뜻하게" if temps[0] == "HOT" else "아이스로"
             notices.append(f"{_josa(order['menu'], '은', '는')} {only} 음료로만 주문할 수 있어서 {how} 담았어요.")
+        elif (not order.get("temp_explicit", True) and order["temperature"] == "ICE"
+                and "HOT" in temps and order["menu"] not in defaulted):
+            defaulted.append(order["menu"])
         kept = []
         for d in order.get("option_details", []):
             kind = d.get("kind")

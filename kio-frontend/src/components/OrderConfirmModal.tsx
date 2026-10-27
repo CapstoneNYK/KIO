@@ -1,5 +1,5 @@
 import { LuX } from "react-icons/lu";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, remainingStock } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
@@ -73,6 +73,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
                     <OptionCounter
                       count={cartItem.quantity}
                       min={1}
+                      max={cartItem.quantity + remainingStock(items, cartItem.item)}
                       onDecrement={() => updateQuantity(cartItem.cartId, cartItem.quantity - 1)}
                       onIncrement={() => updateQuantity(cartItem.cartId, cartItem.quantity + 1)}
                     />

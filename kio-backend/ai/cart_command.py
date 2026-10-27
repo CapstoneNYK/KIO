@@ -59,7 +59,7 @@ _CART_LINE = re.compile(r"^(?:(아이스|따뜻한) )?(.+?)(?: ×(\d+))?(?: \((.
 _OPT_COUNT = re.compile(r"^(.*?)(?: ×(\d+))?$")
 
 
-def _parse_cart(cart_items: list) -> list:
+def parse_cart(cart_items: list) -> list:
     parsed = []
     for i, raw in enumerate(cart_items or []):
         m = _CART_LINE.match((raw or "").strip())
@@ -298,7 +298,7 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
     t = normalize_text(text)
     menu_names = [m["name"] for m in menus]
     by_name = {m["name"]: m for m in menus}
-    cart = _parse_cart(cart_items)
+    cart = parse_cart(cart_items)
     cart_menus = [c["menu"] for c in cart]
 
     if _RE_POST_PAY.search(t):
@@ -413,6 +413,12 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
             qty = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
             if qty < 1 or qty > MAX_QTY:
                 return _result("modify", f"수량은 1~{MAX_QTY}개 사이로 말씀해 주세요.")
+            stock = by_name.get(menu, {}).get("stock")
+            if stock is not None:
+                lines = [c for c in cart if c["menu"] == menu]
+                others = sum(c["quantity"] for c in lines[:-1])
+                if qty > stock - others:
+                    return _result("modify", f"{_eun(menu)} 재고가 {stock}개뿐이라 {qty}개로 바꿀 수 없어요. {_cart_text(cart)}")
             return _result(
                 "modify",
                 f"{_eul(menu)} {qty}개로 바꿨어요.",

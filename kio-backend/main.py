@@ -32,10 +32,11 @@ from ai.order import (
     apply_discount_menu_fallback,
     cart_answer,
     entities_to_orders,
+    limit_by_stock,
     split_sold_out,
     validate_options,
 )
-from ai.cart_command import detect_cart_command
+from ai.cart_command import detect_cart_command, parse_cart
 from ai.preference import find_alternatives, recommend_by_conditions
 from app.coupon.router import router as coupon_router
 from app.admin import db as admin_db
@@ -208,6 +209,13 @@ def _recommend(query: str):
     return recommend_chain.invoke(query)
 
 
+def _cart_quantities(cart_items: list[str]) -> dict[str, int]:
+    totals: dict[str, int] = {}
+    for line in parse_cart(cart_items):
+        totals[line["menu"]] = totals.get(line["menu"], 0) + line["quantity"]
+    return totals
+
+
 def _order_response(
     question: str,
     orders: list[dict],
@@ -350,7 +358,9 @@ async def ask_intent(request: QueryRequest):
 
         orders_all = entities_to_orders(entities)
         orders, sold_out = split_sold_out(orders_all, sold_out_names)
+        orders, stock_notices = limit_by_stock(orders, menus, _cart_quantities(request.cart_items))
         orders, notices = validate_options(orders, menus)
+        notices = stock_notices + notices
         named = [o for o in orders if o["menu"]]
         return _order_response(request.query, orders, named, sold_out, menus, notices)
     elif intent == "coupon":
@@ -384,14 +394,16 @@ async def ask_intent(request: QueryRequest):
 
         orders_all = entities_to_orders(entities)
         orders, sold_out = split_sold_out(orders_all, sold_out_names)
+        orders, stock_notices = limit_by_stock(orders, menus, _cart_quantities(request.cart_items))
         orders, notices = validate_options(orders, menus)
+        notices = stock_notices + notices
         named = [o for o in orders if o["menu"]]
         _, payment_method = get_payment_response(request.query)
 
         if not payment_method:
             return _order_response(request.query, orders, named, sold_out, menus, notices)
 
-        if sold_out and not named:
+        if (sold_out or stock_notices) and not named:
             return _order_response(request.query, orders, named, sold_out, menus, notices)
 
         method_label = {
