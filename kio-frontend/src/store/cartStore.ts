@@ -14,6 +14,8 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   isPackaging: boolean;
+  // 주문확인에서 먹고가기/가져가기를 아직 고르지 않았으면 false (기본값을 보여주지 않기 위함)
+  packagingChosen: boolean;
   setIsPackaging: (v: boolean) => void;
   // 주문확인 창에서 먹고가기/가져가기를 고르면 장바구니 전체에 같은 값을 적용한다
   setPackagingAll: (v: boolean) => void;
@@ -38,6 +40,7 @@ export const remainingStock = (items: CartItem[], menu: MenuItem, excludeCartId?
 export const useCartStore = create<CartStore>((set) => ({
   items: [],
   isPackaging: false,
+  packagingChosen: false,
   setIsPackaging: (v) => set({ isPackaging: v }),
   setPackagingAll: (v) =>
     set((state) => {
@@ -55,7 +58,7 @@ export const useCartStore = create<CartStore>((set) => ({
         if (twin) twin.quantity += next.quantity;
         else merged.push(next);
       }
-      return { isPackaging: v, items: merged };
+      return { isPackaging: v, packagingChosen: true, items: merged };
     }),
   addItem: (item, quantity, temperature, options, isPackaging, isFree = false) =>
     set((state) => {
@@ -122,5 +125,5 @@ export const useCartStore = create<CartStore>((set) => ({
       }
       return { items: state.items.map((i) => (i.cartId === cartId ? { ...i, options } : i)) };
     }),
-  clear: () => set({ items: [] }),
+  clear: () => set({ items: [], packagingChosen: false }),
 }));

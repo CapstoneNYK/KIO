@@ -7,9 +7,9 @@ DISCOUNT_MENU_MAP = {
 NOISE_TOKENS = {"T", "KT", "CJ", "SKT"}
 
 OPTION_ALLOWED_CATEGORIES = {
-    "shot": {"커피", "디카페인"},
+    "shot": {"커피", "디카페인", "티"},
     "light": {"커피", "디카페인"},
-    "syrup": {"커피", "디카페인", "티"},
+    "syrup": {"커피", "디카페인"},
     "cream": {"커피", "디카페인", "스무디"},
 }
 OPTION_LABELS = {

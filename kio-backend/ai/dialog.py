@@ -1,6 +1,6 @@
 """슬롯 채우기 대화: 메뉴마다 빠진 옵션을 직원처럼 하나씩 되묻는다.
 
-- 필수 옵션: 온도(HOT/ICE 둘 다 가능한 메뉴), 사이즈(2개 이상 지원하는 메뉴)
+- 필수 옵션: 온도(HOT/ICE 둘 다 가능한 메뉴). 사이즈는 KIO_DIALOG_SIZE=1 일 때만
 - 선택 옵션: 샷 추가, 시럽 (카테고리가 허용하는 메뉴만)
 - 이미 말한 값은 건너뛰고, 필수 -> 선택 순서로 질문한다.
 - 대화 상태는 서버에 저장하지 않고 프론트가 매 요청에 실어 보낸다.
@@ -18,10 +18,13 @@ from ai.order import OPTION_ALLOWED_CATEGORIES, _josa
 
 DIALOG_ENABLED = os.getenv("KIO_DIALOG", "1") != "0"
 AUTO_PAY = os.getenv("KIO_DIALOG_AUTO_PAY", "1") != "0"
+# 사이즈 질문은 기본으로 끈다(화면에 사이즈 선택·가격 반영이 없어서). 필요하면 KIO_DIALOG_SIZE=1
+ASK_SIZE = os.getenv("KIO_DIALOG_SIZE", "0") == "1"
 MAX_RETRIES = 2  # 같은 질문을 이만큼 못 알아들으면 포기하고 기본값으로 진행
 
 REQUIRED_SLOTS = ("temperature", "size")
 OPTIONAL_SLOTS = ("shot", "syrup")
+AMOUNT_SLOTS = {"shot_amount": "shot", "syrup_amount": "syrup"}  # 선택 옵션에 '네' 한 뒤 양을 묻는 후속 질문
 
 
 def _rx(p: str) -> "re.Pattern":
@@ -38,6 +41,12 @@ _YES = _rx(r"^(?:네|넵|예|응|어|그래|좋아|좋아요|추가|해줘|해�
 _NO = _rx(r"아니|안해|안할|괜찮|됐|필요없|필요 없|없어|없이|그대로|빼|노$|싫")
 _COUNT_WORDS = {"한": 1, "하나": 1, "두": 2, "둘": 2, "세": 3, "셋": 3, "네": 4, "넷": 4}
 _SHOT_COUNT_ONLY = _rx(r"(\d+|한|하나|두|둘|세|셋|네|넷)(?:번|개|잔|샷)?(?:만)?(?:더)?(?:추가|넣|더)")
+_AMOUNT_WORDS = {"한": 1, "하나": 1, "두": 2, "둘": 2, "세": 3, "셋": 3, "네": 4, "넷": 4, "더블": 2, "트리플": 3}
+_SHOT_AMOUNT = _rx(r"(\d+|더블|트리플|하나|한|두|둘|세|셋|네|넷)")
+_LV_HALF = _rx(r"절반|반만|반정도|하프")
+_LV_LESS = _rx(r"적게|조금|약간|살짝|덜")
+_LV_MORE = _rx(r"많이|듬뿍|넉넉|가득")
+_LV_NORMAL = _rx(r"보통|기본|그냥|적당|알아서|중간")
 _CANCEL = _rx(r"취소|그만|처음부터|주문안|안할래|다시할게")
 
 
@@ -50,7 +59,7 @@ def option_spec(info: dict) -> dict:
     required = []
     if len(temps) > 1:
         required.append("temperature")
-    if len(sizes) > 1:
+    if ASK_SIZE and len(sizes) > 1:
         required.append("size")
     optional = [k for k in OPTIONAL_SLOTS if info.get("category") in OPTION_ALLOWED_CATEGORIES.get(k, set())]
     return {"required": required, "optional": optional}
@@ -100,6 +109,17 @@ def parse_answer(slot: str, text: str, info: dict) -> Optional[object]:
         if not found and _DEFAULT.search(t):
             return "M" if "M" in sizes else sizes[0]
         return None
+    if slot == "shot_amount":
+        if _DEFAULT.search(t) or _LV_NORMAL.search(t):
+            return 1
+        m = _SHOT_AMOUNT.search(t)
+        if not m:
+            return None
+        g = m.group(1)
+        n = int(g) if g.isdigit() else _AMOUNT_WORDS.get(g, 1)
+        return n if 1 <= n <= 5 else None
+    if slot == "syrup_amount":
+        return _syrup_level(t)
     if slot in ("shot", "syrup"):
         details = [d for d in extract_option_details(text) if d.get("kind") == slot]
         if details:
@@ -111,11 +131,22 @@ def parse_answer(slot: str, text: str, info: dict) -> Optional[object]:
                 g = m.group(1)
                 n = int(g) if g.isdigit() else _COUNT_WORDS.get(g, 1)
                 return {"kind": "shot", "name": "샷추가", "count": n}
+        if slot == "syrup" and not _NO.search(t):  # "네 많이"처럼 한 번에 말한 경우
+            level = _syrup_level(t)
+            if level:
+                return level
         if _NO.search(t):
             return "no"
         if _YES.search(t):
             return "yes"
         return None
+    return None
+
+
+def _syrup_level(t: str) -> Optional[dict]:
+    for rx, name in ((_LV_HALF, "시럽 절반"), (_LV_LESS, "시럽 적게"), (_LV_MORE, "시럽 많이"), (_LV_NORMAL, "시럽 추가")):
+        if rx.search(t):
+            return {"kind": "syrup", "name": name, "count": 1}
     return None
 
 
@@ -129,6 +160,14 @@ def _apply(order: dict, slot: str, value) -> str:
         order.setdefault("option_details", []).append({"kind": "size", "name": f"사이즈 {value}", "count": 1})
         order["options"] = [d["name"] for d in order["option_details"]]
         return P.ACK["size"][value]
+    if slot == "shot_amount":
+        order.setdefault("option_details", []).append({"kind": "shot", "name": "샷추가", "count": value})
+        order["options"] = [d["name"] for d in order["option_details"]]
+        return P.SHOT_AMOUNT_ACK.format(n=value)
+    if slot == "syrup_amount":
+        order.setdefault("option_details", []).append(value)
+        order["options"] = [d["name"] for d in order["option_details"]]
+        return P.SYRUP_AMOUNT_ACK.get(value["name"], P.ACK["syrup"]["yes"])
     if slot in ("shot", "syrup"):
         if value == "no":
             return P.ACK[slot]["no"]
@@ -242,6 +281,11 @@ def answer_slot(state: dict, text: str, menus: list[dict],
         head["retries"] = head.get("retries", 0) + 1
         if head["retries"] < MAX_RETRIES:
             return _result({"queue": queue}, [], _question(slot, order, retry=True))
+        if slot in AMOUNT_SLOTS:  # 이미 '네'라고 했으니 기본 양으로 진행
+            default = 1 if slot == "shot_amount" else {"kind": "syrup", "name": "시럽 추가", "count": 1}
+            ack = _apply(order, slot, default)
+            head["asked"].append(AMOUNT_SLOTS[slot])
+            return _advance(queue, [], menus, ack)
         if slot in OPTIONAL_SLOTS:  # 선택 옵션은 '없음'으로 진행
             head["asked"].append(slot)
             return _advance(queue, [], menus, P.SKIP_OPTIONAL)
@@ -253,6 +297,12 @@ def answer_slot(state: dict, text: str, menus: list[dict],
         head["asked"].append(slot)
         return _advance(queue, [], menus, P.FALLBACK_DEFAULT.format(value=label))
 
+    if slot in OPTIONAL_SLOTS and value == "yes":  # 얼마나 넣을지 이어서 묻는다
+        head["pending"] = f"{slot}_amount"
+        head["retries"] = 0
+        answer = f"{P.ACK[slot]['yes']} {_question(head['pending'], order)}"
+        return _result({"queue": queue}, [], answer)
+
     ack = _apply(order, slot, value)
-    head["asked"].append(slot)
+    head["asked"].append(AMOUNT_SLOTS.get(slot, slot))
     return _advance(queue, [], menus, ack)

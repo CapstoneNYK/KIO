@@ -201,7 +201,10 @@ def eval_slots(menus):
         problems, seq, done = [], [], []
         res = start_dialog(orders, menus)
         if res is None:
-            problems.append("되묻기가 시작되지 않음")
+            if want_seq:
+                problems.append("되묻기가 시작되지 않음")
+        elif not want_seq:
+            problems.append(f"물어볼 게 없는데 되묻기가 시작됨: {res['answer']}")
         else:
             seq.append(pending_of(res))
             done += res["orders"]
@@ -217,7 +220,8 @@ def eval_slots(menus):
                 done += res["orders"]
         if seq != want_seq:
             problems.append(f"질문 순서 {seq} (기대 {want_seq})")
-        got = [(o["menu"], o["temperature"], o["quantity"], {d["name"] for d in o["option_details"]}) for o in done]
+        got = [(o["menu"], o["temperature"], o["quantity"],
+                {d["name"] + (f" ×{d['count']}" if d["count"] > 1 else "") for d in o["option_details"]}) for o in done]
         if got != want_orders:
             problems.append(f"최종 주문 {got} (기대 {want_orders})")
         if problems:
