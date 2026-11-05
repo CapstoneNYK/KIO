@@ -10,7 +10,7 @@ import { OrderConfirmModal } from "./OrderConfirmModal";
 const CONFIRM_SCREENS = ["order_confirm", "payment", "payment_card", "payment_complete"];
 
 export const CartBar = () => {
-  const { items, removeItem, updateQuantity, clear } = useCartStore();
+  const { items, removeItem, updateQuantity } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
   const clearCoupons = useCouponStore((s) => s.clearCoupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
@@ -179,7 +179,6 @@ export const CartBar = () => {
       {showConfirm && (
         <OrderConfirmModal
           onClose={() => { setOrderOverlayOpen(false); setGuideScreen(null); }}
-          onCancelAll={() => { clear(); setOrderOverlayOpen(false); setGuideScreen(null); }}
           onNext={() => { setOrderOverlayOpen(false); setGuideScreen(null); }}
         />
       )}

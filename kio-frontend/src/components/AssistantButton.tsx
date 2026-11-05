@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { logo } from "../assets";
 import { useLearningStore } from "../store/learningStore";
@@ -8,6 +8,10 @@ import { useChatPrefs, CHAT_SCALES } from "../store/chatPrefsStore";
 import { ttsSupported, stopSpeaking } from "../utils/tts";
 
 type Mode = "idle" | "voice";
+
+// 음성 창이 열려 있을 때 화면을 직접 만지면 창을 숨기고,
+// 되묻는 대화가 남아 있으면 이만큼 가만히 있을 때 다시 연다.
+const REOPEN_AFTER_MS = 4000;
 
 export const AssistantButton = () => {
   const [mode, setMode] = useState<Mode>("idle");
@@ -43,7 +47,57 @@ export const AssistantButton = () => {
     if (closeCount > 0) setMode("idle");
   }, [closeCount]);
 
+  // 음성 창을 화면 터치로 자동으로 닫았는지(직접 ✕/버튼으로 닫은 것과 구분)
+  const autoClosed = useRef(false);
+  const reopenTimer = useRef<number | undefined>(undefined);
+  const modeRef = useRef<Mode>("idle");
+
+  // 시작 화면에서 '말로 주문'을 고르면 바로 음성 창을 연다
+  const openCount = useChatPrefs((s) => s.openCount);
+  useEffect(() => {
+    if (openCount > 0) {
+      setShowGreeting(false);
+      autoClosed.current = false;
+      setMode("voice");
+    }
+  }, [openCount]);
+
+  // 화면을 만지거나 스크롤하면 음성 창만 숨긴다(대화 상태와 말한 내용은 그대로).
+  // 손을 떼고 잠시 지나면 중단된 질문부터 다시 이어간다.
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  useEffect(() => {
+    const armReopen = () => {
+      window.clearTimeout(reopenTimer.current);
+      if (!autoClosed.current || !useChatPrefs.getState().dialogActive) return;
+      reopenTimer.current = window.setTimeout(() => {
+        const busy = useLearningStore.getState().guideScreen || useCouponStore.getState().scanOpen;
+        if (autoClosed.current && !busy) {
+          autoClosed.current = false;
+          setMode("voice");
+        }
+      }, REOPEN_AFTER_MS);
+    };
+    const onTouch = (e: Event) => {
+      const panel = document.getElementById("kio-assistant");
+      if (panel && e.target instanceof Node && panel.contains(e.target)) return;
+      if (modeRef.current === "voice") {
+        autoClosed.current = true;
+        setMode("idle");
+      }
+      armReopen();
+    };
+    const events = ["pointerdown", "wheel", "touchmove", "scroll"] as const;
+    events.forEach((ev) => document.addEventListener(ev, onTouch, { capture: true, passive: true }));
+    return () => {
+      events.forEach((ev) => document.removeEventListener(ev, onTouch, { capture: true }));
+      window.clearTimeout(reopenTimer.current);
+    };
+  }, []);
+
   const handleClick = () => {
+    autoClosed.current = false;
     setShowGreeting(false);
     if (mode === "idle") setMode("voice");
     else if (mode === "voice") setMode("idle");
@@ -68,7 +122,7 @@ export const AssistantButton = () => {
             </span>
           </div>
           <button
-            onClick={() => setMode("idle")}
+            onClick={() => { autoClosed.current = false; setMode("idle"); }}
             className="text-pink-100 hover:text-white transition-colors text-lg leading-none"
           >
             ✕
@@ -116,9 +170,8 @@ export const AssistantButton = () => {
             className="kio-chat absolute right-full top-0 mr-3 w-72 bg-white rounded-2xl shadow-xl px-5 py-4 text-gray-800 leading-relaxed border-2 border-pink-300"
             style={{ "--kio-s": scale } as React.CSSProperties}
           >
-            <p className="font-bold text-pink-600 mb-1">안녕하세요!</p>
             <p className="break-keep">
-              저는 AI 키오스크 도우미 키오예요. 도움이 필요하면 저를 눌러주세요!
+              말로 주문하고 싶으시면 <span className="font-bold text-pink-600">음성주문</span>을 클릭하세요
             </p>
             <div className="absolute -right-2 top-6 w-4 h-4 bg-white border-t border-r border-pink-100 rotate-45" />
           </div>

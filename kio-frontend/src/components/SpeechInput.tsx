@@ -212,6 +212,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       const res = await askApi(query, cartItemNames, dialogRef.current);
       dialogRef.current = res.dialog ?? null;
       autoListen.current = res.intent === "dialog" && !!res.dialog;
+      useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
       let botText = res.answer;
 
       if (res.intent === "recommend" && res.recommended_menus) {
@@ -329,6 +330,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       setLastRecommended([]);
       dialogRef.current = null;
       autoListen.current = false;
+      useChatPrefs.getState().setDialogActive(false);
       greeted.current = false;
       spokenCount.current = 0;
       stopSpeaking();
@@ -338,7 +340,14 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   useEffect(() => {
     if (isOpen) {
       resetTranscript();
-      if (ttsOn && !greeted.current && messages.length === 0) {
+      // 되묻는 도중에 창이 다시 열렸으면 마지막 질문을 한 번 더 말하고 이어서 듣는다
+      const lastBot = dialogRef.current
+        ? [...messages].reverse().find((m) => m.role === "bot")
+        : undefined;
+      if (lastBot) {
+        if (ttsOn) speak(summarizeForSpeech(lastBot.text, lastBot.recommended), () => startListening());
+        else startListening();
+      } else if (ttsOn && !greeted.current && messages.length === 0) {
         greeted.current = true;
         speak(GREETING_SPEECH, () => startListening());
       } else {
