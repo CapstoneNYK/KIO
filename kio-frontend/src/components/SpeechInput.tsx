@@ -323,6 +323,18 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     }
   };
 
+  // 화면에서 직접 담거나 주문하기를 누르면 되묻기를 멈추고 알려준다(화면 조작이 우선)
+  const dialogCancelCount = useChatPrefs((s) => s.dialogCancelCount);
+  useEffect(() => {
+    if (dialogCancelCount === 0) return;
+    dialogRef.current = null;
+    autoListen.current = false;
+    setMessages((prev) => [
+      ...prev,
+      { role: "bot", text: "화면에서 직접 고르셔서 질문은 여기서 멈출게요." },
+    ]);
+  }, [dialogCancelCount]);
+
   const resetCount = useChatPrefs((s) => s.resetCount);
   useEffect(() => {
     if (resetCount > 0 || location.pathname === "/") {

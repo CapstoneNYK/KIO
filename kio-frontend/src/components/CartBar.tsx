@@ -4,6 +4,7 @@ import { LuX, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { useCartStore, remainingStock } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
+import { useChatPrefs } from "../store/chatPrefsStore";
 import { OptionCounter } from "./OptionCounter";
 import { OrderConfirmModal } from "./OrderConfirmModal";
 
@@ -169,7 +170,7 @@ export const CartBar = () => {
       </div>
 
       <button
-        onClick={() => setOrderOverlayOpen(true)}
+        onClick={() => { useChatPrefs.getState().cancelDialog(); setOrderOverlayOpen(true); }}
         className="w-full py-4 rounded-xl text-white font-bold text-base active:brightness-95 transition"
         style={{ backgroundColor: "#FFB900" }}
       >

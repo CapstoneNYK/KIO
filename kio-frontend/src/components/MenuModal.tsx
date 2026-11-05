@@ -3,6 +3,7 @@ import { LuX } from "react-icons/lu";
 import type { MenuItem, MenuOption, Temperature } from "../types/menu";
 import { OptionCounter } from "./OptionCounter";
 import { useCartStore, remainingStock } from "../store/cartStore";
+import { useChatPrefs } from "../store/chatPrefsStore";
 
 interface MenuModalProps {
   item: MenuItem;
@@ -55,6 +56,7 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
 
   const handleOrder = () => {
     if (noStock) return;
+    useChatPrefs.getState().cancelDialog();
     addItem(item, quantity, temperature, options, isPackaging);
     onOrder(item, quantity, temperature, options, isPackaging);
     onClose();
