@@ -12,6 +12,11 @@ OPTION_ALLOWED_CATEGORIES = {
     "syrup": {"커피", "디카페인"},
     "cream": {"커피", "디카페인", "스무디"},
 }
+# 대화형으로 되묻는 옵션: 주문 화면(MenuModal)에서 실제로 고를 수 있는 것만
+DIALOG_ASK_CATEGORIES = {
+    "shot": {"커피", "디카페인", "티"},
+    "light": {"커피", "디카페인"},
+}
 OPTION_LABELS = {
     "shot": "샷 추가",
     "light": "연하게",

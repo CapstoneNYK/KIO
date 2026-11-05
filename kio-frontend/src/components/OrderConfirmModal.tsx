@@ -13,7 +13,7 @@ interface OrderConfirmModalProps {
 const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
 
 export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) => {
-  const { items, updateQuantity, setPackagingAll, packagingChosen } = useCartStore();
+  const { items, updateQuantity, setPackagingAll } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
@@ -91,13 +91,6 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
                           {line}
                         </p>
                       ))}
-                      <p className="text-sm text-gray-400">
-                        {!packagingChosen
-                          ? "먹고가기·가져가기를 선택해 주세요"
-                          : cartItem.isPackaging
-                            ? "포장 (일회용컵)"
-                            : "매장 (다회용컵)"}
-                      </p>
                     </div>
                   </div>
 

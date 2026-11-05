@@ -1,8 +1,12 @@
+import { useEffect, useRef, useState } from "react";
 import { useChatPrefs } from "../store/chatPrefsStore";
 import { LuX } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
 import { useLearningStore } from "../store/learningStore";
+
+// 이 시간 안에 출력/미출력을 누르지 않으면 미출력으로 처리한다
+const AUTO_SKIP_SECONDS = 5;
 
 interface PaymentCompleteModalProps {
   onClose: () => void;
@@ -15,13 +19,37 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
 
+  const [left, setLeft] = useState(AUTO_SKIP_SECONDS);
+  const doneRef = useRef(false);
+
   const finish = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
     clear();
     useChatPrefs.getState().resetChat();
     setGuideScreen(null);
     setHighlightPaymentMethod(null);
     navigate("/");
   };
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setLeft((v) => {
+        if (v <= 1) {
+          window.clearInterval(id);
+          return 0;
+        }
+        return v - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // 0초가 되면 미출력으로 마무리
+  useEffect(() => {
+    if (left === 0) finish();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [left]);
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center" style={{ backgroundColor: "#d4d4d4" }}>
@@ -46,7 +74,7 @@ export const PaymentCompleteModal = ({ onClose }: PaymentCompleteModalProps) => 
             className="flex-1 py-4 rounded-md font-bold text-white text-base active:brightness-95 transition"
             style={{ backgroundColor: "#888" }}
           >
-            미출력
+            미출력 ({left}초)
           </button>
           <button
             onClick={finish}

@@ -14,7 +14,7 @@ from typing import Optional
 
 from ai import dialog_phrases as P
 from ai.entity import extract_menu, extract_option_details, normalize_text
-from ai.order import OPTION_ALLOWED_CATEGORIES, _josa
+from ai.order import DIALOG_ASK_CATEGORIES, _josa
 
 DIALOG_ENABLED = os.getenv("KIO_DIALOG", "1") != "0"
 AUTO_PAY = os.getenv("KIO_DIALOG_AUTO_PAY", "1") != "0"
@@ -23,7 +23,7 @@ ASK_SIZE = os.getenv("KIO_DIALOG_SIZE", "0") == "1"
 MAX_RETRIES = 2  # 같은 질문을 이만큼 못 알아들으면 포기하고 기본값으로 진행
 
 REQUIRED_SLOTS = ("temperature", "size")
-OPTIONAL_SLOTS = ("shot", "syrup")
+OPTIONAL_SLOTS = ("shot", "light")  # 화면에서 실제로 고를 수 있는 옵션만 묻는다 (시럽·크림은 화면에 없음)
 AMOUNT_SLOTS = {"shot_amount": "shot", "syrup_amount": "syrup"}  # 선택 옵션에 '네' 한 뒤 양을 묻는 후속 질문
 
 
@@ -61,7 +61,7 @@ def option_spec(info: dict) -> dict:
         required.append("temperature")
     if ASK_SIZE and len(sizes) > 1:
         required.append("size")
-    optional = [k for k in OPTIONAL_SLOTS if info.get("category") in OPTION_ALLOWED_CATEGORIES.get(k, set())]
+    optional = [k for k in OPTIONAL_SLOTS if info.get("category") in DIALOG_ASK_CATEGORIES.get(k, set())]
     return {"required": required, "optional": optional}
 
 
@@ -79,7 +79,7 @@ def missing_slots(order: dict, info: dict, asked: Optional[list] = None) -> list
             continue
         if slot == "temperature" and order.get("temp_explicit"):
             continue
-        if slot in ("size", "shot", "syrup") and _has(order, slot):
+        if slot in ("size", "shot", "light", "syrup") and _has(order, slot):
             continue
         out.append(slot)
     return out
@@ -120,6 +120,12 @@ def parse_answer(slot: str, text: str, info: dict) -> Optional[object]:
         return n if 1 <= n <= 5 else None
     if slot == "syrup_amount":
         return _syrup_level(t)
+    if slot == "light":
+        if _NO.search(t):
+            return "no"
+        if _YES.search(t) or extract_option_details(text):
+            return "yes"
+        return None
     if slot in ("shot", "syrup"):
         details = [d for d in extract_option_details(text) if d.get("kind") == slot]
         if details:
@@ -140,6 +146,27 @@ def parse_answer(slot: str, text: str, info: dict) -> Optional[object]:
         if _YES.search(t):
             return "yes"
         return None
+    return None
+
+
+_PART = _rx(r"(\d+|한|하나|두|둘|세|셋)(?:잔|개|컵)?(?:은|는|만)")
+_PLAIN = _rx(r"기본|그대로|보통|없이|안해|아니|빼고|일반")
+
+
+def _split_count(text: str, qty: int) -> Optional[int]:
+    """"한 잔은 연하게, 다른 한 잔은 기본으로"처럼 일부 수량에만 옵션을 걸었으면 그 수량을 돌려준다."""
+    if qty < 2:
+        return None
+    t = normalize_text(text)
+    ms = list(_PART.finditer(t))
+    for i, m in enumerate(ms):
+        seg = t[m.end(): ms[i + 1].start() if i + 1 < len(ms) else len(t)]
+        if _PLAIN.search(seg):
+            continue
+        g = m.group(1)
+        n = int(g) if g.isdigit() else _COUNT_WORDS.get(g, 1)
+        if 0 < n < qty:
+            return n
     return None
 
 
@@ -168,6 +195,12 @@ def _apply(order: dict, slot: str, value) -> str:
         order.setdefault("option_details", []).append(value)
         order["options"] = [d["name"] for d in order["option_details"]]
         return P.SYRUP_AMOUNT_ACK.get(value["name"], P.ACK["syrup"]["yes"])
+    if slot == "light":
+        if value == "no":
+            return P.ACK["light"]["no"]
+        order.setdefault("option_details", []).append({"kind": "light", "name": "연하게", "count": 1})
+        order["options"] = [d["name"] for d in order["option_details"]]
+        return P.ACK["light"]["yes"]
     if slot in ("shot", "syrup"):
         if value == "no":
             return P.ACK[slot]["no"]
@@ -297,12 +330,20 @@ def answer_slot(state: dict, text: str, menus: list[dict],
         head["asked"].append(slot)
         return _advance(queue, [], menus, P.FALLBACK_DEFAULT.format(value=label))
 
-    if slot in OPTIONAL_SLOTS and value == "yes":  # 얼마나 넣을지 이어서 묻는다
+    if slot in AMOUNT_SLOTS.values() and value == "yes":  # 얼마나 넣을지 이어서 묻는다
         head["pending"] = f"{slot}_amount"
         head["retries"] = 0
         answer = f"{P.ACK[slot]['yes']} {_question(head['pending'], order)}"
         return _result({"queue": queue}, [], answer)
 
+    n = _split_count(text, order.get("quantity", 1)) if slot in ("shot", "light") and value != "no" else None
+    if n:
+        # 일부 수량에만 옵션 적용: 주문을 둘로 나눈다 (옵션 있는 쪽 먼저, 나머지는 이 옵션을 다시 묻지 않음)
+        import copy
+        rest = copy.deepcopy(order)
+        rest["quantity"] = order["quantity"] - n
+        order["quantity"] = n
+        queue.insert(1, {"order": rest, "asked": list(head["asked"]) + [slot], "pending": None, "retries": 0})
     ack = _apply(order, slot, value)
     head["asked"].append(AMOUNT_SLOTS.get(slot, slot))
     return _advance(queue, [], menus, ack)
