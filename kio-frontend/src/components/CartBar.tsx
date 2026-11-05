@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PiShoppingCartSimple } from "react-icons/pi";
 import { LuX, LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import { useCartStore, remainingStock } from "../store/cartStore";
+import { useCartStore, remainingStock, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { useChatPrefs } from "../store/chatPrefsStore";
@@ -52,7 +52,7 @@ export const CartBar = () => {
   if (items.length === 0) return null;
 
   const totalQty = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const totalPrice = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount, items);
   const totalDiscount = freeDiscount + couponDiscount;
@@ -135,7 +135,7 @@ export const CartBar = () => {
                 {cartItem.item.title}
               </p>
               <p className="text-sm font-bold text-orange-500 mb-1">
-                {(cartItem.item.price * cartItem.quantity).toLocaleString()}원
+                {(unitPrice(cartItem) * cartItem.quantity).toLocaleString()}원
               </p>
               <OptionCounter
                 count={cartItem.quantity}

@@ -3,7 +3,7 @@ import { LuX, LuCreditCard, LuSmartphone, LuGift, LuTicket, LuSparkles, LuInfo }
 import { PaymentDetailModal } from "./PaymentDetailModal";
 import { iconKT, iconCJONE, iconTMembership, iconTUzu, iconKakao, iconNaver } from "../assets";
 import { useLearningStore } from "../store/learningStore";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 
 interface PaymentModalProps {
@@ -48,7 +48,7 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
 
-  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const cartTotal = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => (i.isFree ? sum + i.item.price : sum), 0);
   const couponDiscount = calcDiscount(coupons, cartTotal - freeDiscount, items);
   const remainingPrice = cartTotal - freeDiscount - couponDiscount;

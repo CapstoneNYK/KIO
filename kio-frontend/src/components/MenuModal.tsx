@@ -101,7 +101,7 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
               )}
             </div>
             <p className="text-orange-500 font-bold text-2xl shrink-0">
-              {(item.price * quantity).toLocaleString()}원
+              {((item.price + optionExtra(options)) * quantity).toLocaleString()}원
             </p>
           </div>
 
@@ -134,7 +134,10 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
               <div className="flex flex-col gap-8 pl-4">
                 {options.map((opt, idx) => (
                   <div key={opt.name} className="flex items-center gap-4">
-                    <span className="flex-1 text-gray-700 text-xl">{opt.name}</span>
+                    <span className="flex-1 text-gray-700 text-xl">
+                      {opt.name}
+                      {OPTION_PRICES[opt.name] ? ` (+${OPTION_PRICES[opt.name].toLocaleString()}원)` : ""}
+                    </span>
                     <OptionCounter
                       count={opt.count}
                       onDecrement={() => updateOption(idx, -1)}
