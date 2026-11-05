@@ -2,7 +2,7 @@ import { useServerSTT } from "../utils/serverSttUtil";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { askApi, sendFeedback } from "../api/askApi";
-import type { CartAction } from "../api/askApi";
+import type { CartAction, DialogState } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
@@ -83,6 +83,11 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // 옵션 되묻기(슬롯 채우기) 대화 상태: 서버가 만들고 다음 요청에 그대로 되돌려 보낸다.
+  // 창을 닫아도 지우지 않아서 다시 열면 중단된 질문부터 이어진다.
+  const dialogRef = useRef<DialogState | null>(null);
+  // 질문을 말한 뒤 마이크를 자동으로 다시 켤지
+  const autoListen = useRef(false);
   const ttsOn = useChatPrefs((s) => s.ttsOn) && ttsSupported;
   const spokenCount = useRef(0);
   const greeted = useRef(false);
@@ -204,7 +209,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           (extra.length ? ` (${extra.join(", ")})` : "")
         );
       });
-      const res = await askApi(query, cartItemNames);
+      const res = await askApi(query, cartItemNames, dialogRef.current);
+      dialogRef.current = res.dialog ?? null;
+      autoListen.current = res.intent === "dialog" && !!res.dialog;
       let botText = res.answer;
 
       if (res.intent === "recommend" && res.recommended_menus) {
@@ -230,13 +237,13 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         return;
       }
 
-      if (res.intent === "order" || res.intent === "order_and_pay") {
+      if (res.intent === "order" || res.intent === "order_and_pay" || res.intent === "dialog") {
         dismissPaymentOverlay();
         const ordersToProcess = res.orders ?? [];
 
         if (
-          ordersToProcess.length === 0 ||
-          ordersToProcess.every((o) => !o.menu)
+          res.intent !== "dialog" &&
+          (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu))
         ) {
           const refMenus = resolveMenusFromRef(query);
           const quantity = ordersToProcess[0]?.quantity ?? 1;
@@ -279,7 +286,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           }
         }
 
-        if (res.intent === "order_and_pay") {
+        if (res.intent === "order_and_pay" || res.go_payment) {
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
           setTimeout(() => {
             setHighlightPaymentMethod(res.payment_method ?? null);
@@ -320,6 +327,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     if (resetCount > 0 || location.pathname === "/") {
       setMessages([]);
       setLastRecommended([]);
+      dialogRef.current = null;
+      autoListen.current = false;
       greeted.current = false;
       spokenCount.current = 0;
       stopSpeaking();
@@ -352,14 +361,25 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     if (messages.length < spokenCount.current) spokenCount.current = messages.length;
     const fresh = messages.slice(spokenCount.current);
     spokenCount.current = messages.length;
-    if (!isOpen || !ttsOn) return;
+    if (!isOpen) return;
     const bots = fresh.filter((m) => m.role === "bot");
     if (bots.length === 0) return;
+    // 되묻는 질문이면 말이 끝난 뒤 마이크를 자동으로 다시 켠다
+    const reopen = () => {
+      if (!autoListen.current) return;
+      autoListen.current = false;
+      resetTranscript();
+      startListening();
+    };
+    if (!ttsOn) {
+      if (autoListen.current) setTimeout(reopen, 400);
+      return;
+    }
     const text = bots
       .map((m) => summarizeForSpeech(m.text, m.recommended))
       .join(" ")
       .slice(0, 220);
-    speak(text);
+    speak(text, autoListen.current ? reopen : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 

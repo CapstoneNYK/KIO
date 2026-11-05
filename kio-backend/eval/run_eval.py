@@ -183,14 +183,65 @@ def eval_dialog(menus):
     return ok, n, fails
 
 
+def eval_slots(menus):
+    """슬롯 채우기 대화: 질문 순서와 최종 주문이 정답과 같은지."""
+    from ai.cart_command import detect_cart_command as _detect
+    from ai.dialog import answer_slot, start_dialog
+    from eval.cases_dialog import DIALOG_SLOT_CASES, PASS
+    names = [m["name"] for m in menus]
+    fails, ok = [], 0
+
+    def pending_of(res):
+        st = res["state"]
+        return st["queue"][0]["pending"] if st else None
+
+    for title, first, answers, want_seq, want_orders in DIALOG_SLOT_CASES:
+        orders = entities_to_orders(extract_multi_order(fix_stt_errors(first), names))
+        orders, _ = validate_options([o for o in orders if o["menu"]], menus)
+        problems, seq, done = [], [], []
+        res = start_dialog(orders, menus)
+        if res is None:
+            problems.append("되묻기가 시작되지 않음")
+        else:
+            seq.append(pending_of(res))
+            done += res["orders"]
+            for a in answers:
+                if res["state"] is None:
+                    break
+                nxt = answer_slot(res["state"], fix_stt_errors(a), menus, [], _detect)
+                if nxt is None:
+                    seq.append(PASS)
+                    break
+                res = nxt
+                seq.append(pending_of(res))
+                done += res["orders"]
+        if seq != want_seq:
+            problems.append(f"질문 순서 {seq} (기대 {want_seq})")
+        got = [(o["menu"], o["temperature"], o["quantity"], {d["name"] for d in o["option_details"]}) for o in done]
+        if got != want_orders:
+            problems.append(f"최종 주문 {got} (기대 {want_orders})")
+        if problems:
+            fails.append({"text": title, "problems": problems})
+        else:
+            ok += 1
+    n = len(DIALOG_SLOT_CASES)
+    print(f"\n=== [대화형] 옵션 되묻기(슬롯 채우기): {ok}/{n} ({ok / n * 100:.1f}%)")
+    for f in fails:
+        print(f"  ✗ {f['text']}")
+        for p in f["problems"]:
+            print(f"      - {p}")
+    return ok, n, fails
+
+
 def eval_intent_fast(menus):
     from ai.fast_intent import fast_classify
     from eval.cases_intent import INTENT_CASES
     names = [m["name"] for m in menus]
     decided = right = 0
     wrong = []
+    from ai.entity import fix_stt_errors
     for text, expected in INTENT_CASES:
-        got = fast_classify(text, names)
+        got = fast_classify(fix_stt_errors(text), names)
         if got is None:
             continue
         decided += 1
@@ -205,6 +256,26 @@ def eval_intent_fast(menus):
     return {"decided": decided, "total": n, "right": right, "wrong": wrong}
 
 
+def eval_cart_route(menus):
+    """장바구니 명령(수정·취소)로 라벨된 로그 케이스: 실제 경로(STT 보정 → detect_cart_command)로 검증."""
+    from ai.cart_command import clear_pending
+    from eval.cases_intent import CART_ROUTE_CASES
+    sample_cart = ["아이스 아메리카노 ×2", "따뜻한 카페라떼 ×2"]
+    ok, fails = 0, []
+    for text, expected in CART_ROUTE_CASES:
+        clear_pending()
+        got = detect_cart_command(fix_stt_errors(text), sample_cart, menus)
+        if got is not None and got["intent"] == expected:
+            ok += 1
+        else:
+            fails.append({"text": text, "problems": [f"예측 {got['intent'] if got else None} (정답 {expected})"]})
+    n = len(CART_ROUTE_CASES)
+    print(f"\n=== 장바구니 명령 경로 (로그 케이스): {ok}/{n}")
+    for f in fails:
+        print(f"  ✗ {f['text']}  {f['problems'][0]}")
+    return {"correct": ok, "total": n, "accuracy": round(ok / n * 100, 1) if n else 100.0, "failures": fails}
+
+
 def eval_intent(report, menus):
     from ai.fast_intent import fast_classify
     from ai.intent import classify_intent
@@ -214,7 +285,9 @@ def eval_intent(report, menus):
     llm_fails, pipe_fails = [], []
     confusion = {}
     per_class = {}
+    from ai.entity import fix_stt_errors
     for text, expected in INTENT_CASES:
+        text = fix_stt_errors(text)
         llm = classify_intent(text)
         fast = fast_classify(text, names)
         pipe = fast or llm
@@ -269,7 +342,10 @@ def main():
     report["overall_rules"] = {"correct": all_ok, "total": all_n, "accuracy": round(all_ok / all_n * 100, 1)}
     d_ok, d_n, d_fails = eval_dialog(menus)
     report["대화형 / 되묻기 이어 받기"] = {"correct": d_ok, "total": d_n, "accuracy": round(d_ok / d_n * 100, 1), "failures": d_fails}
+    s_ok, s_n, s_fails = eval_slots(menus)
+    report["대화형 / 옵션 되묻기(슬롯 채우기)"] = {"correct": s_ok, "total": s_n, "accuracy": round(s_ok / s_n * 100, 1), "failures": s_fails}
     report["intent_rules"] = eval_intent_fast(menus)
+    report["장바구니 명령 경로 (로그 케이스)"] = eval_cart_route(menus)
     if "--intent" in sys.argv:
         eval_intent(report, menus)
     out = Path(__file__).parent / "report.json"

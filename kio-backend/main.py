@@ -37,6 +37,7 @@ from ai.order import (
     validate_options,
 )
 from ai.cart_command import detect_cart_command, parse_cart
+from ai.dialog import answer_slot, start_dialog
 from ai.preference import find_alternatives, recommend_by_conditions
 from app.coupon.router import router as coupon_router
 from app.admin import db as admin_db
@@ -238,6 +239,19 @@ def _order_response(
 class QueryRequest(BaseModel):
     query: str
     cart_items: list[str] = []
+    dialog: dict | None = None  # 열려 있는 옵션 되묻기 대화 상태 (프론트가 되돌려 보냄)
+
+
+def _dialog_response(question: str, res: dict, **extra) -> dict:
+    return {
+        "question": question,
+        "intent": "dialog",
+        "answer": res["answer"],
+        "orders": res["orders"],
+        "dialog": res["state"],
+        "go_payment": res["go_payment"],
+        **extra,
+    }
 
 
 @app.get("/")
@@ -332,6 +346,12 @@ async def _handle_ask(request: QueryRequest) -> dict:
 
     request.query = fix_stt_errors(request.query)
     all_menus = admin_db.get_menus()
+
+    if request.dialog:
+        slot_res = answer_slot(request.dialog, request.query, all_menus, request.cart_items, detect_cart_command)
+        if slot_res is not None:
+            return _dialog_response(request.query, slot_res)
+
     command = detect_cart_command(request.query, request.cart_items, all_menus)
     if command:
         return {"question": request.query, **command}
@@ -378,8 +398,17 @@ async def _handle_ask(request: QueryRequest) -> dict:
         orders, sold_out = split_sold_out(orders_all, sold_out_names)
         orders, stock_notices = limit_by_stock(orders, menus, _cart_quantities(request.cart_items))
         orders, notices = validate_options(orders, menus)
-        notices = stock_notices + notices
         named = [o for o in orders if o["menu"]]
+        started = start_dialog(named, menus) if named else None
+        if started is not None:
+            # 온도를 되물을 거라 '아이스로 담았어요' 안내는 뺀다
+            keep = [n for n in stock_notices + notices if not n.startswith("온도를 말씀하지 않으셔서")]
+            if sold_out or keep:
+                started["answer"] = cart_answer(
+                    [], sold_out, alternatives=_alternatives_map(sold_out, menus), notices=keep
+                ) + " " + started["answer"]
+            return _dialog_response(request.query, started, sold_out=sold_out)
+        notices = stock_notices + notices
         return _order_response(request.query, orders, named, sold_out, menus, notices)
     elif intent == "coupon":
         return {
