@@ -2,7 +2,7 @@ import { useServerSTT } from "../utils/serverSttUtil";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { askApi, sendFeedback } from "../api/askApi";
-import type { CartAction } from "../api/askApi";
+import type { CartAction, DialogState } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
@@ -83,6 +83,11 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // 옵션 되묻기(슬롯 채우기) 대화 상태: 서버가 만들고 다음 요청에 그대로 되돌려 보낸다.
+  // 창을 닫아도 지우지 않아서 다시 열면 중단된 질문부터 이어진다.
+  const dialogRef = useRef<DialogState | null>(null);
+  // 질문을 말한 뒤 마이크를 자동으로 다시 켤지
+  const autoListen = useRef(false);
   const ttsOn = useChatPrefs((s) => s.ttsOn) && ttsSupported;
   const spokenCount = useRef(0);
   const greeted = useRef(false);
@@ -204,7 +209,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           (extra.length ? ` (${extra.join(", ")})` : "")
         );
       });
-      const res = await askApi(query, cartItemNames);
+      const res = await askApi(query, cartItemNames, dialogRef.current);
+      dialogRef.current = res.dialog ?? null;
+      autoListen.current = res.intent === "dialog" && !!res.dialog;
+      useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
       let botText = res.answer;
 
       if (res.intent === "recommend" && res.recommended_menus) {
@@ -230,13 +238,13 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         return;
       }
 
-      if (res.intent === "order" || res.intent === "order_and_pay") {
+      if (res.intent === "order" || res.intent === "order_and_pay" || res.intent === "dialog") {
         dismissPaymentOverlay();
         const ordersToProcess = res.orders ?? [];
 
         if (
-          ordersToProcess.length === 0 ||
-          ordersToProcess.every((o) => !o.menu)
+          res.intent !== "dialog" &&
+          (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu))
         ) {
           const refMenus = resolveMenusFromRef(query);
           const quantity = ordersToProcess[0]?.quantity ?? 1;
@@ -279,7 +287,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           }
         }
 
-        if (res.intent === "order_and_pay") {
+        if (res.intent === "order_and_pay" || res.go_payment) {
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
           setTimeout(() => {
             setHighlightPaymentMethod(res.payment_method ?? null);
@@ -315,11 +323,26 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     }
   };
 
+  // 화면에서 직접 담거나 주문하기를 누르면 되묻기를 멈추고 알려준다(화면 조작이 우선)
+  const dialogCancelCount = useChatPrefs((s) => s.dialogCancelCount);
+  useEffect(() => {
+    if (dialogCancelCount === 0) return;
+    dialogRef.current = null;
+    autoListen.current = false;
+    setMessages((prev) => [
+      ...prev,
+      { role: "bot", text: "화면에서 직접 고르셔서 질문은 여기서 멈출게요." },
+    ]);
+  }, [dialogCancelCount]);
+
   const resetCount = useChatPrefs((s) => s.resetCount);
   useEffect(() => {
     if (resetCount > 0 || location.pathname === "/") {
       setMessages([]);
       setLastRecommended([]);
+      dialogRef.current = null;
+      autoListen.current = false;
+      useChatPrefs.getState().setDialogActive(false);
       greeted.current = false;
       spokenCount.current = 0;
       stopSpeaking();
@@ -329,7 +352,14 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   useEffect(() => {
     if (isOpen) {
       resetTranscript();
-      if (ttsOn && !greeted.current && messages.length === 0) {
+      // 되묻는 도중에 창이 다시 열렸으면 마지막 질문을 한 번 더 말하고 이어서 듣는다
+      const lastBot = dialogRef.current
+        ? [...messages].reverse().find((m) => m.role === "bot")
+        : undefined;
+      if (lastBot) {
+        if (ttsOn) speak(summarizeForSpeech(lastBot.text, lastBot.recommended), () => startListening());
+        else startListening();
+      } else if (ttsOn && !greeted.current && messages.length === 0) {
         greeted.current = true;
         speak(GREETING_SPEECH, () => startListening());
       } else {
@@ -352,14 +382,25 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     if (messages.length < spokenCount.current) spokenCount.current = messages.length;
     const fresh = messages.slice(spokenCount.current);
     spokenCount.current = messages.length;
-    if (!isOpen || !ttsOn) return;
+    if (!isOpen) return;
     const bots = fresh.filter((m) => m.role === "bot");
     if (bots.length === 0) return;
+    // 되묻는 질문이면 말이 끝난 뒤 마이크를 자동으로 다시 켠다
+    const reopen = () => {
+      if (!autoListen.current) return;
+      autoListen.current = false;
+      resetTranscript();
+      startListening();
+    };
+    if (!ttsOn) {
+      if (autoListen.current) setTimeout(reopen, 400);
+      return;
+    }
     const text = bots
       .map((m) => summarizeForSpeech(m.text, m.recommended))
       .join(" ")
       .slice(0, 220);
-    speak(text);
+    speak(text, autoListen.current ? reopen : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 

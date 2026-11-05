@@ -38,6 +38,14 @@ interface ChatPrefs {
   resetChat: () => void;
   closeCount: number;
   closeChat: () => void;
+  openCount: number;
+  openChat: () => void;
+  // 옵션 되묻기 대화가 진행 중인지 (창이 자동으로 닫혀도 이어서 열어야 하는지 판단)
+  dialogActive: boolean;
+  setDialogActive: (v: boolean) => void;
+  // 화면에서 직접 담거나 주문하기를 눌렀을 때, 진행 중이던 음성 되묻기를 멈추는 신호
+  dialogCancelCount: number;
+  cancelDialog: () => void;
 }
 
 export const useChatPrefs = create<ChatPrefs>((set, get) => ({
@@ -46,6 +54,13 @@ export const useChatPrefs = create<ChatPrefs>((set, get) => ({
   resetChat: () => set((s) => ({ resetCount: s.resetCount + 1 })),
   closeCount: 0,
   closeChat: () => set((s) => ({ closeCount: s.closeCount + 1 })),
+  openCount: 0,
+  openChat: () => set((s) => ({ openCount: s.openCount + 1 })),
+  dialogActive: false,
+  setDialogActive: (dialogActive) => set({ dialogActive }),
+  dialogCancelCount: 0,
+  cancelDialog: () =>
+    set((s) => (s.dialogActive ? { dialogActive: false, dialogCancelCount: s.dialogCancelCount + 1 } : s)),
   setScale: (scale) => {
     set({ scale });
     save(scale, get().ttsOn);

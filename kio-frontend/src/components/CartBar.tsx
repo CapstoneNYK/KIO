@@ -4,13 +4,14 @@ import { LuX, LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { useCartStore, remainingStock, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
+import { useChatPrefs } from "../store/chatPrefsStore";
 import { OptionCounter } from "./OptionCounter";
 import { OrderConfirmModal } from "./OrderConfirmModal";
 
 const CONFIRM_SCREENS = ["order_confirm", "payment", "payment_card", "payment_complete"];
 
 export const CartBar = () => {
-  const { items, removeItem, updateQuantity, clear } = useCartStore();
+  const { items, removeItem, updateQuantity } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
   const clearCoupons = useCouponStore((s) => s.clearCoupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
@@ -169,7 +170,7 @@ export const CartBar = () => {
       </div>
 
       <button
-        onClick={() => setOrderOverlayOpen(true)}
+        onClick={() => { useChatPrefs.getState().cancelDialog(); setOrderOverlayOpen(true); }}
         className="w-full py-4 rounded-xl text-white font-bold text-base active:brightness-95 transition"
         style={{ backgroundColor: "#FFB900" }}
       >
@@ -179,7 +180,6 @@ export const CartBar = () => {
       {showConfirm && (
         <OrderConfirmModal
           onClose={() => { setOrderOverlayOpen(false); setGuideScreen(null); }}
-          onCancelAll={() => { clear(); setOrderOverlayOpen(false); setGuideScreen(null); }}
           onNext={() => { setOrderOverlayOpen(false); setGuideScreen(null); }}
         />
       )}

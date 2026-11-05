@@ -7,14 +7,13 @@ import { PaymentModal } from "./PaymentModal";
 
 interface OrderConfirmModalProps {
   onClose: () => void;
-  onCancelAll: () => void;
   onNext: () => void;
 }
 
 const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
 
-export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirmModalProps) => {
-  const { items, updateQuantity } = useCartStore();
+export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) => {
+  const { items, updateQuantity, setPackagingAll } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
@@ -92,9 +91,6 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
                           {line}
                         </p>
                       ))}
-                      <p className="text-sm text-gray-400">
-                        {cartItem.isPackaging ? "포장 (일회용컵)" : "매장 (다회용컵)"}
-                      </p>
                     </div>
                   </div>
 
@@ -132,24 +128,26 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
 
         <div className="flex gap-2 px-6 py-4 bg-white">
           <button
-            onClick={onCancelAll}
-            className="flex-1 py-3 rounded-xl border-2 border-gray-300 text-gray-600 font-bold active:bg-gray-50 transition"
-          >
-            전체취소
-          </button>
-          <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl border-2 font-bold active:opacity-80 transition"
-            style={{ borderColor: "#FFB900", color: "#FFB900" }}
+            className="flex-1 py-3 rounded-xl border-2 border-gray-300 text-gray-600 font-bold active:bg-gray-50 transition"
           >
             이전
           </button>
           <button
-            onClick={() => setPaymentDetailOverlayOpen(true)}
-            className="flex-1 py-3 rounded-xl text-white font-bold active:brightness-95 transition"
-            style={{ backgroundColor: "#FFB900" }}
+            onClick={() => { setPackagingAll(false); setPaymentDetailOverlayOpen(true); }}
+            className="flex-1 flex flex-col items-center py-2.5 rounded-xl text-white font-bold active:brightness-95 transition"
+            style={{ backgroundColor: "#F5A623" }}
           >
-            다음
+            <span>먹고가기</span>
+            <span className="text-xs font-medium opacity-90">다회용컵</span>
+          </button>
+          <button
+            onClick={() => { setPackagingAll(true); setPaymentDetailOverlayOpen(true); }}
+            className="flex-1 flex flex-col items-center py-2.5 rounded-xl text-white font-bold active:brightness-95 transition"
+            style={{ backgroundColor: "#FCC200" }}
+          >
+            <span>가져가기</span>
+            <span className="text-xs font-medium opacity-90">일회용컵</span>
           </button>
         </div>
       </div>

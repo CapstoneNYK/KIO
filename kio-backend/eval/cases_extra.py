@@ -117,6 +117,11 @@ CART_CASES = [
     ("달콤한 거 추천해줘", CART, None),
     ("2번으로 담아줘", CART, None),
     ("아메리카노 얼마예요", CART, None),
+    ("아메리카노 하나는 따뜻하게 주세요", ["아이스 아메리카노 ×2"], C("modify", {"type": "set_temperature_part", "menu": "아메리카노", "temperature": "HOT", "count": 1})),
+    ("아바하라 하나는 따뜻하게 주세요", ["아이스 아메리카노 ×2"], C("modify", {"type": "set_temperature_part", "menu": "아메리카노", "temperature": "HOT", "count": 1})),
+    ("카페라떼 한 잔은 아이스로 해줘", ["따뜻한 카페라떼 ×3"], C("modify", {"type": "set_temperature_part", "menu": "카페라떼", "temperature": "ICE", "count": 1})),
+    ("아메리카노 하나는 따뜻하게 주세요", [], None),
+    ("카페라떼 하나는 따뜻하게 주세요", ["아이스 아메리카노 ×2"], None),
 ]
 
 RECO_CASES = [

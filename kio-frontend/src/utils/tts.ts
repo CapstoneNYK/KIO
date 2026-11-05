@@ -165,7 +165,7 @@ export function summarizeForSpeech(text: string, recommended?: string[]): string
 }
 
 export const GREETING_TEXT =
-  "안녕하세요! 저는 키오예요. 마시고 싶은 메뉴를 편하게 말씀해 주세요.";
+  "안녕하세요! 말로 주문하는 음성 주문 도우미 키오예요. 어떤 음료 드릴까요?";
 export const GREETING_SPEECH =
-  "안녕하세요, 저는 키오예요. 마시고 싶은 메뉴를 편하게 말씀해 주세요. 마이크 버튼을 누르고 말씀하시면 돼요.";
+  "안녕하세요! 말로 주문하는 음성 주문 도우미 키오예요. 어떤 음료 드릴까요?";
 export const GREETING_EXAMPLES = ["아이스 아메리카노 두 잔 주세요", "달달한 거 추천해줘", "카드로 결제할게요"];

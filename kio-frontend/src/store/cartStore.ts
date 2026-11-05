@@ -14,7 +14,11 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   isPackaging: boolean;
+  // 주문확인에서 먹고가기/가져가기를 아직 고르지 않았으면 false (기본값을 보여주지 않기 위함)
+  packagingChosen: boolean;
   setIsPackaging: (v: boolean) => void;
+  // 주문확인 창에서 먹고가기/가져가기를 고르면 장바구니 전체에 같은 값을 적용한다
+  setPackagingAll: (v: boolean) => void;
   addItem: (item: MenuItem, quantity: number, temperature: Temperature, options: MenuOption[], isPackaging: boolean, isFree?: boolean) => void;
   removeItem: (cartId: number) => void;
   updateQuantity: (cartId: number, quantity: number) => void;
@@ -44,7 +48,26 @@ export const remainingStock = (items: CartItem[], menu: MenuItem, excludeCartId?
 export const useCartStore = create<CartStore>((set) => ({
   items: [],
   isPackaging: false,
+  packagingChosen: false,
   setIsPackaging: (v) => set({ isPackaging: v }),
+  setPackagingAll: (v) =>
+    set((state) => {
+      const same = (a: MenuOption[], b: MenuOption[]) =>
+        a.length === b.length && a.every((x) => b.some((o) => o.name === x.name && o.count === x.count));
+      const merged: CartItem[] = [];
+      for (const i of state.items) {
+        const next = { ...i, isPackaging: v };
+        // 포장 여부만 달라서 따로 있던 같은 줄은 하나로 합친다
+        const twin = next.isFree
+          ? undefined
+          : merged.find(
+              (m) => !m.isFree && m.item.id === next.item.id && m.temperature === next.temperature && same(m.options, next.options)
+            );
+        if (twin) twin.quantity += next.quantity;
+        else merged.push(next);
+      }
+      return { isPackaging: v, packagingChosen: true, items: merged };
+    }),
   addItem: (item, quantity, temperature, options, isPackaging, isFree = false) =>
     set((state) => {
       quantity = Math.min(quantity, remainingStock(state.items, item));
@@ -110,5 +133,5 @@ export const useCartStore = create<CartStore>((set) => ({
       }
       return { items: state.items.map((i) => (i.cartId === cartId ? { ...i, options } : i)) };
     }),
-  clear: () => set({ items: [] }),
+  clear: () => set({ items: [], packagingChosen: false }),
 }));

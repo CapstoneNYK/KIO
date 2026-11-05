@@ -189,4 +189,7 @@ def _logged_cases():
     return [(c["text"], c["intent"]) for c in json.loads(path.read_text(encoding="utf-8"))]
 
 
-INTENT_CASES = INTENT_CASES + [c for c in _logged_cases() if c not in INTENT_CASES]
+_CART_ROUTE = ("modify", "cancel")
+INTENT_CASES = INTENT_CASES + [c for c in _logged_cases() if c not in INTENT_CASES and c[1] not in _CART_ROUTE]
+# 장바구니 명령(수정·취소)은 의도 분류기가 아니라 detect_cart_command 가 먼저 처리한다.
+CART_ROUTE_CASES = [c for c in _logged_cases() if c[1] in _CART_ROUTE]

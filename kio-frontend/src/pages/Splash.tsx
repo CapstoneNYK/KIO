@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { tpass_poster, t_poster, kt_poster, cafe_logo } from "../assets";
 import { useDiscountStore } from "../store/discountStore";
+import { useChatPrefs } from "../store/chatPrefsStore";
 
 const FALLBACK_POSTERS = [tpass_poster, t_poster, kt_poster];
 const SLIDE_INTERVAL = 3500;
@@ -49,6 +50,12 @@ export const Splash = () => {
   }, [transitionEnabled]);
 
   const dotIndex = currentIndex % POSTERS.length;
+  const openChat = useChatPrefs((s) => s.openChat);
+
+  const startVoice = () => {
+    navigate("/home");
+    openChat();
+  };
 
   return (
     <div
@@ -100,23 +107,21 @@ export const Splash = () => {
 
       <div className="relative z-10 flex gap-4 px-8 pb-10 pt-4 shrink-0">
         <button
-          onClick={() => navigate("/home", { state: { orderType: "eat-in" } })}
+          onClick={startVoice}
           className="flex flex-1 flex-col items-center justify-center gap-1 py-5 rounded-3xl active:scale-95 transition-transform bg-[#F5A623]"
         >
-          <span className="text-3xl font-black text-white">먹고가기</span>
+          <span className="text-3xl font-black text-white">음성주문</span>
           <span className="text-sm font-medium text-white opacity-80">
-            매장 내 식사
+            말로 편하게 주문
           </span>
         </button>
         <button
-          onClick={() =>
-            navigate("/home", { state: { orderType: "take-out" } })
-          }
+          onClick={() => navigate("/home")}
           className="flex flex-1 flex-col items-center justify-center gap-1 py-5 rounded-3xl active:scale-95 transition-transform bg-[#FCC200]"
         >
-          <span className="text-3xl font-black text-white">가져가기</span>
+          <span className="text-3xl font-black text-white">화면주문</span>
           <span className="text-sm font-medium text-white opacity-80">
-            포장 주문
+            메뉴를 눌러서 주문
           </span>
         </button>
       </div>

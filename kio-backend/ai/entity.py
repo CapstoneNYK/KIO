@@ -58,6 +58,9 @@ _STT_SHOT = re.compile(r"(?:찹|챱|샵|삿|셧|샤)(?=\s*(?:을|를)?\s*(?:더\
 
 _STT_TEA_T = re.compile(r"(?<![A-Za-z])[Tt](?![A-Za-z])(?=\s*(?:로|가|를|는|은|종류|류|말고|계열|\b))")
 _STT_DISCOUNT = re.compile(r"할인\s*(?:에\s*등|해택|헤택|혜택|에\s*택)")
+_STT_QTY2 = re.compile(r"(?<![가-힣])[조주]\s*잔")
+_STT_AA = re.compile(r"아바(?:랑|하라)")
+_STT_AA_SPLIT = re.compile(r"(?<![가-힣])아\s+아(?![가-힣])")  # "아 아"처럼 띄어 인식된 아이스 아메리카노 줄임말
 
 
 def fix_stt_errors(text: str) -> str:
@@ -65,6 +68,9 @@ def fix_stt_errors(text: str) -> str:
     text = _STT_HOT.sub("핫으로", text)
     text = _STT_TEA_T.sub("티", text)
     text = _STT_DISCOUNT.sub("할인혜택", text)
+    text = _STT_QTY2.sub("두 잔", text)
+    text = _STT_AA.sub("아아 ", text)
+    text = _STT_AA_SPLIT.sub("아아", text)
     return _STT_SHOT.sub("샷", text)
 
 
