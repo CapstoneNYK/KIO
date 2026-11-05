@@ -294,6 +294,33 @@ def _temperature_all(t: str, cart: list, by_name: dict) -> Optional[dict]:
     return _result("modify", msg, [{"type": "set_temperature_all", "temperature": target, "menus": ok}])
 
 
+def _temperature_part(text: str, t: str, cart: list, menu: Optional[str], by_name: dict) -> Optional[dict]:
+    """"아메리카노 하나는 따뜻하게" — 같은 메뉴 줄의 일부 수량만 온도를 바꾼다."""
+    if not menu or menu not in [c["menu"] for c in cart] or _RE_CANCEL_STRONG.search(t):
+        return None
+    pm = _RE_PART.search(t)
+    target = _temp_in(t)
+    if not pm or not target:
+        return None
+    g = pm.group(1)
+    count = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
+    lines = [c for c in cart if c["menu"] == menu]
+    line = lines[-1]
+    temps = by_name.get(menu, {}).get("temps") or []
+    label = "따뜻한" if target == "HOT" else "아이스"
+    if temps and target not in temps:
+        return _result("modify", f"{_eun(menu)} {label} 음료로 주문할 수 없어요.")
+    if count < 1 or count > line["quantity"]:
+        return _result("modify", f"{_eun(menu)} {line['quantity']}잔 담겨 있어요. 그 안에서 말씀해 주세요.")
+    if line["temperature"] == target:
+        return _result("modify", f"{_eun(menu)} 이미 {label} 음료예요.")
+    msg = f"{menu} {count}잔을 {label} 음료로 바꿨어요."
+    rest = line["quantity"] - count
+    if rest:
+        msg += f" 나머지 {rest}잔은 그대로예요."
+    return _result("modify", msg, [{"type": "set_temperature_part", "menu": menu, "temperature": target, "count": count}])
+
+
 def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[dict]:
     t = normalize_text(text)
     menu_names = [m["name"] for m in menus]
@@ -319,6 +346,10 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
 
     target0 = extract_menu(text, menu_names)
     target_temp0 = _temp_in(t)
+
+    part = _temperature_part(text, t, cart, target0, by_name)
+    if part is not None:
+        return part
 
     if (target0 and target0 in cart_menus and _RE_EXISTING.search(t)
             and not _RE_CANCEL_STRONG.search(t) and not _RE_CHANGE.search(t) and not _RE_REPLACE_SPLIT.search(t)):
