@@ -1,5 +1,5 @@
 import { LuX } from "react-icons/lu";
-import { useCartStore, remainingStock } from "../store/cartStore";
+import { useCartStore, remainingStock, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
@@ -26,7 +26,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
     || PAYMENT_SCREENS.includes(learningScreen ?? "")
     || PAYMENT_SCREENS.includes(guideScreen ?? "");
 
-  const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const totalPrice = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount, items);
   const discountPrice = freeDiscount + couponDiscount;
@@ -99,7 +99,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
                   </div>
 
                   <p className="text-orange-500 font-bold text-base shrink-0 pt-1">
-                    {(cartItem.item.price * cartItem.quantity).toLocaleString()}원
+                    {(unitPrice(cartItem) * cartItem.quantity).toLocaleString()}원
                   </p>
                 </div>
 

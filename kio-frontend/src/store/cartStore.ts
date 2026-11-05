@@ -25,6 +25,14 @@ interface CartStore {
 
 let nextId = 1;
 
+export const OPTION_PRICES: Record<string, number> = { 샷추가: 500 };
+
+export const optionExtra = (options: MenuOption[]): number =>
+  options.reduce((sum, o) => sum + (OPTION_PRICES[o.name] ?? 0) * o.count, 0);
+
+export const unitPrice = (i: { item: { price: number }; options: MenuOption[] }): number =>
+  i.item.price + optionExtra(i.options);
+
 export const remainingStock = (items: CartItem[], menu: MenuItem, excludeCartId?: number): number => {
   if (menu.stock == null) return Infinity;
   const used = items

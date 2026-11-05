@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { LuX, LuTag } from "react-icons/lu";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 
@@ -93,7 +93,7 @@ const CardPayment = ({
 }) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
-  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const cartTotal = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount, items);
   const totalPrice = cartTotal - discount;
@@ -157,7 +157,7 @@ const CardPayment = ({
 const VoucherPayment = ({ onBack, onComplete }: { onBack: () => void; onComplete: () => void }) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
-  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const cartTotal = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount, items);
   const totalPrice = cartTotal - discount;
@@ -349,7 +349,7 @@ const AppBarcodePayment = ({
 }) => {
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
-  const cartTotal = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const cartTotal = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const discount = freeDiscount + calcDiscount(coupons, cartTotal - freeDiscount, items);
   const totalPrice = cartTotal - discount;
@@ -439,7 +439,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
   }, [guideScreen]);
 
   const submitOrder = async () => {
-    const totalAmount = cartItems.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+    const totalAmount = cartItems.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
     const freeDiscount = cartItems.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
     const couponDiscount = calcDiscount(coupons, totalAmount - freeDiscount, cartItems);
     const discountAmount = freeDiscount + couponDiscount;
@@ -457,7 +457,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
         menu_name: i.item.title,
         temperature: i.temperature,
         quantity: i.quantity,
-        unit_price: i.item.price,
+        unit_price: unitPrice(i),
         is_free: i.isFree ?? false,
         options: [
           ...i.options.map((o) => (o.count > 1 ? `${o.name} ×${o.count}` : o.name)),
