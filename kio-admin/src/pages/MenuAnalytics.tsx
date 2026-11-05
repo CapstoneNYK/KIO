@@ -6,7 +6,7 @@ import type { PieLabelRenderProps } from "recharts";
 import { apiFetch } from "../api";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  커피: "#F5A623", 디카페인: "#EF4444", 스무디: "#10B981",
+  커피: "#F5A623", 디카페인: "#EF4444", 논커피: "#14B8A6", 스무디: "#10B981",
   에이드: "#3B82F6", 주스: "#8B5CF6", 티: "#EC4899",
 };
 const TEMP_COLORS: Record<string, string> = { ICE: "#60A5FA", HOT: "#F97316" };

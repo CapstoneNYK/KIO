@@ -27,9 +27,14 @@ const TEA_CATEGORIES = ["티"];
 export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
   const isCoffee = COFFEE_CATEGORIES.includes(item.category ?? "");
   const isTea = TEA_CATEGORIES.includes(item.category ?? "");
-  const hasTempSelect = (isCoffee && item.title !== "에스프레소") || isTea;
+  const temps = (item.temps ?? []).filter((t): t is Temperature => t === "HOT" || t === "ICE");
+  const hasTempSelect = temps.length > 0
+    ? temps.length > 1
+    : (isCoffee && item.title !== "에스프레소") || isTea;
   const [quantity, setQuantity] = useState(1);
-  const defaultTemp: Temperature = hasTempSelect || item.title === "에스프레소" ? "HOT" : "ICE";
+  const defaultTemp: Temperature = temps.length === 1
+    ? temps[0]
+    : hasTempSelect || item.title === "에스프레소" ? "HOT" : "ICE";
   const [temperature, setTemperature] = useState<Temperature>(defaultTemp);
   const [options, setOptions] = useState<MenuOption[]>(
     (isCoffee ? COFFEE_OPTIONS : isTea ? TEA_OPTIONS : NON_COFFEE_OPTIONS).map((o) => ({ ...o }))
