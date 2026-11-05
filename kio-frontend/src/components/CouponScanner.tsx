@@ -50,8 +50,16 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
 
   const handleUseProductCoupon = () => {
     if (!result || result.type !== "product" || !result.menu) return;
-    const menuItem = menus.find((m) => m.title === result.menu);
-    if (menuItem) addItem(menuItem, 1, "ICE", [], true, true);
+    const { items, updateQuantity, removeItem } = useCartStore.getState();
+    const paid = items.find((i) => i.item.title === result.menu && !i.isFree);
+    if (paid) {
+      if (paid.quantity > 1) updateQuantity(paid.cartId, paid.quantity - 1);
+      else removeItem(paid.cartId);
+      addItem(paid.item, 1, paid.temperature, paid.options, paid.isPackaging, true);
+    } else {
+      const menuItem = menus.find((m) => m.title === result.menu);
+      if (menuItem) addItem(menuItem, 1, "ICE", [], true, true);
+    }
     onClose();
   };
 
@@ -99,7 +107,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
 
         {result?.type === "product" && (
           <div className="px-5 py-6 flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-3xl">🎉</div>
             <div className="text-center">
               <p className="font-bold text-gray-800 text-base">{result.description}</p>
               <p className="text-sm text-gray-500 mt-1">{result.menu}을(를) 무료로 받을 수 있어요!</p>
@@ -196,7 +203,6 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
 
         {error && (
           <div className="px-5 py-6 flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-3xl">❌</div>
             <p className="font-bold text-gray-800 text-base">{error}</p>
             <button
               onClick={handleRetry}
