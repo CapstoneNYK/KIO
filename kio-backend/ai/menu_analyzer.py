@@ -8,6 +8,7 @@ MAX_TAGS = 4
 CATEGORY_DEFAULT_TAGS = {
     "커피": ["쌉쌀", "고소"],
     "디카페인": ["고소", "부드러운"],
+    "논커피": ["달콤", "부드러운"],
     "스무디": ["달콤", "과일"],
     "에이드": ["상큼", "탄산"],
     "주스": ["상큼", "과일"],
@@ -20,7 +21,7 @@ _CAFFEINE_FREE_TEA = re.compile(r"허브|캐모마일|카모마일|페퍼민트|
 def decide_caffeine(name: str, category: str) -> Optional[bool]:
     if "디카페인" in name or category == "디카페인":
         return False
-    if category in ("에이드", "주스", "스무디"):
+    if category in ("에이드", "주스", "스무디", "논커피"):
         return False if not re.search(r"커피|모카|말차|녹차|초코", name) else None
     if category == "커피":
         return True

@@ -3,7 +3,7 @@ import { FiEdit2, FiTrash2, FiUpload, FiX } from "react-icons/fi";
 import { PiToggleRightFill, PiToggleLeftFill, PiPlusBold } from "react-icons/pi";
 import { apiFetch, API, authHeaders } from "../api";
 
-const CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티"];
+const CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티", "논커피"];
 
 interface Menu {
   id: number;
@@ -181,7 +181,13 @@ export const MenuManagement = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const filtered = activeCategory === "전체" ? menus : menus.filter((m) => m.category === activeCategory);
+  const categoryRank = (category: string) => {
+    const i = CATEGORIES.indexOf(category);
+    return i === -1 ? CATEGORIES.length : i;
+  };
+  const filtered = activeCategory === "전체"
+    ? [...menus].sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || a.id - b.id)
+    : menus.filter((m) => m.category === activeCategory);
   const soldOutCount = menus.filter((m) => m.sold_out).length;
 
   const handleToggleSoldOut = async (id: number, current: boolean) => {
