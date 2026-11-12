@@ -14,9 +14,9 @@ export default defineConfig({
   server: {
     host: true,
     allowedHosts: true,
-    proxy: {
-      "/api": { target: "https://inbox-jpeg-experiment-incident.trycloudflare.com", changeOrigin: true },
-      "/uploads": { target: "https://inbox-jpeg-experiment-incident.trycloudflare.com", changeOrigin: true },
-    },
+proxy: {
+  "/api": "http://localhost:8000",
+  "/uploads": "http://localhost:8000",
+},
   },
 });

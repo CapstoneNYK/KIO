@@ -13,7 +13,7 @@ interface OrderConfirmModalProps {
 const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
 
 export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) => {
-  const { items, updateQuantity, setPackagingAll } = useCartStore();
+  const { items, updateQuantity, setPackagingAll, memo } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
@@ -107,6 +107,12 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
           })}
         </div>
 
+        {memo && (
+          <div className="px-6 py-3 border-t border-gray-100 text-sm text-gray-700">
+            <span className="font-semibold" style={{ color: "#E17100" }}>요청사항</span> {memo}
+          </div>
+        )}
+
         <div className="px-6 py-5" style={{ backgroundColor: "#FFFBEB" }}>
           <div className="flex justify-between mb-2">
             <span className="text-gray-700">주문 금액</span>
@@ -155,7 +161,7 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
       {showPayment && (
         <PaymentModal
           onClose={() => { setPaymentDetailOverlayOpen(false); setGuideScreen(null); }}
-          onSelect={(_method) => {
+          onSelect={() => {
             setPaymentDetailOverlayOpen(false);
             setGuideScreen(null);
             onNext();

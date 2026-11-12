@@ -41,6 +41,7 @@ export interface AskResponse {
   cart_actions?: CartAction[];
   dialog?: DialogState | null;
   go_payment?: boolean;
+  memo?: string | null; // 손님이 말한 요청사항(주문서에 메모로 남김)
 }
 
 export const sendFeedback = async (query: string, answer: string, intent: string): Promise<void> => {

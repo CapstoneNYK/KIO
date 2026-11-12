@@ -42,20 +42,20 @@
     "failures": []
   },
   "추가셋 / 장바구니 취소·변경": {
-    "correct": 43,
-    "total": 43,
+    "correct": 56,
+    "total": 56,
     "accuracy": 100.0,
     "failures": []
   },
   "추가셋 / 조건 추천": {
-    "correct": 21,
-    "total": 21,
+    "correct": 24,
+    "total": 24,
     "accuracy": 100.0,
     "failures": []
   },
   "overall_rules": {
-    "correct": 291,
-    "total": 291,
+    "correct": 307,
+    "total": 307,
     "accuracy": 100.0
   },
   "대화형 / 되묻기 이어 받기": {
@@ -64,108 +64,28 @@
     "accuracy": 100.0,
     "failures": []
   },
+  "대화형 / 옵션 되묻기(슬롯 채우기)": {
+    "correct": 36,
+    "total": 36,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "대화형 / 더 주문·요청사항 단계": {
+    "correct": 14,
+    "total": 14,
+    "accuracy": 100.0,
+    "failures": []
+  },
   "intent_rules": {
-    "decided": 99,
-    "total": 147,
-    "right": 99,
+    "decided": 106,
+    "total": 150,
+    "right": 106,
     "wrong": []
   },
-  "LLM / 의도 분류(LLM 단독)": {
-    "correct": 141,
-    "total": 147,
-    "accuracy": 95.9,
-    "failures": [
-      {
-        "text": "2번으로 할게요",
-        "problems": [
-          "예측 payment (정답 order)"
-        ]
-      },
-      {
-        "text": "음... 바닐라라떼로 할게요",
-        "problems": [
-          "예측 order_and_pay (정답 order)"
-        ]
-      },
-      {
-        "text": "샷 두 번 추가해서 아메리카노 주세요",
-        "problems": [
-          "예측 order_and_pay (정답 order)"
-        ]
-      },
-      {
-        "text": "청포도 에이드로 할게요",
-        "problems": [
-          "예측 order_and_pay (정답 order)"
-        ]
-      },
-      {
-        "text": "KT 할인 되는 메뉴로 하나 줘",
-        "problems": [
-          "예측 order_and_pay (정답 order)"
-        ]
-      },
-      {
-        "text": "카드 결제하면 영수증 나와요",
-        "problems": [
-          "예측 payment (정답 qa)"
-        ]
-      }
-    ]
-  },
-  "LLM / 의도 분류(파이프라인)": {
-    "correct": 145,
-    "total": 147,
-    "accuracy": 98.6,
-    "confusion": {
-      "order->order_and_pay": 1,
-      "qa->payment": 1
-    },
-    "per_class": {
-      "order": {
-        "n": 40,
-        "llm": 35,
-        "pipeline": 39
-      },
-      "order_and_pay": {
-        "n": 18,
-        "llm": 18,
-        "pipeline": 18
-      },
-      "payment": {
-        "n": 22,
-        "llm": 22,
-        "pipeline": 22
-      },
-      "recommend": {
-        "n": 25,
-        "llm": 25,
-        "pipeline": 25
-      },
-      "qa": {
-        "n": 30,
-        "llm": 29,
-        "pipeline": 29
-      },
-      "coupon": {
-        "n": 12,
-        "llm": 12,
-        "pipeline": 12
-      }
-    },
-    "failures": [
-      {
-        "text": "KT 할인 되는 메뉴로 하나 줘",
-        "problems": [
-          "예측 order_and_pay (정답 order) [LLM]"
-        ]
-      },
-      {
-        "text": "카드 결제하면 영수증 나와요",
-        "problems": [
-          "예측 payment (정답 qa) [LLM]"
-        ]
-      }
-    ]
+  "장바구니 명령 경로 (로그 케이스)": {
+    "correct": 0,
+    "total": 0,
+    "accuracy": 100.0,
+    "failures": []
   }
 }

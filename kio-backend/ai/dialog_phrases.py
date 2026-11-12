@@ -46,3 +46,15 @@ FINISH_MORE = "더 필요한 메뉴가 있으면 말씀해 주세요. 없으면 
 CANCELLED = "주문을 취소했어요. 처음부터 다시 말씀해 주세요."
 FALLBACK_DEFAULT = "잘 알아듣지 못해서 {value}로 담았어요. 화면에서 바꿀 수 있어요."
 SKIP_OPTIONAL = "선택 옵션은 없이 진행할게요."
+
+OPTIONS_ON_SCREEN = "샷 추가나 연하게는 화면에서 바꿀 수 있어요."
+
+# 다 정한 뒤 묻는 말
+ASK_MORE = "더 주문하실 메뉴나 요청사항 있으세요? 없으면 '없어요'라고 말씀해 주세요."
+MORE_WHICH = "네, 어떤 메뉴나 요청사항인가요? 말씀해 주세요."
+MEMO_SAVED = "'{memo}' 요청사항으로 적어 둘게요. 더 필요한 건 없으세요?"
+TEMP_SPLIT_ACK = "따뜻한 거 {hot}잔, 차가운 거 {ice}잔으로 할게요."
+ASK_MORE_SHORT = "더 필요한 건 없으세요?"
+AGAIN_ADDED = "{item} 더 담았어요."
+
+MENU_SWAPPED = "알겠어요, {new} 쪽으로 바꿀게요."

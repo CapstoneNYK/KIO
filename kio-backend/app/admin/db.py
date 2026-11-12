@@ -127,6 +127,7 @@ def init_db() -> None:
                 final_amount    INTEGER NOT NULL,
                 is_packaging    INTEGER NOT NULL DEFAULT 0,
                 request_id      TEXT,
+                memo            TEXT    NOT NULL DEFAULT '',
                 created_at      TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
@@ -191,6 +192,8 @@ def init_db() -> None:
             conn.execute("ALTER TABLE orders ADD COLUMN status TEXT NOT NULL DEFAULT 'PAID'")
         if "status_updated_at" not in order_columns:
             conn.execute("ALTER TABLE orders ADD COLUMN status_updated_at TEXT")
+        if "memo" not in order_columns:  # 손님 요청사항 ("얼음 적게" 등)
+            conn.execute("ALTER TABLE orders ADD COLUMN memo TEXT NOT NULL DEFAULT ''")
 
         if "stock" not in existing_columns:
             conn.execute("ALTER TABLE menus ADD COLUMN stock INTEGER")
@@ -458,6 +461,7 @@ def save_order(
     is_packaging: bool,
     items: list[dict],
     request_id: str | None = None,
+    memo: str = "",
 ) -> dict:
     with get_conn() as conn:
         if request_id:
@@ -470,10 +474,10 @@ def save_order(
         try:
             cur = conn.execute(
                 """INSERT INTO orders
-                   (payment_method, total_amount, discount_amount, final_amount, is_packaging, request_id)
-                   VALUES (?,?,?,?,?,?)""",
+                   (payment_method, total_amount, discount_amount, final_amount, is_packaging, request_id, memo)
+                   VALUES (?,?,?,?,?,?,?)""",
                 (payment_method, total_amount, discount_amount, final_amount,
-                 int(is_packaging), request_id),
+                 int(is_packaging), request_id, (memo or "").strip()[:200]),
             )
         except sqlite3.IntegrityError:
             existing = conn.execute(

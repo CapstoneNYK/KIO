@@ -70,6 +70,8 @@ CART_CASES = [
     ("디카페인 라떼 하수로 바꿔줘", DECAF_LINES, C("modify", {"type": "set_temperature", "menu": "디카페인 라떼", "temperature": "HOT"})),
     ("키카페인 라떼 핫으로 바꿔줘", DECAF_LINES, C("modify", {"type": "set_temperature", "menu": "디카페인 라떼", "temperature": "HOT"})),
     ("티카페인 라떼 핫으로 바꿔줘", DECAF_LINES, C("modify", {"type": "set_temperature", "menu": "디카페인 라떼", "temperature": "HOT"})),
+    ("라떼 따뜻한 거 말고 차가운 걸로 바꿔줘", ["따뜻한 카페라떼"], C("modify", {"type": "set_temperature", "menu": "카페라떼", "temperature": "ICE"})),
+    ("아메리카노 아이스 말고 따뜻한 걸로 바꿔줘", ["아이스 아메리카노"], C("modify", {"type": "set_temperature", "menu": "아메리카노", "temperature": "HOT"})),
     ("아이스가 아니라 다 핫이라고", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     ("아이스가 아니라 다 하시라고", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),
     ("아이스가 아니라 다 하신대", TEMP_CART, C("modify", {"type": "set_temperature_all", "temperature": "HOT"})),

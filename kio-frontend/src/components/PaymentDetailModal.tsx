@@ -3,6 +3,9 @@ import { LuX, LuTag } from "react-icons/lu";
 import { useCartStore, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
+import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
+import { PaymentCompleteModal } from "./PaymentCompleteModal";
+import { CouponScanner } from "./CouponScanner";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -29,6 +32,7 @@ async function saveOrderWithRetry(body: unknown, maxAttempts = 3): Promise<SaveR
         return { ok: false, rejected: true, message: typeof data?.detail === "string" ? data.detail : undefined };
       }
     } catch {
+      // 네트워크 오류: 잠시 뒤 다시 시도
     }
     if (attempt < maxAttempts) await sleep(500 * attempt);
   }
@@ -40,9 +44,6 @@ const PAYMENT_LABELS: Record<string, string> = {
   naver: "네이버페이", voucher: "모바일상품권", giftcard: "기프트카드",
   kt: "KT VIP", tmembership: "T멤버십", cjone: "CJ ONE", uzu: "T우주",
 };
-import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "../assets";
-import { PaymentCompleteModal } from "./PaymentCompleteModal";
-import { CouponScanner } from "./CouponScanner";
 
 interface PaymentDetailModalProps {
   method: string;
@@ -428,6 +429,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const cartItems = useCartStore((s) => s.items);
   const isPackaging = useCartStore((s) => s.isPackaging);
+  const memo = useCartStore((s) => s.memo);
   const coupons = useCouponStore((s) => s.coupons);
 
   useEffect(() => {
@@ -453,6 +455,7 @@ export const PaymentDetailModal = ({ method, onClose, onCancel }: PaymentDetailM
       final_amount: totalAmount - discountAmount,
       is_packaging: isPackaging,
       request_id: requestIdRef.current,
+      memo,
       items: cartItems.map((i) => ({
         menu_name: i.item.title,
         temperature: i.temperature,

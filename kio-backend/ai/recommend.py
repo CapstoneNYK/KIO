@@ -2,7 +2,6 @@ import json
 import re
 
 from pydantic import BaseModel
-from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
@@ -10,7 +9,6 @@ from ai.dictionary import MENU_DICTIONARY
 from ai.llm import get_llm
 from app.admin import db as admin_db
 
-load_dotenv()
 
 _qa_llm = get_llm(temperature=0)
 

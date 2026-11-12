@@ -60,17 +60,67 @@ _STT_TEA_T = re.compile(r"(?<![A-Za-z])[Tt](?![A-Za-z])(?=\s*(?:로|가|를|는|
 _STT_DISCOUNT = re.compile(r"할인\s*(?:에\s*등|해택|헤택|혜택|에\s*택)")
 _STT_QTY2 = re.compile(r"(?<![가-힣])[조주]\s*잔")
 _STT_AA = re.compile(r"아바(?:랑|하라)")
+_STT_MENU = [  # 어르신 발음·STT에서 자주 틀리는 메뉴 이름
+    (re.compile(r"아메리카[도오]"), "아메리카노"),
+    (re.compile(r"카푸치[도누나오]"), "카푸치노"),
+    (re.compile(r"카페\s*나[떼때]"), "카페라떼"),
+    (re.compile(r"마[키끼]아[또토]"), "마키아토"),
+    (re.compile(r"에스프레[쏘소]"), "에스프레소"),
+    (re.compile(r"쥬스"), "주스"),
+    (re.compile(r"(?<![가-힣])아메(?!리)"), "아메리카노"),
+]
+_EN_WORDS = [  # 영어로 말하거나 영어 섞어 말하는 손님: 소문자로 바꾼 뒤 한국어로 옮긴다
+    (re.compile(r"\bamericano\b"), "아메리카노"), (re.compile(r"\bcaf[eé]\s*latte\b|\blatte\b"), "카페라떼"),
+    (re.compile(r"\bcappuccino\b"), "카푸치노"), (re.compile(r"\bespresso\b"), "에스프레소"),
+    (re.compile(r"\bvanilla\s*latte\b"), "바닐라라떼"), (re.compile(r"\bcaramel\s*macchiato\b"), "카라멜마키아토"),
+    (re.compile(r"\bgrapefruit\s*ade\b"), "자몽 에이드"), (re.compile(r"\blemon\s*ade\b"), "레몬 에이드"),
+    (re.compile(r"\b(?:iced|ice|cold)\b"), "아이스"), (re.compile(r"\b(?:hot|warm)\b"), "따뜻한"),
+    (re.compile(r"\b(?:one|1)\b"), "한 잔"), (re.compile(r"\b(?:two|2)\b"), "두 잔"),
+    (re.compile(r"\b(?:three|3)\b"), "세 잔"), (re.compile(r"\b(?:four|4)\b"), "네 잔"),
+    (re.compile(r"\bplease\b|\bpls\b"), "주세요"), (re.compile(r"\bto\s*go\b|\btake\s*out\b|\btakeout\b"), "포장"),
+    (re.compile(r"\bcard\b"), "카드"),
+]
+_STT_PLEASE = re.compile(r"(?<![가-힣])원\s*(?=플리즈|주세요)")
+_STT_PLEASE_WORD = re.compile(r"플리[즈스]")
+_STT_FILLER_A = re.compile(r"(?<![가-힣])[아어음]\s+(?=아[가-힣])")  # "아 아이스…"·"아 아메리카노"의 말머리 '아'는 '아아'로 붙어 읽히므로 뺀다
 _STT_AA_SPLIT = re.compile(r"(?<![가-힣])아\s+아(?![가-힣])")  # "아 아"처럼 띄어 인식된 아이스 아메리카노 줄임말
 
 
+def _english_to_korean(text: str) -> str:
+    if not re.search(r"[A-Za-z]{3,}", text):
+        return text
+    low = text.lower()
+    for rx, ko in _EN_WORDS:
+        low = rx.sub(ko, low)
+    return low
+
+
+_STT_REPEAT = re.compile(r"(?<![가-힣])((?:[가-힣]+ ){0,2}[가-힣]{2,})\s+\1(?![가-힣])")
+
+
+def _collapse_repeats(text: str) -> str:
+    """인식기가 같은 말을 두 번 붙여 적은 경우("아이스 아메리카노 아이스 아메리카노 하나")를 한 번으로."""
+    def one(m):
+        return m.group(1) if len(m.group(1).replace(" ", "")) >= 4 else m.group(0)
+    text = re.sub(r"(?<![가-힣])(아아|뜨아|따아)(?:\s+\1)+(?![가-힣])", r"\1", text)
+    return _STT_REPEAT.sub(one, text)
+
+
 def fix_stt_errors(text: str) -> str:
+    text = _collapse_repeats(text)
+    text = _english_to_korean(text)
+    text = _STT_PLEASE.sub("한 잔 ", text)
+    text = _STT_PLEASE_WORD.sub("주세요", text)
     text = _STT_DECAF.sub("디카페인", text)
     text = _STT_HOT.sub("핫으로", text)
     text = _STT_TEA_T.sub("티", text)
     text = _STT_DISCOUNT.sub("할인혜택", text)
     text = _STT_QTY2.sub("두 잔", text)
     text = _STT_AA.sub("아아 ", text)
+    for rx, fixed in _STT_MENU:
+        text = rx.sub(fixed, text)
     text = _STT_AA_SPLIT.sub("아아", text)
+    text = _STT_FILLER_A.sub("", text)
     return _STT_SHOT.sub("샷", text)
 
 
@@ -80,11 +130,17 @@ def normalize_text(text: str) -> str:
     text = "".join(_unify_ae_e(ch) for ch in text)
     return text
 
-_SHOT_NUM_STRIP = re.compile(r"(?:샷|샤)\s*(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:개|번|잔|샷|게)?|(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:샷|샤)")
+_SHOT_NUM_STRIP = re.compile(r"(?:샷|샤)\s*(?:을|를)?\s*(?:더\s*)?추가\s*(?:해서|해|로|요)?\s*(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:번|샷)|(?:샷|샤)\s*(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:개|번|잔|샷|게)?|(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:샷|샤)")
+
+
+_QTY_FIX = re.compile(r"(?:아니|아냐|아니야|아니다)[\s,]*(?:[가-힣]{0,4}\s*)?((?:\d+|한|하나|두|둘|세|셋|네|넷|다섯|여섯|일곱|여덟|아홉|열)\s*(?:잔|개|게|컵))")
 
 
 def extract_quantity(text: str) -> int:
     text = _SHOT_NUM_STRIP.sub(" ", text)
+    fix = _QTY_FIX.search(text)
+    if fix:  # "아아 하나 아니 두 잔" — 고쳐 말한 수량을 따른다
+        text = fix.group(1)
     m = re.search(r"(\d+)\s*(?:잔|개|게|컵)", text)
     if m:
         return int(m.group(1))
@@ -184,6 +240,7 @@ _NUM = r"(\d+|한|하나|두|둘|세|셋|네|넷|다섯)"
 _SHOT_COUNT_RES = [
     _rx(r"(?:샷|샤|셔츠)(?:을|를|은)?" + _NUM + r"(?:개|번|잔|샷)?(?:만)?(?:더)?(?:추가|넣|더)"),
     _rx(_NUM + r"(?:샷|샤)(?:만)?(?:더)?(?:추가|넣|더)"),
+    _rx(r"(?:샷|샤|셔츠)(?:을|를)?(?:더)?추가(?:를)?(?:해서|해|로|요)?" + _NUM + r"(?:번|샷)"),  # "샷 추가 두 번"
 ]
 _SHOT_PLAIN_RE = _rx(r"(?:샷|샤|셔츠)(?:을|를)?(?:더)?(?:추가|넣|더)|추가샷")
 _SHOT_MULTI = {"더블샷": 1, "트리플샷": 2}
@@ -440,6 +497,11 @@ def _per_unit_orders(text: str, menu_names: Optional[list]) -> Optional[list]:
     if not base["menu"]:
         return None
     total = extract_quantity(prefix)
+    if len(starts) == 1:  # "아메리카노 하나만 따뜻하게"의 '하나만'은 수량 말버릇이지 잔별 나눔이 아니다
+        g1 = starts[0].group(1)
+        n1 = int(g1) if g1.isdigit() else _UNIT_NUM.get(g1, 1)
+        if total <= n1:
+            return None
     packaging = extract_packaging(text)
     out, used = [], 0
     for i, m in enumerate(starts):
@@ -460,12 +522,39 @@ def _per_unit_orders(text: str, menu_names: Optional[list]) -> Optional[list]:
     return out
 
 
+_QTY_END = re.compile(
+    r"(?:하나|한\s*잔|한\s*개|두\s*잔|두\s*개|세\s*잔|세\s*개|네\s*잔|네\s*개|둘|셋|\d+\s*(?:잔|개))"
+    r"(?:씩|만)?(?:\s*(?:해\s*)?(?:주세요|주세여|줘요|줘|주십시오|주이소))?"
+)
+
+
+def _split_after_qty(text: str, menu_names: Optional[list]) -> list:
+    """수량 말 뒤에 또 다른 메뉴가 이어지면 거기서 나눈다 (이음말 없는 여러 메뉴 주문)."""
+    if not menu_names:
+        return [text]
+    cuts, last = [], 0
+    for m in _QTY_END.finditer(text):
+        e = m.end()
+        if e <= last:
+            continue
+        rest = text[e:]
+        if len(normalize_text(rest)) >= 3 and extract_menu(text[last:e], menu_names) and extract_menu(rest, menu_names):
+            cuts.append(e)
+            last = e
+    if not cuts:
+        return [text]
+    bounds = [0, *cuts, len(text)]
+    return [text[a:b] for a, b in zip(bounds, bounds[1:]) if text[a:b].strip()]
+
+
 def extract_multi_order(text: str, menu_names: list = None) -> list:
     text = fix_stt_errors(text)
     per_unit = _per_unit_orders(text, menu_names)
     if per_unit:
         return per_unit
     parts = MULTI_SPLIT_PATTERN.split(text)
+    if len(parts) == 1:  # "아이스 아메리카노 하나 따뜻한 라떼 하나"처럼 이음말 없이 이어 말한 경우
+        parts = _split_after_qty(text, menu_names)
     if len(parts) > 1:
         results = []
         for part in parts:

@@ -23,7 +23,7 @@ _RE_COUPON_ACT = _rx(r"쓸게|쓰고|쓰려|사용|스캔|찍을|찍어|있어�
 _RE_ORDINAL = _rx(r"\d+번(?:으로|째|거|걸|이요)?|[한두세네다섯]번째")
 _RE_QA_PAY = _rx(r"(?:결제|계산)하면.*(?:영수증|나와요|나오나|나옵)|영수증")
 _RE_DISCOUNT_MENU = _rx(r"할인(?:되는|받는|가능한|적용)?메뉴")
-_RE_HAS_QTY = _rx(r"\d+(?:잔|개|병)|한잔|두잔|세잔|네잔|하나|둘|셋|한개|두개")
+_RE_HAS_QTY = _rx(r"\d+(?:잔|개|병|컵)|[한두세네]잔|[한두세네]개|[한두세네]컵|다섯잔|다섯개|하나|둘|셋|넷")
 
 
 def fast_classify(query: str, menu_names: Optional[list] = None) -> Optional[str]:

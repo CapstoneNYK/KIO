@@ -22,7 +22,7 @@ function sino(n: number): string {
   const tens = Math.floor(n / 10);
   return (tens === 1 ? "" : SINO[tens]) + "십" + SINO[n % 10];
 }
-export function toSpoken(text: string): string {
+function toSpoken(text: string): string {
   return text
     .replace(/(\d+)\s*번/g, (_, d) => `${sino(Number(d))} 번`)
     .replace(/(\d+)\s*(잔|개|병|줄)/g, (m, d, unit) => {
@@ -113,6 +113,7 @@ export async function speak(rawText: string, onDone?: () => void) {
         await a.play();
         return;
       } catch {
+        // 자동 재생이 막히면 아래 브라우저 음성으로 대신 읽는다
       }
     } else {
       serverRetryAt = Date.now() + 60_000;

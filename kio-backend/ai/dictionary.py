@@ -71,6 +71,12 @@ ATTRIBUTE_KEYWORDS: dict[str, str] = {
     "뜨라": "hot",
     "차갑게": "ice",
     "시원하게": "ice",
+    "찬 거": "ice",
+    "찬 걸": "ice",
+    "찬 것": "ice",
+    "찬 음료": "ice",
+    "찬 커피": "ice",
+    "차거운": "ice",
 }
 
 MENU_DICTIONARY: dict[str, str] = {

@@ -207,7 +207,8 @@ def cart_answer(
     parts = []
     if named:
         items_str = ", ".join(
-            f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}{_option_text(o)}"
+            f"{'아이스' if o['temperature'] == 'ICE' else '따뜻한'} {o['menu']}"
+            f"{' ' + str(o['quantity']) + '잔' if o.get('quantity', 1) > 1 else ''}{_option_text(o)}"
             for o in named
         )
         if pay_suffix is None:
