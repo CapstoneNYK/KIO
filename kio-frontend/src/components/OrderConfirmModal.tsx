@@ -34,7 +34,7 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
     const parts: string[] = [];
     parts.push(`${cartItem.item.title}(${cartItem.temperature})`);
     const activeOptions = cartItem.options.filter((o) => o.count > 0);
-    activeOptions.forEach((o) => parts.push(`+${o.name}`));
+    activeOptions.forEach((o) => parts.push(o.count > 1 ? `+${o.name} ×${o.count}` : `+${o.name}`));
     return parts;
   };
 
