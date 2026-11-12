@@ -67,12 +67,50 @@ _STT_MENU = [  # 어르신 발음·STT에서 자주 틀리는 메뉴 이름
     (re.compile(r"마[키끼]아[또토]"), "마키아토"),
     (re.compile(r"에스프레[쏘소]"), "에스프레소"),
     (re.compile(r"쥬스"), "주스"),
+    (re.compile(r"(?<![가-힣])아메(?!리)"), "아메리카노"),
 ]
+_EN_WORDS = [  # 영어로 말하거나 영어 섞어 말하는 손님: 소문자로 바꾼 뒤 한국어로 옮긴다
+    (re.compile(r"\bamericano\b"), "아메리카노"), (re.compile(r"\bcaf[eé]\s*latte\b|\blatte\b"), "카페라떼"),
+    (re.compile(r"\bcappuccino\b"), "카푸치노"), (re.compile(r"\bespresso\b"), "에스프레소"),
+    (re.compile(r"\bvanilla\s*latte\b"), "바닐라라떼"), (re.compile(r"\bcaramel\s*macchiato\b"), "카라멜마키아토"),
+    (re.compile(r"\bgrapefruit\s*ade\b"), "자몽 에이드"), (re.compile(r"\blemon\s*ade\b"), "레몬 에이드"),
+    (re.compile(r"\b(?:iced|ice|cold)\b"), "아이스"), (re.compile(r"\b(?:hot|warm)\b"), "따뜻한"),
+    (re.compile(r"\b(?:one|1)\b"), "한 잔"), (re.compile(r"\b(?:two|2)\b"), "두 잔"),
+    (re.compile(r"\b(?:three|3)\b"), "세 잔"), (re.compile(r"\b(?:four|4)\b"), "네 잔"),
+    (re.compile(r"\bplease\b|\bpls\b"), "주세요"), (re.compile(r"\bto\s*go\b|\btake\s*out\b|\btakeout\b"), "포장"),
+    (re.compile(r"\bcard\b"), "카드"),
+]
+_STT_PLEASE = re.compile(r"(?<![가-힣])원\s*(?=플리즈|주세요)")
+_STT_PLEASE_WORD = re.compile(r"플리[즈스]")
 _STT_FILLER_A = re.compile(r"(?<![가-힣])[아어음]\s+(?=아[가-힣])")  # "아 아이스…"·"아 아메리카노"의 말머리 '아'는 '아아'로 붙어 읽히므로 뺀다
 _STT_AA_SPLIT = re.compile(r"(?<![가-힣])아\s+아(?![가-힣])")  # "아 아"처럼 띄어 인식된 아이스 아메리카노 줄임말
 
 
+def _english_to_korean(text: str) -> str:
+    if not re.search(r"[A-Za-z]{3,}", text):
+        return text
+    low = text.lower()
+    for rx, ko in _EN_WORDS:
+        low = rx.sub(ko, low)
+    return low
+
+
+_STT_REPEAT = re.compile(r"(?<![가-힣])((?:[가-힣]+ ){0,2}[가-힣]{2,})\s+\1(?![가-힣])")
+
+
+def _collapse_repeats(text: str) -> str:
+    """인식기가 같은 말을 두 번 붙여 적은 경우("아이스 아메리카노 아이스 아메리카노 하나")를 한 번으로."""
+    def one(m):
+        return m.group(1) if len(m.group(1).replace(" ", "")) >= 4 else m.group(0)
+    text = re.sub(r"(?<![가-힣])(아아|뜨아|따아)(?:\s+\1)+(?![가-힣])", r"\1", text)
+    return _STT_REPEAT.sub(one, text)
+
+
 def fix_stt_errors(text: str) -> str:
+    text = _collapse_repeats(text)
+    text = _english_to_korean(text)
+    text = _STT_PLEASE.sub("한 잔 ", text)
+    text = _STT_PLEASE_WORD.sub("주세요", text)
     text = _STT_DECAF.sub("디카페인", text)
     text = _STT_HOT.sub("핫으로", text)
     text = _STT_TEA_T.sub("티", text)
@@ -95,8 +133,14 @@ def normalize_text(text: str) -> str:
 _SHOT_NUM_STRIP = re.compile(r"(?:샷|샤)\s*(?:을|를)?\s*(?:더\s*)?추가\s*(?:해서|해|로|요)?\s*(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:번|샷)|(?:샷|샤)\s*(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:개|번|잔|샷|게)?|(?:\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:샷|샤)")
 
 
+_QTY_FIX = re.compile(r"(?:아니|아냐|아니야|아니다)[\s,]*(?:[가-힣]{0,4}\s*)?((?:\d+|한|하나|두|둘|세|셋|네|넷|다섯|여섯|일곱|여덟|아홉|열)\s*(?:잔|개|게|컵))")
+
+
 def extract_quantity(text: str) -> int:
     text = _SHOT_NUM_STRIP.sub(" ", text)
+    fix = _QTY_FIX.search(text)
+    if fix:  # "아아 하나 아니 두 잔" — 고쳐 말한 수량을 따른다
+        text = fix.group(1)
     m = re.search(r"(\d+)\s*(?:잔|개|게|컵)", text)
     if m:
         return int(m.group(1))

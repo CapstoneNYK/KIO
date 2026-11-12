@@ -20,6 +20,7 @@ _RE_EVERY = _rx(r"전부|모두|전체|싹|다(?=취소|빼|삭제|지워|지우
 _RE_CART_WIDE = _rx(r"주문|장바구니|처음부터|다시시작")
 _RE_EXISTING = _rx(r"담은|담아둔|시킨|넣은|주문한|담긴|장바구니|있는|방금|아까|처음에")
 _RE_PART = _rx(r"(\d+|한|하나|두|둘|세|셋|네|넷)(?:개|잔)?(?:는|만|은)")
+_RE_MINUS_N = _rx(r"(\d+|한|하나|두|둘|세|셋)(?:잔|개|컵)(?:만|은|는)?(?:빼|취소|줄여|줄이|덜)")
 _RE_THAT = _rx(r"(?:그거|그건|이거|이건|그걸|이걸)(?:는|은)?(?:좀)?(?:취소|빼|삭제|지워)")
 
 _RE_CANCEL_STRONG = _rx(r"취소|삭제|지워|지우|제거|필요없|안마실|안할래|안먹")
@@ -342,6 +343,22 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
     resolved = _resolve_pending(text, t, cart, menus, by_name, menu_names)
     if resolved is not None:
         return resolved
+
+    minus = _RE_MINUS_N.search(t)
+    if minus and cart:  # "한 잔 빼줘" — 장바구니 줄이 하나(또는 메뉴를 말함)면 그만큼만 줄인다
+        want = extract_menu(text, menu_names)
+        lines = [c for c in cart if not want or c["menu"] == want]
+        if len(lines) == 1:
+            line = lines[0]
+            g = minus.group(1)
+            n = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
+            if n >= line["quantity"]:
+                return _result("cancel", f"{_eul(line['menu'])} 장바구니에서 뺐어요.",
+                               [{"type": "remove_item", "menu": line["menu"], "temperature": line["temperature"]}])
+            left = line["quantity"] - n
+            return _result("modify", f"{_eul(line['menu'])} {left}개로 줄였어요.",
+                           [{"type": "set_quantity", "menu": line["menu"], "quantity": left,
+                             "temperature": line["temperature"]}])
 
     tall = None
     if not extract_menu(text, menu_names) or _RE_TEMP_ALL.search(t):

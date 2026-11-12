@@ -411,6 +411,100 @@ def _finish_with_defaults(queue: list, menus: list[dict]) -> dict:
     return res
 
 
+_CHANGE_CUE = _rx(r"아니|말고|바꿔|바꿀|바꾸|로할래|로할게|로할께|로하겠|로주세요|로줘")
+_PARTICLE = "는은이가를을도로으만요"
+_HAS_QTY = re.compile(r"(\d+|한|하나|두|둘|세|셋|네|넷|다섯)\s*(?:잔|개|컵)")
+
+
+def _refers_to(text: str, menu: str) -> bool:
+    """말 속의 단어가 지금 정하는 메뉴 이름의 일부인지 ("라떼는" → 바닐라라떼)."""
+    name = normalize_text(menu)
+    for w in re.findall(r"[가-힣]+", text):
+        w = w.rstrip(_PARTICLE) or w
+        if len(w) >= 2 and normalize_text(w) in name:
+            return True
+    return False
+
+
+_ALL_WORD = _rx(r"둘다|셋다|모두|전부|다같이|다(?=따뜻|따듯|아이스|뜨겁|차갑|시원|핫)|같은걸로|똑같이")
+
+
+def _answer_temps(queue: list, text: str, t: str, by_name: dict, menus: list) -> Optional[dict]:
+    """메뉴가 여럿일 때 한 번에 답하는 경우: "둘 다 따뜻하게", "아메리카노는 아이스 라떼는 따뜻하게"."""
+    waiting = [h for h in queue if "temperature" in missing_slots(
+        h["order"], by_name.get(h["order"]["menu"], {}), h["asked"])]
+    if len(waiting) < 2:
+        return None
+
+    def supports(h, v):
+        temps = by_name.get(h["order"]["menu"], {}).get("temps") or []
+        return not temps or v in temps
+
+    hot, ice = bool(_HOT.search(t)), bool(_ICE.search(t))
+    picked: dict[int, str] = {}
+    if _ALL_WORD.search(t) and hot != ice:
+        v = "HOT" if hot else "ICE"
+        for h in waiting:
+            if supports(h, v):
+                picked[id(h)] = v
+    else:
+        cur = None
+        for w in re.findall(r"[가-힣]+", text):
+            base = w.rstrip(_PARTICLE) or w
+            for h in waiting:
+                if id(h) not in picked and len(base) >= 2 and normalize_text(base) in normalize_text(h["order"]["menu"]):
+                    cur = h
+                    break
+            wn = normalize_text(w)
+            v = "HOT" if _HOT.search(wn) and not _ICE.search(wn) else "ICE" if _ICE.search(wn) and not _HOT.search(wn) else None
+            if v and cur is not None and id(cur) not in picked and supports(cur, v):
+                picked[id(cur)] = v
+                cur = None
+    if not picked:
+        return None
+    acks = []
+    for h in waiting:
+        if id(h) in picked:
+            _apply(h["order"], "temperature", picked[id(h)])
+            acks.append(f"{h['order']['menu']} {'따뜻하게' if picked[id(h)] == 'HOT' else '차갑게'}")
+    return _advance(queue, [], menus, ", ".join(acks) + " 알겠어요.")
+
+
+def _temp_fix(order: dict, info: dict, t: str) -> Optional[str]:
+    """명시적인 온도 말('아이스로', '따뜻한 걸로')이 지금 온도와 다르면 바꾸고 안내 문구를 돌려준다."""
+    hot, ice = bool(_HOT.search(t)), bool(_ICE.search(t))
+    if hot == ice:
+        return None
+    new = "HOT" if hot else "ICE"
+    temps = info.get("temps") or []
+    if (temps and new not in temps) or order.get("temperature") == new or not order.get("temp_explicit"):
+        return None
+    order["temperature"] = new
+    return P.ACK["temperature"][new]
+
+
+def _swap_menu(state: dict, text: str, new_menu: str, by_name: dict, menus: list) -> dict:
+    """묻는 도중 다른 메뉴로 바꾸겠다고 하면 지금 주문의 메뉴만 갈아끼우고 처음부터 다시 묻는다."""
+    queue = state["queue"]
+    head = queue[0]
+    order = head["order"]
+    old = order["menu"]
+    order["menu"] = new_menu
+    order["option_details"], order["options"] = [], []
+    m = _HAS_QTY.search(text)
+    if m:
+        g = m.group(1)
+        order["quantity"] = int(g) if g.isdigit() else _COUNT_WORDS.get(g, order.get("quantity", 1))
+    temps = by_name[new_menu].get("temps") or []
+    order["temp_explicit"] = len(temps) == 1
+    if len(temps) == 1:
+        order["temperature"] = temps[0]
+    head["asked"] = list(OPTIONAL_SLOTS) if head.get("lite") else []
+    head["retries"] = 0
+    ack = P.MENU_SWAPPED.format(new=new_menu)
+    return _advance(queue, [], menus, ack)
+
+
 def answer_slot(state: dict, text: str, menus: list[dict],
                 cart_items: Optional[list] = None, detect_command=None) -> Optional[dict]:
     """열려 있는 대화에 대한 사용자의 답을 처리한다.
@@ -433,8 +527,17 @@ def answer_slot(state: dict, text: str, menus: list[dict],
     t = normalize_text(text)
     if _CANCEL.search(t):
         return _result(None, [], P.CANCELLED, done=True)
-    if extract_menu(text, list(by_name)):  # 새 메뉴를 말하면 새 주문으로 본다
-        return None
+    if slot == "temperature" and len(queue) >= 2:
+        multi = _answer_temps(queue, text, t, by_name, menus)
+        if multi is not None:
+            return multi
+    mentioned = extract_menu(text, list(by_name))
+    if mentioned and _refers_to(text, order["menu"]):
+        mentioned = None  # "라떼는 따뜻하게"처럼 지금 정하는 메뉴를 가리키는 말
+    if mentioned and mentioned != order["menu"]:
+        if not _CHANGE_CUE.search(t):  # 새 메뉴를 말하면 새 주문으로 본다
+            return None
+        return _swap_menu(state, text, mentioned, by_name, menus)  # "아니 아메리카노로 할래" — 메뉴를 바꾼다
 
     if slot == "temperature" and order.get("quantity", 1) >= 2:
         split = _temp_split(text, order["quantity"])
@@ -449,6 +552,11 @@ def answer_slot(state: dict, text: str, menus: list[dict],
             head["lite"] = True
             queue.insert(1, {"order": rest, "asked": ["temperature", *skip], "pending": None, "retries": 0, "lite": True})
             return _advance(queue, [], menus, P.TEMP_SPLIT_ACK.format(hot=hot_n, ice=ice_n))
+
+    if slot != "temperature":  # 샷·연하게를 묻는 중에 "아니 아이스로"처럼 온도를 고치는 경우
+        fixed = _temp_fix(order, info, t)
+        if fixed:
+            return _result({"queue": queue}, [], f"{fixed} {_question(slot, order)}")
 
     pre = ""
     if slot == "temperature":  # "샷 추가해서 따뜻하게"처럼 묻기 전에 먼저 말한 옵션은 바로 반영

@@ -56,3 +56,5 @@ MEMO_SAVED = "'{memo}' 요청사항으로 적어 둘게요. 더 필요한 건 �
 TEMP_SPLIT_ACK = "따뜻한 거 {hot}잔, 차가운 거 {ice}잔으로 할게요."
 ASK_MORE_SHORT = "더 필요한 건 없으세요?"
 AGAIN_ADDED = "{item} 더 담았어요."
+
+MENU_SWAPPED = "알겠어요, {new} 쪽으로 바꿀게요."

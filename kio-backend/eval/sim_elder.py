@@ -55,6 +55,9 @@ class Kiosk:
         self.paid = False
         self.log: list[tuple[str, str]] = []
         clear_pending()
+        main._last_asked.clear()
+        main._pending_temp.clear()
+        main._last_recommended_menus.clear()
 
     # --- 프론트가 서버로 보내는 장바구니 문자열
     def cart_items(self) -> list[str]:
@@ -159,6 +162,31 @@ class Kiosk:
 
 # (제목, 발화 목록, 기대 장바구니, 결제 이동 기대, 비고)
 from eval.sim_scenarios import SCENARIOS  # noqa: E402
+from eval.sim_scenarios_cafe import CAFE_SCENARIOS  # noqa: E402
+
+if "--cafe" in sys.argv:       # 카페 손님 유형별 시나리오만
+    SCENARIOS = CAFE_SCENARIOS
+else:
+    SCENARIOS = SCENARIOS + CAFE_SCENARIOS
+
+_orig_get_menus = admin_db.get_menus
+
+
+def _with_sold_out(title):
+    """제목이 '[품절:메뉴]' 로 시작하면 그 메뉴를 품절로 둔다."""
+    import re
+    m = re.match(r"\[품절:([^\]]+)\]", title)
+    names = {m.group(1)} if m else set()
+
+    def patched():
+        out = []
+        for x in _orig_get_menus():
+            x = dict(x)
+            if x["name"] in names:
+                x["sold_out"] = True
+            out.append(x)
+        return out
+    admin_db.get_menus = patched
 
 
 def run():
@@ -168,6 +196,7 @@ def run():
         if title.startswith("[LLM]") and not USE_LLM:  # LLM이 있어야 판단되는 시나리오
             skipped += 1
             continue
+        _with_sold_out(title)
         k = Kiosk()
         for u in utterances:
             k.say(u)
