@@ -1,33 +1,62 @@
-import { useSTT } from "../utils/sttUtil";
+import { useServerSTT } from "../utils/serverSttUtil";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { askApi } from "../api/askApi";
+import { askApi, sendFeedback } from "../api/askApi";
+import type { CartAction, DialogState } from "../api/askApi";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
-import { MENUS } from "../data/menus";
+import { useMenuStore } from "../store/menuStore";
 import type { MenuItem, Temperature, MenuOption } from "../types/menu";
+import { useChatPrefs } from "../store/chatPrefsStore";
+import {
+  speak, stopSpeaking, summarizeForSpeech, ttsSupported,
+  GREETING_TEXT, GREETING_SPEECH, GREETING_EXAMPLES,
+} from "../utils/tts";
 
-type Message = { role: "user" | "bot"; text: string };
+type Message = {
+  role: "user" | "bot";
+  text: string;
+  recommended?: string[];
+  asked?: string;
+  intent?: string;
+  reported?: boolean;
+};
 
-function findMenuItem(menuName: string | null): MenuItem | null {
+function BotText({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      {text.split("\n").map((line, idx) => {
+        const m = line.match(/^(\d+)\s*(?:번|\.)\s*(.+)$/);
+        if (!m) return <p key={idx} className="text-[1em] leading-relaxed break-keep">{line}</p>;
+        return (
+          <p key={idx} className="flex items-start gap-2 text-[1em] leading-relaxed break-keep">
+            <span className="mt-0.5 flex h-[1.5em] w-[1.5em] shrink-0 items-center justify-center rounded-full bg-pink-500 text-[0.8em] font-bold text-white">
+              {m[1]}
+            </span>
+            <span className="font-semibold">{m[2]}</span>
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function findMenuItem(menuName: string | null, menus: MenuItem[]): MenuItem | null {
   if (!menuName) return null;
   const normalized = menuName.replace(/\s/g, "").toLowerCase();
 
-  // 정확히 일치하는 항목 우선
-  const exact = MENUS.find(
+  const exact = menus.find(
     (m) => m.title.replace(/\s/g, "").toLowerCase() === normalized
   );
   if (exact) return exact;
 
-  // 메뉴 타이틀이 쿼리를 포함하는 경우
-  const titleContains = MENUS.find((m) =>
+  const titleContains = menus.find((m) =>
     m.title.replace(/\s/g, "").toLowerCase().includes(normalized)
   );
   if (titleContains) return titleContains;
 
-  // 쿼리가 메뉴 타이틀을 포함하는 경우 — 가장 긴 타이틀 우선 (아메리카노 < 디카페인 아메리카노)
-  const candidates = MENUS.filter((m) =>
+  const candidates = menus.filter((m) =>
     normalized.includes(m.title.replace(/\s/g, "").toLowerCase())
   );
   if (candidates.length === 0) return null;
@@ -45,18 +74,33 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const {
     transcript,
     listening,
+    processing,
     startListening,
     stopListening,
     resetTranscript,
-  } = useSTT("ko-KR");
+  } = useServerSTT("ko");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [lastRecommended, setLastRecommended] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // 옵션 되묻기(슬롯 채우기) 대화 상태: 서버가 만들고 다음 요청에 그대로 되돌려 보낸다.
+  // 창을 닫아도 지우지 않아서 다시 열면 중단된 질문부터 이어진다.
+  const dialogRef = useRef<DialogState | null>(null);
+  // 질문을 말한 뒤 마이크를 자동으로 다시 켤지
+  const autoListen = useRef(false);
+  const ttsOn = useChatPrefs((s) => s.ttsOn) && ttsSupported;
+  const spokenCount = useRef(0);
+  const greeted = useRef(false);
   const location = useLocation();
   const addItem = useCartStore((s) => s.addItem);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const updateQuantity = useCartStore((s) => s.updateQuantity);
+  const updateTemperature = useCartStore((s) => s.updateTemperature);
+  const updateOptions = useCartStore((s) => s.updateOptions);
+  const clearCart = useCartStore((s) => s.clear);
+  const setIsPackaging = useCartStore((s) => s.setIsPackaging);
   const cartItems = useCartStore((s) => s.items);
-  const isPackaging = useCartStore((s) => s.isPackaging);
+  const menus = useMenuStore((s) => s.menus);
   const openScan = useCouponStore((s) => s.openScan);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
   const setHighlightPaymentMethod = useLearningStore(
@@ -65,6 +109,74 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const dismissPaymentOverlay = useLearningStore(
     (s) => s.dismissPaymentOverlay
   );
+
+  const applyCartActions = (actions: CartAction[]) => {
+    const current = useCartStore.getState().items;
+    const lines = (menu: string, temperature?: Temperature | null) =>
+      current.filter(
+        (i) => i.item.title === menu && (!temperature || i.temperature === temperature)
+      );
+
+    for (const action of actions) {
+      if (action.type === "remove_all") {
+        clearCart();
+      } else if (action.type === "remove_last") {
+        const all = useCartStore.getState().items;
+        const last = all[all.length - 1];
+        if (last) removeItem(last.cartId);
+      } else if (action.type === "remove_item") {
+        lines(action.menu, action.temperature).forEach((i) => removeItem(i.cartId));
+      } else if (action.type === "set_quantity") {
+        const found = lines(action.menu, action.temperature);
+        const target = found[found.length - 1];
+        if (target) updateQuantity(target.cartId, action.quantity);
+      } else if (action.type === "set_temperature") {
+        const found = lines(action.menu);
+        const target = found[found.length - 1];
+        if (target) updateTemperature(target.cartId, action.temperature);
+      } else if (action.type === "set_temperature_part") {
+        // "두 잔 중 한 잔만 따뜻하게": 일부만 온도를 바꾸면 줄을 나눈다
+        const found = lines(action.menu);
+        const target = found[found.length - 1];
+        if (target) {
+          const n = Math.min(action.count, target.quantity);
+          if (n >= target.quantity) {
+            updateTemperature(target.cartId, action.temperature);
+          } else {
+            updateQuantity(target.cartId, target.quantity - n);
+            addItem(target.item, n, action.temperature, target.options, target.isPackaging);
+          }
+        }
+      } else if (action.type === "set_temperature_all") {
+        current
+          .filter((i) => action.menus.includes(i.item.title))
+          .forEach((i) => updateTemperature(i.cartId, action.temperature));
+      } else if (action.type === "remove_line") {
+        action.indexes.forEach((idx) => {
+          const line = current[idx];
+          if (line) removeItem(line.cartId);
+        });
+      } else if (action.type === "set_options") {
+        const line = current[action.index];
+        if (line) {
+          if (action.count >= line.quantity) {
+            updateOptions(line.cartId, action.options);
+          } else {
+            updateQuantity(line.cartId, line.quantity - action.count);
+            addItem(line.item, action.count, line.temperature, action.options, line.isPackaging);
+          }
+        }
+      } else if (action.type === "replace_item") {
+        const found = lines(action.menu);
+        const target = found[found.length - 1];
+        const next = findMenuItem(action.to_menu, menus);
+        if (target && next) {
+          removeItem(target.cartId);
+          addItem(next, target.quantity, target.temperature, target.options, target.isPackaging);
+        }
+      }
+    }
+  };
 
   const resolveMenusFromRef = (query: string): string[] => {
     const resolved: string[] = [];
@@ -78,12 +190,20 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   };
 
   const handleButtonClick = () => {
+    stopSpeaking();
     if (listening) {
       stopListening();
-    } else {
+    } else if (!processing) {
       resetTranscript();
       startListening();
     }
+  };
+
+  const reportWrong = (index: number) => {
+    const msg = messages[index];
+    if (!msg?.asked || msg.reported) return;
+    setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, reported: true } : m)));
+    sendFeedback(msg.asked, msg.text, msg.intent ?? "").catch(() => {});
   };
 
   const handleAsk = async (query: string) => {
@@ -91,15 +211,32 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", text: query }]);
     try {
-      const cartItemNames = cartItems.map(
-        (i) =>
-          `${i.temperature === "ICE" ? "아이스" : "따뜻한"} ${i.item.title}`
-      );
-      const res = await askApi(query, cartItemNames);
+      const cartItemNames = cartItems.map((i) => {
+        const extra = [
+          ...i.options.map((o) => (o.count > 1 ? `${o.name} ×${o.count}` : o.name)),
+          ...(i.isPackaging ? ["포장"] : []),
+        ];
+        return (
+          `${i.temperature === "ICE" ? "아이스" : "따뜻한"} ${i.item.title}` +
+          (i.quantity > 1 ? ` ×${i.quantity}` : "") +
+          (extra.length ? ` (${extra.join(", ")})` : "")
+        );
+      });
+      const res = await askApi(query, cartItemNames, dialogRef.current);
+      dialogRef.current = res.dialog ?? null;
+      if (res.memo) useCartStore.getState().addMemo(res.memo);
+      autoListen.current = !!res.dialog; // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다
+      useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
       let botText = res.answer;
 
       if (res.intent === "recommend" && res.recommended_menus) {
         setLastRecommended(res.recommended_menus);
+      }
+
+      if (res.intent === "cancel" || res.intent === "modify") {
+        applyCartActions(res.cart_actions ?? []);
+        setMessages((prev) => [...prev, { role: "bot", text: botText, asked: query, intent: res.intent }]);
+        return;
       }
 
       if (res.intent === "payment") {
@@ -110,17 +247,18 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           setHighlightPaymentMethod(res.payment_method ?? null);
           setGuideScreen(res.payment_method ? "payment" : "order_confirm");
           setMessages([]);
+          useChatPrefs.getState().closeChat();
         }
         return;
       }
 
-      if (res.intent === "order" || res.intent === "order_and_pay") {
+      if (res.intent === "order" || res.intent === "order_and_pay" || res.intent === "dialog") {
         dismissPaymentOverlay();
         const ordersToProcess = res.orders ?? [];
 
         if (
-          ordersToProcess.length === 0 ||
-          ordersToProcess.every((o) => !o.menu)
+          res.intent !== "dialog" &&
+          (ordersToProcess.length === 0 || ordersToProcess.every((o) => !o.menu))
         ) {
           const refMenus = resolveMenusFromRef(query);
           const quantity = ordersToProcess[0]?.quantity ?? 1;
@@ -130,7 +268,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
               refMenu.startsWith("핫") || refMenu.startsWith("따뜻")
                 ? "HOT"
                 : "ICE";
-            const menuItem = findMenuItem(refMenu);
+            const menuItem = findMenuItem(refMenu, menus);
             if (menuItem) {
               addItem(menuItem, quantity, temperature, [], false);
               added.push(refMenu);
@@ -146,26 +284,29 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           for (const orderInfo of ordersToProcess) {
             if (!orderInfo.menu) continue;
             const temperature = (orderInfo.temperature as Temperature) ?? "ICE";
-            const menuItem = findMenuItem(orderInfo.menu);
-            const menuOptions: MenuOption[] = (orderInfo.options ?? []).map(
-              (name) => ({ name, count: 1 })
-            );
+            const menuItem = findMenuItem(orderInfo.menu, menus);
+            const menuOptions: MenuOption[] = orderInfo.option_details
+              ? orderInfo.option_details.map((d) => ({ name: d.name, count: d.count }))
+              : (orderInfo.options ?? []).map((name) => ({ name, count: 1 }));
+            const packaging = orderInfo.packaging === true;
+            if (packaging) setIsPackaging(true);
             if (menuItem)
               addItem(
                 menuItem,
                 orderInfo.quantity ?? 1,
                 temperature,
                 menuOptions,
-                false
+                packaging
               );
           }
         }
 
-        if (res.intent === "order_and_pay") {
+        if (res.intent === "order_and_pay" || res.go_payment) {
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
           setTimeout(() => {
             setHighlightPaymentMethod(res.payment_method ?? null);
             setGuideScreen(res.payment_method ? "payment" : "order_confirm");
+            useChatPrefs.getState().closeChat();
           }, 1000);
           return;
         }
@@ -175,35 +316,72 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         openScan("assistant");
       }
 
-      const newMessages: Message[] = [{ role: "bot", text: botText }];
-      if (res.intent === "order" && res.discount_tip) {
-        newMessages.push({ role: "bot", text: res.discount_tip });
-      }
+      const newMessages: Message[] = [
+        {
+          role: "bot",
+          text: botText,
+          recommended: res.intent === "recommend" ? res.recommended_menus : undefined,
+          asked: query,
+          intent: res.intent,
+        },
+      ];
       setMessages((prev) => [...prev, ...newMessages]);
     } catch (error) {
       console.error(error);
       setMessages((prev) => [
         ...prev,
-        { role: "bot", text: "질문 처리 중 오류가 발생했습니다." },
+        { role: "bot", text: "잠시 연결이 원활하지 않아요. 다시 한 번 말씀해 주세요." },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
+  // 화면에서 직접 담거나 주문하기를 누르면 되묻기를 멈추고 알려준다(화면 조작이 우선)
+  const dialogCancelCount = useChatPrefs((s) => s.dialogCancelCount);
   useEffect(() => {
-    if (location.pathname === "/") {
+    if (dialogCancelCount === 0) return;
+    dialogRef.current = null;
+    autoListen.current = false;
+    setMessages((prev) => [
+      ...prev,
+      { role: "bot", text: "화면에서 직접 고르셔서 질문은 여기서 멈출게요." },
+    ]);
+  }, [dialogCancelCount]);
+
+  const resetCount = useChatPrefs((s) => s.resetCount);
+  useEffect(() => {
+    if (resetCount > 0 || location.pathname === "/") {
       setMessages([]);
       setLastRecommended([]);
+      dialogRef.current = null;
+      autoListen.current = false;
+      useChatPrefs.getState().setDialogActive(false);
+      greeted.current = false;
+      spokenCount.current = 0;
+      stopSpeaking();
     }
-  }, [location.pathname]);
+  }, [location.pathname, resetCount]);
 
   useEffect(() => {
     if (isOpen) {
       resetTranscript();
-      startListening();
+      // 되묻는 도중에 창이 다시 열렸으면 마지막 질문을 한 번 더 말하고 이어서 듣는다
+      const lastBot = dialogRef.current
+        ? [...messages].reverse().find((m) => m.role === "bot")
+        : undefined;
+      if (lastBot) {
+        if (ttsOn) speak(summarizeForSpeech(lastBot.text, lastBot.recommended), () => startListening());
+        else startListening();
+      } else if (ttsOn && !greeted.current && messages.length === 0) {
+        greeted.current = true;
+        speak(GREETING_SPEECH, () => startListening());
+      } else {
+        startListening();
+      }
     } else {
       stopListening();
+      stopSpeaking();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -215,42 +393,84 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   }, [listening, transcript]);
 
   useEffect(() => {
+    if (messages.length < spokenCount.current) spokenCount.current = messages.length;
+    const fresh = messages.slice(spokenCount.current);
+    spokenCount.current = messages.length;
+    if (!isOpen) return;
+    const bots = fresh.filter((m) => m.role === "bot");
+    if (bots.length === 0) return;
+    // 되묻는 질문이면 말이 끝난 뒤 마이크를 자동으로 다시 켠다
+    const reopen = () => {
+      if (!autoListen.current) return;
+      autoListen.current = false;
+      resetTranscript();
+      startListening();
+    };
+    if (!ttsOn) {
+      if (autoListen.current) setTimeout(reopen, 400);
+      return;
+    }
+    const text = bots
+      .map((m) => summarizeForSpeech(m.text, m.recommended))
+      .join(" ")
+      .slice(0, 220);
+    speak(text, autoListen.current ? reopen : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading, transcript]);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* 채팅 히스토리 영역 (스크롤, 높이 고정) */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-3 p-3 min-h-0">
-        {messages.length === 0 && !listening && !loading && (
-          <p className="text-xs text-pink-300 text-center pt-4">
-            아래 버튼을 눌러 말씀해 주세요
-          </p>
+    <div className="kio-chat flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto flex flex-col gap-3 p-4 min-h-0 bg-pink-50/60">
+        {messages.length === 0 && !loading && (
+          <div className="flex justify-start">
+            <div className="bg-white border border-pink-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-[92%] shadow-sm text-gray-900">
+              <p className="font-bold text-pink-600 text-[1em] mb-1">안녕하세요!</p>
+              <p className="text-[1em] leading-relaxed break-keep">{GREETING_TEXT.replace("안녕하세요! ", "")}</p>
+              <p className="mt-2 text-[0.85em] font-semibold text-gray-500">이렇게 말씀해 보세요</p>
+              <ul className="mt-1 flex flex-col gap-1">
+                {GREETING_EXAMPLES.map((ex) => (
+                  <li key={ex} className="rounded-lg bg-pink-50 px-3 py-1.5 text-[0.95em] text-pink-700 break-keep">
+                    “{ex}”
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         )}
 
         {messages.map((msg, i) =>
           msg.role === "user" ? (
             <div key={i} className="flex justify-end">
-              <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
-                <p className="text-sm leading-relaxed">{msg.text}</p>
+              <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-[85%] shadow-sm">
+                <p className="text-[1em] leading-relaxed break-keep">{msg.text}</p>
               </div>
             </div>
           ) : (
             <div key={i} className="flex justify-start">
-              <div className="bg-white border border-pink-100 px-4 py-3 rounded-2xl rounded-bl-sm max-w-xs shadow-sm">
-                <p className="text-sm text-gray-800 leading-relaxed">
-                  {msg.text}
-                </p>
+              <div className="bg-white border border-pink-200 px-4 py-3 rounded-2xl rounded-bl-sm max-w-[90%] shadow-sm text-gray-900">
+                <BotText text={msg.text} />
+                {msg.asked && (
+                  <button
+                    onClick={() => reportWrong(i)}
+                    disabled={msg.reported}
+                    className="mt-2 text-[0.7em] text-gray-400 underline disabled:no-underline disabled:text-gray-300"
+                  >
+                    {msg.reported ? "의견이 접수됐어요" : "잘못 알아들었어요"}
+                  </button>
+                )}
               </div>
             </div>
           )
         )}
 
-        {/* 음성 인식 중 실시간 미리보기 */}
         {listening && transcript && (
           <div className="flex justify-end opacity-60">
-            <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-xs shadow-sm">
-              <p className="text-sm leading-relaxed">{transcript}</p>
+            <div className="bg-pink-500 text-white px-4 py-3 rounded-2xl rounded-br-sm max-w-[85%] shadow-sm">
+              <p className="text-[1em] leading-relaxed">{transcript}</p>
             </div>
           </div>
         )}
@@ -270,15 +490,17 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 마이크 버튼 (하단 고정) */}
-      <div className="flex flex-col items-center gap-2 p-3 border-t border-pink-50">
+      <div className="flex flex-col items-center gap-2 p-3 border-t border-pink-100 bg-white">
         <button
           onClick={handleButtonClick}
+          disabled={processing}
           className={`
             w-14 h-14 rounded-full flex items-center justify-center shadow-md transition-all duration-200
             ${
               listening
                 ? "bg-red-500 hover:bg-red-600 ring-4 ring-red-300 animate-pulse"
+                : processing
+                ? "bg-pink-300 cursor-not-allowed"
                 : "bg-pink-500 hover:bg-pink-600 hover:scale-105"
             }
           `}
@@ -291,6 +513,12 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
             >
               <rect x="6" y="6" width="12" height="12" rx="2" />
             </svg>
+          ) : processing ? (
+            <div className="flex gap-1 items-center">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:0ms]" />
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:300ms]" />
+            </div>
           ) : (
             <svg
               className="w-6 h-6 text-white"
@@ -302,11 +530,15 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           )}
         </button>
         <p
-          className={`text-xs font-medium ${
+          className={`text-[0.9em] font-medium ${
             listening ? "text-red-500" : "text-pink-500"
           }`}
         >
-          {listening ? "듣는 중... 탭하면 중지" : "탭하면 음성 주문 시작"}
+          {listening
+            ? "듣는 중... 탭하면 중지"
+            : processing
+            ? "인식 처리 중..."
+            : "탭하면 음성 주문 시작"}
         </p>
       </div>
     </div>

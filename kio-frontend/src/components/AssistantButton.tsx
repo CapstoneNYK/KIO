@@ -1,105 +1,37 @@
-import { useRef, useState, useEffect } from "react";
-import { toBlob } from "html-to-image";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { logo } from "../assets";
-import ktPoster from "../assets/images/poster/kt_poster.png";
-import tPoster from "../assets/images/poster/t_poster.png";
-import tpassPoster from "../assets/images/poster/tpass_poster.png";
-import { useCategoryStore } from "../store/categoryStore";
 import { useLearningStore } from "../store/learningStore";
-import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
-import { MENUS } from "../data/menus";
 import { SpeechInput } from "./SpeechInput";
+import { useChatPrefs, CHAT_SCALES } from "../store/chatPrefsStore";
+import { ttsSupported, stopSpeaking } from "../utils/tts";
 
-const HOME_CATEGORIES = [
-  "전체",
-  "커피",
-  "디카페인",
-  "스무디",
-  "에이드",
-  "주스",
-  "티",
-];
-const MODAL_SCREENS = [
-  "menu_modal",
-  "cart",
-  "order_confirm",
-  "payment",
-  "payment_card",
-  "payment_complete",
-];
-const POSTER_ASSETS = [
-  { url: ktPoster, name: "poster_kt" },
-  { url: tPoster, name: "poster_t" },
-  { url: tpassPoster, name: "poster_tpass" },
-];
-const TOTAL_SCREENS =
-  1 + HOME_CATEGORIES.length + MODAL_SCREENS.length + POSTER_ASSETS.length;
+type Mode = "idle" | "voice";
 
-const API = `${import.meta.env.VITE_API_URL}/ocr`;
-
-type Mode = "idle" | "learning" | "voice";
-
-function injectOklchOverride(): () => void {
-  const entries: Array<{ prop: string; val: string }> = [];
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      for (const rule of Array.from(sheet.cssRules)) {
-        if (!(rule instanceof CSSStyleRule)) continue;
-        const { style } = rule;
-        for (let i = 0; i < style.length; i++) {
-          const prop = style[i];
-          const val = style.getPropertyValue(prop).trim();
-          if (val.includes("oklch")) entries.push({ prop, val });
-        }
-      }
-      // eslint-disable-next-line no-empty
-    } catch {}
-  }
-  if (entries.length === 0) return () => {};
-
-  const container = document.createElement("div");
-  container.style.display = "none";
-  entries.forEach(({ val }) => {
-    const div = document.createElement("div");
-    div.style.color = val;
-    container.appendChild(div);
-  });
-  document.body.appendChild(container);
-  const overrides = entries.map(
-    ({ prop }, i) => `${prop}: ${getComputedStyle(container.children[i]).color}`
-  );
-  document.body.removeChild(container);
-
-  const el = document.createElement("style");
-  el.id = "__oklch_fix";
-  el.textContent = `:root { ${overrides.join("; ")} }`;
-  document.head.appendChild(el);
-  return () => el.remove();
-}
-
-async function captureScreen(): Promise<Blob> {
-  const blob = await toBlob(document.body, {
-    filter: (el) => (el as HTMLElement).id !== "kio-assistant",
-  });
-  if (!blob) throw new Error("캡처 실패");
-  return blob;
-}
+// 음성 창이 열려 있을 때 화면을 직접 만지면 창을 숨기고,
+// 되묻는 대화가 남아 있으면 이만큼 가만히 있을 때 다시 연다.
+const REOPEN_AFTER_MS = 4000;
+// 화면을 만져서 음성 창이 닫혔을 때, 다시 눌러 달라는 말풍선을 보여 주는 시간
+const RESUME_HINT_MS = 8000;
 
 export const AssistantButton = () => {
   const [mode, setMode] = useState<Mode>("idle");
-  const [learnProgress, setLearnProgress] = useState(0);
-  const [currentScreen, setCurrentScreen] = useState("");
   const [showGreeting, setShowGreeting] = useState(true);
+  const [resumeHint, setResumeHint] = useState(false);
+  const { scale, setScale, ttsOn, setTtsOn } = useChatPrefs();
 
   useEffect(() => {
     if (!showGreeting) return;
     const t = setTimeout(() => setShowGreeting(false), 5000);
     return () => clearTimeout(t);
   }, [showGreeting]);
-  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!resumeHint) return;
+    const t = setTimeout(() => setResumeHint(false), RESUME_HINT_MS);
+    return () => clearTimeout(t);
+  }, [resumeHint]);
   const location = useLocation();
 
   useEffect(() => {
@@ -110,9 +42,6 @@ export const AssistantButton = () => {
   }, [location.pathname]);
   const scanOpen = useCouponStore((s) => s.scanOpen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
-  const setCategory = useCategoryStore((s) => s.setCategory);
-  const setLearningScreen = useLearningStore((s) => s.setLearningScreen);
-  const { addItem, clear: clearCart } = useCartStore();
 
   useEffect(() => {
     if (scanOpen) setMode("idle");
@@ -122,105 +51,67 @@ export const AssistantButton = () => {
     if (guideScreen) setMode("idle");
   }, [guideScreen]);
 
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const closeCount = useChatPrefs((s) => s.closeCount);
+  useEffect(() => {
+    if (closeCount > 0) setMode("idle");
+  }, [closeCount]);
 
-  const captureAndLearn = async (
-    screenName: string,
-    progress: { count: number }
-  ) => {
-    setCurrentScreen(screenName);
-    const removeOverride = injectOklchOverride();
-    try {
-      const blob = await captureScreen();
-      const formData = new FormData();
-      formData.append("file", blob, "screen.png");
-      formData.append("screen_name", screenName);
-      await fetch(`${API}/learn`, { method: "POST", body: formData });
-    } finally {
-      removeOverride();
+  // 음성 창을 화면 터치로 자동으로 닫았는지(직접 ✕/버튼으로 닫은 것과 구분)
+  const autoClosed = useRef(false);
+  const reopenTimer = useRef<number | undefined>(undefined);
+  const modeRef = useRef<Mode>("idle");
+
+  // 시작 화면에서 '말로 주문'을 고르면 바로 음성 창을 연다
+  const openCount = useChatPrefs((s) => s.openCount);
+  useEffect(() => {
+    if (openCount > 0) {
+      setShowGreeting(false);
+      autoClosed.current = false;
+      setMode("voice");
     }
-    setLearnProgress(++progress.count);
-  };
+  }, [openCount]);
 
-  const learnPoster = async (
-    url: string,
-    screenName: string,
-    progress: { count: number }
-  ) => {
-    setCurrentScreen(screenName);
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const formData = new FormData();
-    formData.append("file", blob, "poster.png");
-    formData.append("screen_name", screenName);
-    await fetch(`${API}/learn`, { method: "POST", body: formData });
-    setLearnProgress(++progress.count);
-  };
-
-  const startLearning = async () => {
-    setMode("learning");
-    setLearnProgress(0);
-    const progress = { count: 0 };
-
-    navigate("/");
-    await sleep(800);
-    await captureAndLearn("splash", progress);
-
-    for (const { url, name } of POSTER_ASSETS) {
-      await learnPoster(url, name, progress);
-    }
-
-    navigate("/home");
-    await sleep(800);
-    for (const cat of HOME_CATEGORIES) {
-      setCategory(cat);
-      await sleep(600);
-      await captureAndLearn(`home_${cat}`, progress);
-    }
-    setCategory("전체");
-
-    setLearningScreen("menu_modal");
-    await sleep(600);
-    await captureAndLearn("menu_modal", progress);
-    setLearningScreen(null);
-    await sleep(300);
-
-    addItem(MENUS[0], 1, "HOT", [], false);
-    await sleep(600);
-    await captureAndLearn("cart", progress);
-
-    setLearningScreen("order_confirm");
-    await sleep(600);
-    await captureAndLearn("order_confirm", progress);
-
-    setLearningScreen("payment");
-    await sleep(600);
-    await captureAndLearn("payment", progress);
-
-    setLearningScreen("payment_card");
-    await sleep(800);
-    await captureAndLearn("payment_card", progress);
-
-    setLearningScreen("payment_complete");
-    await sleep(1000);
-    await captureAndLearn("payment_complete", progress);
-
-    setLearningScreen(null);
-    clearCart();
-    setMode("idle");
-    setLearnProgress(0);
-    setCurrentScreen("");
-  };
-
-  const handleMouseDown = () => {
-    pressTimer.current = setTimeout(() => startLearning(), 1500);
-  };
-  const handleMouseUp = () => {
-    if (pressTimer.current) clearTimeout(pressTimer.current);
-  };
+  // 화면을 만지거나 스크롤하면 음성 창만 숨긴다(대화 상태와 말한 내용은 그대로).
+  // 손을 떼고 잠시 지나면 중단된 질문부터 다시 이어간다.
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+  useEffect(() => {
+    const armReopen = () => {
+      window.clearTimeout(reopenTimer.current);
+      if (!autoClosed.current || !useChatPrefs.getState().dialogActive) return;
+      reopenTimer.current = window.setTimeout(() => {
+        const busy = useLearningStore.getState().guideScreen || useCouponStore.getState().scanOpen;
+        if (autoClosed.current && !busy) {
+          autoClosed.current = false;
+          setResumeHint(false);
+          setMode("voice");
+        }
+      }, REOPEN_AFTER_MS);
+    };
+    const onTouch = (e: Event) => {
+      const panel = document.getElementById("kio-assistant");
+      if (panel && e.target instanceof Node && panel.contains(e.target)) return;
+      if (modeRef.current === "voice") {
+        autoClosed.current = true;
+        setMode("idle");
+        // 되묻는 질문이 남아 있으면 곧 알아서 다시 열리니, 그렇지 않을 때만 다시 눌러 달라고 안내한다
+        if (!useChatPrefs.getState().dialogActive) setResumeHint(true);
+      }
+      armReopen();
+    };
+    const events = ["pointerdown", "wheel", "touchmove", "scroll"] as const;
+    events.forEach((ev) => document.addEventListener(ev, onTouch, { capture: true, passive: true }));
+    return () => {
+      events.forEach((ev) => document.removeEventListener(ev, onTouch, { capture: true }));
+      window.clearTimeout(reopenTimer.current);
+    };
+  }, []);
 
   const handleClick = () => {
+    autoClosed.current = false;
     setShowGreeting(false);
+    setResumeHint(false);
     if (mode === "idle") setMode("voice");
     else if (mode === "voice") setMode("idle");
   };
@@ -230,80 +121,93 @@ export const AssistantButton = () => {
       id="kio-assistant"
       className="fixed top-4 right-4 z-9999 flex flex-row items-start gap-3"
     >
-      {/* 학습 진행 패널 */}
-      {mode === "learning" && (
-        <div className="bg-white rounded-xl shadow-lg p-3 text-xs w-48 mt-2">
-          <p className="font-bold text-gray-700 mb-1">화면 학습 중...</p>
-          <p className="text-gray-400 mb-2 truncate">{currentScreen}</p>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-pink-400 transition-all duration-300"
-              style={{ width: `${(learnProgress / TOTAL_SCREENS) * 100}%` }}
-            />
-          </div>
-          <p className="text-right text-gray-400 mt-1">
-            {learnProgress} / {TOTAL_SCREENS}
-          </p>
-        </div>
-      )}
-
-      {/* 음성 어시스턴트 채팅 패널 - 항상 마운트, 채팅 내역 유지 */}
       <div
-        className={`bg-white rounded-2xl shadow-xl border border-pink-100 w-85 h-120 flex flex-col shrink-0 ${
+        className={`kio-chat bg-white rounded-2xl shadow-2xl border-2 border-pink-400 ring-4 ring-pink-200/70 h-[40rem] max-h-[calc(100dvh-2rem)] flex flex-col shrink-0 overflow-hidden ${
           mode !== "voice" ? "hidden" : ""
         }`}
+        style={{ "--kio-s": scale, width: "min(calc(26rem * var(--kio-s)), calc(100vw - 8rem))" } as React.CSSProperties}
       >
-        {/* 헤더 */}
-        <div className="flex items-center justify-between px-4 py-3 bg-pink-50 border-b border-pink-100 shrink-0 rounded-t-2xl">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-pink-500 shrink-0 rounded-t-xl">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-pink-400 inline-block" />
-            <span className="text-sm font-bold text-pink-700">
+            <span className="w-2.5 h-2.5 rounded-full bg-white inline-block" />
+            <span className="text-[1em] font-bold text-white">
               KIO 어시스턴트
             </span>
           </div>
           <button
-            onClick={() => setMode("idle")}
-            className="text-pink-300 hover:text-pink-500 transition-colors text-base leading-none"
+            onClick={() => { autoClosed.current = false; setResumeHint(false); setMode("idle"); }}
+            className="text-pink-100 hover:text-white transition-colors text-lg leading-none"
           >
             ✕
           </button>
         </div>
 
-        {/* SpeechInput이 남은 높이를 채움 */}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-pink-50 border-b border-pink-100 shrink-0">
+          <div className="flex items-center gap-1" role="group" aria-label="글자 크기">
+            <span className="text-[0.8em] font-semibold text-pink-700 mr-1">글자</span>
+            {CHAT_SCALES.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => setScale(c.value)}
+                className={`rounded-lg border px-2 py-1 text-[0.8em] font-bold transition ${
+                  scale === c.value
+                    ? "bg-pink-500 border-pink-500 text-white"
+                    : "bg-white border-pink-200 text-pink-600 active:bg-pink-100"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+          {ttsSupported && (
+            <button
+              onClick={() => { if (ttsOn) stopSpeaking(); setTtsOn(!ttsOn); }}
+              className={`rounded-lg border px-3 py-1 text-[0.8em] font-bold transition ${
+                ttsOn ? "bg-pink-500 border-pink-500 text-white" : "bg-white border-pink-200 text-pink-600"
+              }`}
+              aria-pressed={ttsOn}
+            >
+              {ttsOn ? "🔊 소리 켜짐" : "🔇 소리 꺼짐"}
+            </button>
+          )}
+        </div>
+
         <div className="flex-1 min-h-0">
           <SpeechInput isOpen={mode === "voice"} />
         </div>
       </div>
 
-      {/* KIO 버튼 + 말풍선 */}
       <div className="relative flex flex-col items-end shrink-0">
-        {showGreeting && mode === "idle" && (
-          <div className="absolute right-full top-0 mr-3 w-56 bg-white rounded-2xl shadow-lg px-4 py-3 text-sm text-gray-700 leading-relaxed border border-pink-100">
-            <p className="font-semibold text-pink-600 mb-1">안녕하세요!</p>
+        {(showGreeting || resumeHint) && mode === "idle" && (
+          <div
+            className="kio-chat absolute right-full top-0 mr-3 w-72 bg-white rounded-2xl shadow-xl px-5 py-4 text-gray-800 leading-relaxed border-2 border-pink-300"
+            style={{ "--kio-s": scale } as React.CSSProperties}
+          >
             <p className="break-keep">
-              저는 AI 키오스크 도우미 키오예요. 도움이 필요하면 저를 눌러주세요!
+              {resumeHint ? (
+                <>
+                  음성 주문을 이어가고 싶으시면 저를 <span className="font-bold text-pink-600">다시 눌러주세요</span>
+                </>
+              ) : (
+                <>
+                  말로 주문하고 싶으시면 <span className="font-bold text-pink-600">음성주문</span>을 클릭하세요
+                </>
+              )}
             </p>
             <div className="absolute -right-2 top-6 w-4 h-4 bg-white border-t border-r border-pink-100 rotate-45" />
           </div>
         )}
         <button
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onTouchStart={handleMouseDown}
-          onTouchEnd={handleMouseUp}
           onClick={handleClick}
-          disabled={mode === "learning"}
           className={`w-20 h-20 rounded-full transition-all duration-200
             ${
-              mode === "learning"
-                ? "animate-pulse ring-4 ring-yellow-400"
-                : mode === "voice"
+              mode === "voice"
                 ? "ring-4 ring-pink-400 scale-105"
                 : "hover:ring-4 hover:ring-pink-400 hover:scale-105"
             }
-            ${showGreeting && mode === "idle" ? "animate-kio-bounce" : ""}
+            ${(showGreeting || resumeHint) && mode === "idle" ? "animate-kio-bounce" : ""}
           `}
-          title="클릭: 음성 어시스턴트 | 길게 누르기: 화면 학습"
+          title="클릭: 음성 어시스턴트"
         >
           <img
             src={logo}

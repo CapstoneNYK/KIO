@@ -3,6 +3,7 @@ interface OptionCounterProps {
   onDecrement: () => void;
   onIncrement: () => void;
   min?: number;
+  max?: number;
 }
 
 export const OptionCounter = ({
@@ -10,6 +11,7 @@ export const OptionCounter = ({
   onDecrement,
   onIncrement,
   min = 0,
+  max = Infinity,
 }: OptionCounterProps) => {
   return (
     <div className="flex items-center gap-2">
@@ -24,7 +26,8 @@ export const OptionCounter = ({
       <span className="w-8 text-center text-lg">{count}</span>
       <button
         onClick={onIncrement}
-        className="w-10 h-10 rounded flex items-center justify-center text-lg active:opacity-70"
+        disabled={count >= max}
+        className="w-10 h-10 rounded flex items-center justify-center text-lg disabled:opacity-30 active:opacity-70"
         style={{ border: "1.5px solid #FEE685", color: "#E17100" }}
       >
         +

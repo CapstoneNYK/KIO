@@ -1,7 +1,7 @@
 export interface NavBarProps {
-  categories: string[]; // 카테고리 목록
-  activeCategory: string; // 현재 선택된 카테고리
-  onSelect: (category: string) => void; // 클릭 핸들러
+  categories: string[];
+  activeCategory: string;
+  onSelect: (category: string) => void;
 }
 
 export const NavBar = ({

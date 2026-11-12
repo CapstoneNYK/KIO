@@ -1,0 +1,91 @@
+{
+  "기본셋 / 주문 추출·옵션": {
+    "correct": 64,
+    "total": 64,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "기본셋 / 장바구니 취소·변경": {
+    "correct": 38,
+    "total": 38,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "기본셋 / 조건 추천": {
+    "correct": 23,
+    "total": 23,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 주문 추출·옵션": {
+    "correct": 20,
+    "total": 20,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 장바구니 취소·변경": {
+    "correct": 14,
+    "total": 14,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "자연발화셋 / 조건 추천": {
+    "correct": 10,
+    "total": 10,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "추가셋 / 주문 추출·옵션": {
+    "correct": 58,
+    "total": 58,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "추가셋 / 장바구니 취소·변경": {
+    "correct": 56,
+    "total": 56,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "추가셋 / 조건 추천": {
+    "correct": 24,
+    "total": 24,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "overall_rules": {
+    "correct": 307,
+    "total": 307,
+    "accuracy": 100.0
+  },
+  "대화형 / 되묻기 이어 받기": {
+    "correct": 10,
+    "total": 10,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "대화형 / 옵션 되묻기(슬롯 채우기)": {
+    "correct": 36,
+    "total": 36,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "대화형 / 더 주문·요청사항 단계": {
+    "correct": 14,
+    "total": 14,
+    "accuracy": 100.0,
+    "failures": []
+  },
+  "intent_rules": {
+    "decided": 106,
+    "total": 150,
+    "right": 106,
+    "wrong": []
+  },
+  "장바구니 명령 경로 (로그 케이스)": {
+    "correct": 0,
+    "total": 0,
+    "accuracy": 100.0,
+    "failures": []
+  }
+}

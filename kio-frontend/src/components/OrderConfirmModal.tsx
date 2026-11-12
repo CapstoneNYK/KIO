@@ -1,6 +1,5 @@
-// no useState needed — overlay state managed by learningStore
 import { LuX } from "react-icons/lu";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, remainingStock, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
 import { OptionCounter } from "./OptionCounter";
@@ -8,14 +7,13 @@ import { PaymentModal } from "./PaymentModal";
 
 interface OrderConfirmModalProps {
   onClose: () => void;
-  onCancelAll: () => void;
   onNext: () => void;
 }
 
 const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
 
-export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirmModalProps) => {
-  const { items, updateQuantity } = useCartStore();
+export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) => {
+  const { items, updateQuantity, setPackagingAll, memo } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
@@ -27,18 +25,16 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
     || PAYMENT_SCREENS.includes(learningScreen ?? "")
     || PAYMENT_SCREENS.includes(guideScreen ?? "");
 
-  const totalPrice = items.reduce((sum, i) => sum + i.item.price * i.quantity, 0);
+  const totalPrice = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => i.isFree ? sum + i.item.price : sum, 0);
   const couponDiscount = calcDiscount(coupons, totalPrice - freeDiscount, items);
   const discountPrice = freeDiscount + couponDiscount;
 
   const getOptionSummary = (cartItem: typeof items[number]) => {
     const parts: string[] = [];
-    // 온도 표시
     parts.push(`${cartItem.item.title}(${cartItem.temperature})`);
-    // 선택된 옵션만
     const activeOptions = cartItem.options.filter((o) => o.count > 0);
-    activeOptions.forEach((o) => parts.push(`+${o.name}`));
+    activeOptions.forEach((o) => parts.push(o.count > 1 ? `+${o.name} ×${o.count}` : `+${o.name}`));
     return parts;
   };
 
@@ -48,10 +44,9 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl w-[80%] h-[88vh] flex flex-col overflow-hidden shadow-xl"
+        className="relative bg-white rounded-2xl w-[80%] h-[88dvh] flex flex-col overflow-hidden shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
         <div className="flex items-center justify-center py-4 px-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">주문확인</h2>
           <button
@@ -62,14 +57,12 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           </button>
         </div>
 
-        {/* 아이템 목록 */}
         <div className="flex-1 overflow-y-auto">
           {items.map((cartItem, idx) => {
             const summaryLines = getOptionSummary(cartItem);
             return (
               <div key={cartItem.cartId}>
                 <div className="flex items-start gap-4 px-6 py-5">
-                  {/* 이미지 + 카운터 */}
                   <div className="flex flex-col items-center gap-2 shrink-0">
                     <img
                       src={cartItem.item.img}
@@ -79,12 +72,12 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
                     <OptionCounter
                       count={cartItem.quantity}
                       min={1}
+                      max={cartItem.quantity + remainingStock(items, cartItem.item)}
                       onDecrement={() => updateQuantity(cartItem.cartId, cartItem.quantity - 1)}
                       onIncrement={() => updateQuantity(cartItem.cartId, cartItem.quantity + 1)}
                     />
                   </div>
 
-                  {/* 이름 + 옵션 */}
                   <div className="flex-1 min-w-0 pt-1">
                     <p className="font-semibold text-gray-900 text-base mb-1">
                       {cartItem.item.title}
@@ -98,15 +91,11 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
                           {line}
                         </p>
                       ))}
-                      <p className="text-sm text-gray-400">
-                        {cartItem.isPackaging ? "포장 (일회용컵)" : "매장 (다회용컵)"}
-                      </p>
                     </div>
                   </div>
 
-                  {/* 가격 */}
                   <p className="text-orange-500 font-bold text-base shrink-0 pt-1">
-                    {(cartItem.item.price * cartItem.quantity).toLocaleString()}원
+                    {(unitPrice(cartItem) * cartItem.quantity).toLocaleString()}원
                   </p>
                 </div>
 
@@ -118,7 +107,12 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           })}
         </div>
 
-        {/* 금액 요약 */}
+        {memo && (
+          <div className="px-6 py-3 border-t border-gray-100 text-sm text-gray-700">
+            <span className="font-semibold" style={{ color: "#E17100" }}>요청사항</span> {memo}
+          </div>
+        )}
+
         <div className="px-6 py-5" style={{ backgroundColor: "#FFFBEB" }}>
           <div className="flex justify-between mb-2">
             <span className="text-gray-700">주문 금액</span>
@@ -138,27 +132,28 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
           </div>
         </div>
 
-        {/* 버튼 */}
         <div className="flex gap-2 px-6 py-4 bg-white">
           <button
-            onClick={onCancelAll}
-            className="flex-1 py-3 rounded-xl border-2 border-gray-300 text-gray-600 font-bold active:bg-gray-50 transition"
-          >
-            전체취소
-          </button>
-          <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl border-2 font-bold active:opacity-80 transition"
-            style={{ borderColor: "#FFB900", color: "#FFB900" }}
+            className="flex-1 py-3 rounded-xl border-2 border-gray-300 text-gray-600 font-bold active:bg-gray-50 transition"
           >
             이전
           </button>
           <button
-            onClick={() => setPaymentDetailOverlayOpen(true)}
-            className="flex-1 py-3 rounded-xl text-white font-bold active:brightness-95 transition"
-            style={{ backgroundColor: "#FFB900" }}
+            onClick={() => { setPackagingAll(false); setPaymentDetailOverlayOpen(true); }}
+            className="flex-1 flex flex-col items-center py-2.5 rounded-xl text-white font-bold active:brightness-95 transition"
+            style={{ backgroundColor: "#F5A623" }}
           >
-            다음
+            <span>먹고가기</span>
+            <span className="text-xs font-medium opacity-90">다회용컵</span>
+          </button>
+          <button
+            onClick={() => { setPackagingAll(true); setPaymentDetailOverlayOpen(true); }}
+            className="flex-1 flex flex-col items-center py-2.5 rounded-xl text-white font-bold active:brightness-95 transition"
+            style={{ backgroundColor: "#FCC200" }}
+          >
+            <span>가져가기</span>
+            <span className="text-xs font-medium opacity-90">일회용컵</span>
           </button>
         </div>
       </div>
@@ -166,7 +161,7 @@ export const OrderConfirmModal = ({ onClose, onCancelAll, onNext }: OrderConfirm
       {showPayment && (
         <PaymentModal
           onClose={() => { setPaymentDetailOverlayOpen(false); setGuideScreen(null); }}
-          onSelect={(_method) => {
+          onSelect={() => {
             setPaymentDetailOverlayOpen(false);
             setGuideScreen(null);
             onNext();

@@ -2,7 +2,8 @@ import { useState } from "react";
 import { LuX } from "react-icons/lu";
 import type { MenuItem, MenuOption, Temperature } from "../types/menu";
 import { OptionCounter } from "./OptionCounter";
-import { useCartStore } from "../store/cartStore";
+import { useCartStore, remainingStock, optionExtra, OPTION_PRICES } from "../store/cartStore";
+import { useChatPrefs } from "../store/chatPrefsStore";
 
 interface MenuModalProps {
   item: MenuItem;
@@ -27,15 +28,23 @@ const TEA_CATEGORIES = ["티"];
 export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
   const isCoffee = COFFEE_CATEGORIES.includes(item.category ?? "");
   const isTea = TEA_CATEGORIES.includes(item.category ?? "");
-  const hasTempSelect = (isCoffee && item.title !== "에스프레소") || isTea;
+  const temps = (item.temps ?? []).filter((t): t is Temperature => t === "HOT" || t === "ICE");
+  const hasTempSelect = temps.length > 0
+    ? temps.length > 1
+    : (isCoffee && item.title !== "에스프레소") || isTea;
   const [quantity, setQuantity] = useState(1);
-  const defaultTemp: Temperature = hasTempSelect || item.title === "에스프레소" ? "HOT" : "ICE";
+  const defaultTemp: Temperature = temps.length === 1
+    ? temps[0]
+    : hasTempSelect || item.title === "에스프레소" ? "HOT" : "ICE";
   const [temperature, setTemperature] = useState<Temperature>(defaultTemp);
   const [options, setOptions] = useState<MenuOption[]>(
     (isCoffee ? COFFEE_OPTIONS : isTea ? TEA_OPTIONS : NON_COFFEE_OPTIONS).map((o) => ({ ...o }))
   );
   const addItem = useCartStore((s) => s.addItem);
   const isPackaging = useCartStore((s) => s.isPackaging);
+  const cartItems = useCartStore((s) => s.items);
+  const maxQty = remainingStock(cartItems, item);
+  const noStock = maxQty < 1;
 
   const updateOption = (index: number, delta: number) => {
     setOptions((prev) =>
@@ -46,6 +55,8 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
   };
 
   const handleOrder = () => {
+    if (noStock) return;
+    useChatPrefs.getState().cancelDialog();
     addItem(item, quantity, temperature, options, isPackaging);
     onOrder(item, quantity, temperature, options, isPackaging);
     onClose();
@@ -57,10 +68,9 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
       onClick={onClose}
     >
       <div
-        className="relative bg-white rounded-2xl w-[80%] h-[88vh] flex flex-col overflow-hidden shadow-xl"
+        className="relative bg-white rounded-2xl w-[80%] h-[88dvh] flex flex-col overflow-hidden shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 닫기 버튼 */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 active:scale-90 transition z-10"
@@ -68,9 +78,7 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
           <LuX className="w-5 h-5" />
         </button>
 
-        {/* 스크롤 가능한 본문 */}
         <div className="overflow-y-auto flex-1 px-8 pt-14 pb-3">
-          {/* 아이템 정보 */}
           <div className="flex items-center gap-5 mb-8">
             <img
               src={item.img}
@@ -84,14 +92,19 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
                 onDecrement={() => setQuantity((q) => Math.max(1, q - 1))}
                 onIncrement={() => setQuantity((q) => q + 1)}
                 min={1}
+                max={maxQty}
               />
+              {item.stock != null && (
+                <p className="mt-2 text-sm text-gray-500">
+                  {noStock ? "재고를 모두 담았어요" : quantity >= maxQty ? `남은 재고 ${maxQty}개 · 더 담을 수 없어요` : `남은 재고 ${maxQty}개`}
+                </p>
+              )}
             </div>
             <p className="text-orange-500 font-bold text-2xl shrink-0">
-              {(item.price * quantity).toLocaleString()}원
+              {((item.price + optionExtra(options)) * quantity).toLocaleString()}원
             </p>
           </div>
 
-          {/* 온도 선택 (커피/티) */}
           {hasTempSelect && <div className="flex gap-4 mb-14">
             <button
               onClick={() => setTemperature("HOT")}
@@ -115,14 +128,16 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
             </button>
           </div>}
 
-          {/* 선택옵션 */}
           {options.length > 0 && (
             <>
               <p className="font-bold text-gray-800 text-xl mb-4">선택옵션</p>
               <div className="flex flex-col gap-8 pl-4">
                 {options.map((opt, idx) => (
                   <div key={opt.name} className="flex items-center gap-4">
-                    <span className="flex-1 text-gray-700 text-xl">{opt.name}</span>
+                    <span className="flex-1 text-gray-700 text-xl">
+                      {opt.name}
+                      {OPTION_PRICES[opt.name] ? ` (+${OPTION_PRICES[opt.name].toLocaleString()}원)` : ""}
+                    </span>
                     <OptionCounter
                       count={opt.count}
                       onDecrement={() => updateOption(idx, -1)}
@@ -135,14 +150,14 @@ export const MenuModal = ({ item, onClose, onOrder }: MenuModalProps) => {
           )}
         </div>
 
-        {/* 담기 버튼 */}
         <div className="px-8 py-6">
           <button
             onClick={handleOrder}
-            className="w-full text-white rounded-xl py-5 text-lg font-bold active:brightness-95 transition"
+            disabled={noStock}
+            className="w-full text-white rounded-xl py-5 text-lg font-bold active:brightness-95 transition disabled:opacity-40"
             style={{ backgroundColor: "#FFB900" }}
           >
-            담기
+            {noStock ? "재고 소진" : "담기"}
           </button>
         </div>
       </div>
