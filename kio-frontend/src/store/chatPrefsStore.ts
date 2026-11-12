@@ -18,6 +18,7 @@ function load(): { scale: ChatScale; ttsOn: boolean } {
       return { scale, ttsOn: p.ttsOn !== false };
     }
   } catch {
+    // 저장된 설정을 못 읽으면 기본값 사용
   }
   return { scale: 1.25, ttsOn: true };
 }
@@ -26,6 +27,7 @@ function save(scale: ChatScale, ttsOn: boolean) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ scale, ttsOn }));
   } catch {
+    // 저장 공간을 쓸 수 없는 환경이면 이번 실행에서만 유지
   }
 }
 

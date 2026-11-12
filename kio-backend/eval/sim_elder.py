@@ -6,6 +6,7 @@
   python -m eval.sim_elder            # LLM 없이(규칙 경로 + 주문 말버릇 어림 분류, 질문·추천 답변은 '[LLM필요]')
   python -m eval.sim_elder --llm      # 실제 Ollama LLM 사용
   python -m eval.sim_elder -v         # 모든 대화 출력 (기본은 실패한 시나리오만)
+  python -m eval.sim_elder --cafe     # 카페 손님 유형별 시나리오만 (sim_scenarios_cafe.py)
 """
 import asyncio
 import sys
@@ -161,13 +162,11 @@ class Kiosk:
 
 
 # (제목, 발화 목록, 기대 장바구니, 결제 이동 기대, 비고)
-from eval.sim_scenarios import SCENARIOS  # noqa: E402
+from eval.sim_scenarios import SCENARIOS as ELDER_SCENARIOS  # noqa: E402
 from eval.sim_scenarios_cafe import CAFE_SCENARIOS  # noqa: E402
 
-if "--cafe" in sys.argv:       # 카페 손님 유형별 시나리오만
-    SCENARIOS = CAFE_SCENARIOS
-else:
-    SCENARIOS = SCENARIOS + CAFE_SCENARIOS
+# --cafe: 카페 손님 유형별 시나리오만
+SCENARIOS = CAFE_SCENARIOS if "--cafe" in sys.argv else ELDER_SCENARIOS + CAFE_SCENARIOS
 
 _orig_get_menus = admin_db.get_menus
 

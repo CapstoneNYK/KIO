@@ -134,6 +134,19 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         const found = lines(action.menu);
         const target = found[found.length - 1];
         if (target) updateTemperature(target.cartId, action.temperature);
+      } else if (action.type === "set_temperature_part") {
+        // "두 잔 중 한 잔만 따뜻하게": 일부만 온도를 바꾸면 줄을 나눈다
+        const found = lines(action.menu);
+        const target = found[found.length - 1];
+        if (target) {
+          const n = Math.min(action.count, target.quantity);
+          if (n >= target.quantity) {
+            updateTemperature(target.cartId, action.temperature);
+          } else {
+            updateQuantity(target.cartId, target.quantity - n);
+            addItem(target.item, n, action.temperature, target.options, target.isPackaging);
+          }
+        }
       } else if (action.type === "set_temperature_all") {
         current
           .filter((i) => action.menus.includes(i.item.title))
@@ -317,7 +330,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       console.error(error);
       setMessages((prev) => [
         ...prev,
-        { role: "bot", text: "질문 처리 중 오류가 발생했습니다." },
+        { role: "bot", text: "잠시 연결이 원활하지 않아요. 다시 한 번 말씀해 주세요." },
       ]);
     } finally {
       setLoading(false);

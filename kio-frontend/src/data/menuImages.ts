@@ -32,6 +32,6 @@ const MENU_IMAGES: Record<string, string> = {
   "히비스커스": imgHibiscus,
 };
 
-export const DEFAULT_MENU_IMAGE = coffee1;
+const DEFAULT_MENU_IMAGE = coffee1;
 
 export const getMenuImage = (name: string): string => MENU_IMAGES[name] ?? DEFAULT_MENU_IMAGE;

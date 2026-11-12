@@ -20,9 +20,12 @@ export const Splash = () => {
   );
   const EXTENDED_POSTERS = useMemo(() => [...POSTERS, POSTERS[0]], [POSTERS]);
 
-  useEffect(() => {
+  // 포스터 개수가 바뀌면(서버에서 받아 오면) 처음 장부터 다시 보여 준다
+  const [postersCount, setPostersCount] = useState(POSTERS.length);
+  if (postersCount !== POSTERS.length) {
+    setPostersCount(POSTERS.length);
     setCurrentIndex(0);
-  }, [POSTERS.length]);
+  }
 
   useEffect(() => {
     if (postersLoading) return;

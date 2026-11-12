@@ -232,6 +232,7 @@ class OrderCreate(BaseModel):
     is_packaging: bool = False
     items: list[OrderItem]
     request_id: str | None = Field(default=None, max_length=64)
+    memo: str = Field(default="", max_length=200)  # 손님 요청사항
 
 orders_router = APIRouter(prefix="/api", tags=["orders"])
 menus_public_router = APIRouter(prefix="/api", tags=["menus"])
@@ -259,6 +260,7 @@ def create_order(body: OrderCreate):
             is_packaging=body.is_packaging,
             items=[i.model_dump() for i in body.items],
             request_id=body.request_id,
+            memo=body.memo,
         )
     except db.OutOfStock as e:
         raise HTTPException(status_code=409, detail=f"{', '.join(e.names)}의 재고가 부족합니다.")

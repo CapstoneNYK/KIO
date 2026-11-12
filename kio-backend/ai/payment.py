@@ -45,6 +45,18 @@ _METHOD_LABELS: dict[str, str] = {
 }
 
 
+# 안내 문장에 쓰는 짧은 이름 ("카드로 결제 화면으로 이동합니다")
+_SHORT_LABELS: dict[str, str] = {
+    "card": "카드", "kakao": "카카오페이", "naver": "네이버페이",
+    "appcard": "앱카드", "voucher": "모바일상품권", "giftcard": "기프트카드",
+    "kt": "KT VIP", "tmembership": "T멤버십", "cjone": "CJ ONE", "uzu": "T우주",
+}
+
+
+def payment_label(method: str | None) -> str:
+    return _SHORT_LABELS.get(method or "", "")
+
+
 def extract_payment_method(query: str) -> str | None:
     query_norm = query.replace(" ", "").lower()
     for keyword, method in sorted(_METHOD_KEYWORDS.items(), key=lambda x: -len(x[0])):

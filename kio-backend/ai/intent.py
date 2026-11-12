@@ -1,9 +1,7 @@
-from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from ai.llm import get_llm, OLLAMA_INTENT_MODEL
 
-load_dotenv()
 
 llm = get_llm(temperature=0, model=OLLAMA_INTENT_MODEL, num_predict=12)
 
@@ -70,16 +68,3 @@ def classify_intent(question: str) -> str:
     except Exception as e:
         print("Intent 분류 오류:", e)
         return "qa"
-
-if __name__ == "__main__":
-    test_inputs = [
-        "당 떨어지는데 음료 추천해줘",
-        "아메리카노 얼마야?",
-        "아메리카노 하나 줘",
-        "라떼 주문할게",
-        "달달한 거 뭐 있음?"
-    ]
-
-    for q in test_inputs:
-        print(f"\n입력: {q}")
-        print("intent:", classify_intent(q))

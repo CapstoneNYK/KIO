@@ -72,7 +72,6 @@ def say_order(rng):
             pass
     if cat in ("other",) and not temp_said:
         want_temp = "ICE"
-    parts = [form]
     opt = []
     if shot:
         opt.append("샷 추가" if shot == 1 else rng.choice(["샷 추가 두 번", "샷 두 번 추가", "샷 2번 추가"]))
@@ -152,13 +151,13 @@ def run_one(rng):
     got = sorted(k.cart_view())
     exp = sorted((n, t, q, o) for n, t, q, o in wants.values())
     # 온도를 고를 수 없는 메뉴는 온도 비교 제외
-    def loose(rows, ref):
+    def loose(rows):
         out = []
         for r in rows:
             temp_ok = next((it[3] for it in items if it[1][0] == r[0]), True)
             out.append((r[0], r[1] if temp_ok else "-", r[2], r[3]))
         return sorted(out)
-    ok = loose(got, wants) == loose(exp, wants)
+    ok = loose(got) == loose(exp)
     return ok, text, exp, got, k.log, k.paid
 
 

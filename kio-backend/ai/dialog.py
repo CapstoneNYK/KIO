@@ -488,7 +488,6 @@ def _swap_menu(state: dict, text: str, new_menu: str, by_name: dict, menus: list
     queue = state["queue"]
     head = queue[0]
     order = head["order"]
-    old = order["menu"]
     order["menu"] = new_menu
     order["option_details"], order["options"] = [], []
     m = _HAS_QTY.search(text)

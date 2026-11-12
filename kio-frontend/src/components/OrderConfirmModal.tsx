@@ -161,7 +161,7 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
       {showPayment && (
         <PaymentModal
           onClose={() => { setPaymentDetailOverlayOpen(false); setGuideScreen(null); }}
-          onSelect={(_method) => {
+          onSelect={() => {
             setPaymentDetailOverlayOpen(false);
             setGuideScreen(null);
             onNext();

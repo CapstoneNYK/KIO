@@ -20,6 +20,7 @@ interface Order {
   final_amount: number;
   is_packaging: number;
   status: string;
+  memo?: string;
   items: OrderItem[];
 }
 
@@ -52,7 +53,7 @@ const csvCell = (value: string | number) => {
 };
 
 const downloadCsv = (orders: Order[]) => {
-  const header = ["주문번호", "주문시각", "상태", "결제수단", "구분", "메뉴", "주문금액", "할인금액", "결제금액"];
+  const header = ["주문번호", "주문시각", "상태", "결제수단", "구분", "메뉴", "요청사항", "주문금액", "할인금액", "결제금액"];
   const rows = orders.map((o) => [
     o.id,
     o.created_at,
@@ -62,6 +63,7 @@ const downloadCsv = (orders: Order[]) => {
     o.items
       .map((i) => `${i.menu_name}${i.temperature ? `(${i.temperature})` : ""} x${i.quantity}${i.options ? ` {${i.options}}` : ""}${i.is_free ? " [무료]" : ""}`)
       .join(" / "),
+    o.memo ?? "",
     o.total_amount,
     o.discount_amount,
     o.final_amount,
@@ -313,6 +315,12 @@ export const OrderHistory = () => {
                           </div>
                         ))}
                       </div>
+                      {order.memo ? (
+                        <p className="mt-3 text-sm text-gray-700">
+                          <span className="mr-2 text-xs font-bold px-1.5 py-0.5 rounded bg-pink-50 text-pink-600">요청사항</span>
+                          {order.memo}
+                        </p>
+                      ) : null}
                       {order.status !== "CANCELLED" && (
                         <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
                           <button

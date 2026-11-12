@@ -3,12 +3,15 @@ import re
 import tempfile
 
 from dotenv import load_dotenv
+
+load_dotenv()  # ai.llm·ai.stt·app.admin.auth 가 import 시점에 환경변수를 읽으므로 다른 import 보다 먼저 불러온다
+
 from fastapi import FastAPI, File, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from ai.recommend import qa_chain, recommend_chain
+from ai.recommend import RecommendOutput, qa_chain, recommend_chain
 from ai.intent import classify_intent
 from ai.fast_intent import fast_classify
 from ai.entity import (
@@ -23,8 +26,7 @@ from ai.entity import (
     fix_stt_errors,
     normalize_text,
 )
-from ai.payment import get_payment_response
-from ai.dialog import _HOT as _HOT_W, _ICE as _ICE_W
+from ai.payment import extract_payment_method, get_payment_response, payment_label
 from ai.stt import transcribe as transcribe_audio
 from ai.logging_utils import log_feedback, log_intent_query, log_interaction
 from ai.order import (
@@ -38,7 +40,7 @@ from ai.order import (
     validate_options,
 )
 from ai.cart_command import detect_cart_command, parse_cart
-from ai.dialog import answer_slot, current_question, start_dialog
+from ai.dialog import _HOT as _HOT_W, _ICE as _ICE_W, answer_slot, current_question, start_dialog
 from ai.preference import find_alternatives, recommend_by_conditions
 from app.coupon.router import router as coupon_router
 from app.admin import db as admin_db
@@ -50,8 +52,6 @@ from app.admin.router import (
     menus_public_router,
     orders_router,
 )
-
-load_dotenv()
 
 app = FastAPI()
 
@@ -253,11 +253,31 @@ def _alternatives_map(sold_out: list[str], menus: list[dict]) -> dict[str, list[
     return alternatives
 
 
+_LLM_FAIL_ANSWER = "지금은 답변을 준비하지 못했어요. 다시 한 번 말씀해 주세요."
+
+
 def _recommend(query: str):
-    by_rule = recommend_by_conditions(query, admin_db.get_menus())
+    menus = admin_db.get_menus()
+    by_rule = recommend_by_conditions(query, menus)
     if by_rule is not None:
         return by_rule
-    return recommend_chain.invoke(query)
+    try:
+        result = recommend_chain.invoke(query)
+    except Exception as e:  # Ollama 가 꺼져 있거나 응답이 늦을 때도 키오스크가 멈추지 않게 한다
+        print("추천 오류:", e)
+        return RecommendOutput(answer=_LLM_FAIL_ANSWER, menus=[])
+    # LLM 이 메뉴판에 없는 이름을 지어내면 '1번 주세요'로 없는 메뉴가 담기므로 걸러 낸다
+    names = {m["name"] for m in menus}
+    result.menus = [n for n in result.menus if n.removeprefix("핫 ").removeprefix("아이스 ") in names]
+    return result
+
+
+def _qa_answer(query: str, cart_items: list[str]) -> str:
+    try:
+        return qa_chain.invoke({"question": query, "cart_items": cart_items})
+    except Exception as e:
+        print("안내 답변 오류:", e)
+        return _LLM_FAIL_ANSWER
 
 
 def _cart_quantities(cart_items: list[str]) -> dict[str, int]:
@@ -265,6 +285,16 @@ def _cart_quantities(cart_items: list[str]) -> dict[str, int]:
     for line in parse_cart(cart_items):
         totals[line["menu"]] = totals.get(line["menu"], 0) + line["quantity"]
     return totals
+
+
+def _prepare_orders(entities: list[dict], menus: list[dict], cart_items: list[str]):
+    """말에서 뽑은 주문을 품절·재고·옵션 규칙에 맞춘다. (주문들, 메뉴가 있는 주문들, 품절 메뉴, 재고 안내, 옵션 안내)"""
+    sold_out_names = {m["name"] for m in menus if m["sold_out"]}
+    orders, sold_out = split_sold_out(entities_to_orders(entities), sold_out_names)
+    orders, stock_notices = limit_by_stock(orders, menus, _cart_quantities(cart_items))
+    orders, notices = validate_options(orders, menus)
+    named = [o for o in orders if o["menu"]]
+    return orders, named, sold_out, stock_notices, notices
 
 
 def _order_response(
@@ -315,8 +345,8 @@ def _wants_pay_now(query: str) -> bool:
 
 def _order_and_pay_now(question: str, orders: list[dict], named: list[dict], sold_out: list[str],
                        menus: list[dict], notices: list[str]) -> dict:
-    _, method = get_payment_response(question)
-    label = {"card": "카드", "kakao": "카카오페이", "naver": "네이버페이"}.get(method or "", "")
+    method = extract_payment_method(question)
+    label = payment_label(method)
     suffix = f" {label}로 결제 화면으로 이동합니다." if label else " 결제 화면으로 이동합니다."
     alternatives = _alternatives_map(sold_out, menus)
     return {
@@ -356,15 +386,6 @@ async def speech_to_text(file: UploadFile = File(...)):
 
     return {"text": text}
 
-
-@app.post("/api/recommend")
-async def ask_menu(request: QueryRequest):
-    if not request.query.strip():
-        raise HTTPException(status_code=400, detail="질문이 비어있습니다.")
-
-    result = _recommend(request.query)
-    _last_recommended_menus[:] = result.menus
-    return {"question": request.query, "answer": result.answer, "recommended_menus": result.menus}
 
 _TTS_CACHE: dict[str, bytes] = {}
 TTS_VOICE = os.getenv("TTS_VOICE", "ko-KR-SunHiNeural")
@@ -463,8 +484,6 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
     if intent == "order":
         menus = all_menus
         menu_names = [m["name"] for m in menus]
-        sold_out_names = {m["name"] for m in menus if m["sold_out"]}
-
         entities = extract_multi_order(request.query, menu_names)
 
         if all(_is_noise_menu(e.get("menu")) for e in entities):
@@ -478,15 +497,15 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
                 _last_recommended_menus[:] = ambiguous[1]
                 return {"question": request.query, "intent": "recommend", "answer": ambiguous[0],
                         "recommended_menus": ambiguous[1]}
-            elif _category_question(request.query, menus):
-                answer, shown = _category_question(request.query, menus)
+            elif category := _category_question(request.query, menus):
+                answer, shown = category
                 _pending_temp[:] = [x for x in [_temp_prefix(request.query)] if x]
                 _last_recommended_menus[:] = shown
                 return {"question": request.query, "intent": "recommend", "answer": answer,
                         "recommended_menus": shown}
             elif _DISCOUNT_QUESTION_PATTERN.search(request.query):
-                answer = qa_chain.invoke({"question": request.query, "cart_items": request.cart_items})
-                return {"question": request.query, "intent": "qa", "answer": answer}
+                return {"question": request.query, "intent": "qa",
+                        "answer": _qa_answer(request.query, request.cart_items)}
             elif extract_attributes(request.query) and all(
                     _is_noise_menu(e.get("menu"))
                     for e in apply_discount_menu_fallback(entities, request.query, menu_names)):
@@ -498,11 +517,7 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
             else:
                 entities = apply_discount_menu_fallback(entities, request.query, menu_names)
 
-        orders_all = entities_to_orders(entities)
-        orders, sold_out = split_sold_out(orders_all, sold_out_names)
-        orders, stock_notices = limit_by_stock(orders, menus, _cart_quantities(request.cart_items))
-        orders, notices = validate_options(orders, menus)
-        named = [o for o in orders if o["menu"]]
+        orders, named, sold_out, stock_notices, notices = _prepare_orders(entities, menus, request.cart_items)
         if named and _wants_pay_now(request.query):
             # "아아 두 잔 결제", "라떼 하나 카드요"처럼 주문과 결제를 한 번에 말하면 되묻지 않고 바로 결제로 간다
             return _order_and_pay_now(request.query, orders, named, sold_out, menus, stock_notices + notices)
@@ -535,48 +550,17 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
     elif intent == "order_and_pay":
         menus = all_menus
         menu_names = [m["name"] for m in menus]
-        sold_out_names = {m["name"] for m in menus if m["sold_out"]}
-
         entities = extract_multi_order(request.query, menu_names)
-
         if all(not e.get("menu") for e in entities):
             ordinal_entity = _resolve_ordinal_order(request.query)
-            if ordinal_entity:
-                entities = [ordinal_entity]
-            else:
-                entities = apply_discount_menu_fallback(entities, request.query, menu_names)
+            entities = ([ordinal_entity] if ordinal_entity
+                        else apply_discount_menu_fallback(entities, request.query, menu_names))
 
-        orders_all = entities_to_orders(entities)
-        orders, sold_out = split_sold_out(orders_all, sold_out_names)
-        orders, stock_notices = limit_by_stock(orders, menus, _cart_quantities(request.cart_items))
-        orders, notices = validate_options(orders, menus)
+        orders, named, sold_out, stock_notices, notices = _prepare_orders(entities, menus, request.cart_items)
         notices = stock_notices + notices
-        named = [o for o in orders if o["menu"]]
-        _, payment_method = get_payment_response(request.query)
-
-        if not payment_method:
+        if not extract_payment_method(request.query) or ((sold_out or stock_notices) and not named):
             return _order_response(request.query, orders, named, sold_out, menus, notices)
-
-        if (sold_out or stock_notices) and not named:
-            return _order_response(request.query, orders, named, sold_out, menus, notices)
-
-        method_label = {
-            "card": "카드", "kakao": "카카오페이", "naver": "네이버페이",
-            "appcard": "앱카드", "voucher": "모바일상품권", "giftcard": "기프트카드",
-            "kt": "KT VIP", "tmembership": "T멤버십", "cjone": "CJ ONE", "uzu": "T우주",
-        }.get(payment_method or "", "")
-        suffix = f" {method_label}로 결제 화면으로 이동합니다." if method_label else " 결제 화면으로 이동합니다."
-
-        return {
-            "question": request.query,
-            "intent": "order_and_pay",
-            "answer": cart_answer(
-                named, sold_out, pay_suffix=suffix,
-                alternatives=_alternatives_map(sold_out, menus), notices=notices,
-            ),
-            "orders": orders,
-            "payment_method": payment_method,
-        }
+        return _order_and_pay_now(request.query, orders, named, sold_out, menus, notices)
     elif intent == "payment":
         answer, payment_method = get_payment_response(request.query)
         return {
@@ -588,5 +572,4 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
     else:
         mentioned = extract_menu(request.query, [m["name"] for m in all_menus])
         _last_asked[:] = [mentioned] if mentioned else []
-        answer = qa_chain.invoke({"question": request.query, "cart_items": request.cart_items})
-        return {"question": request.query, "intent": intent, "answer": answer}
+        return {"question": request.query, "intent": intent, "answer": _qa_answer(request.query, request.cart_items)}
