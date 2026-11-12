@@ -211,7 +211,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       });
       const res = await askApi(query, cartItemNames, dialogRef.current);
       dialogRef.current = res.dialog ?? null;
-      autoListen.current = res.intent === "dialog" && !!res.dialog;
+      if (res.memo) useCartStore.getState().addMemo(res.memo);
+      autoListen.current = !!res.dialog; // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다
       useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
       let botText = res.answer;
 

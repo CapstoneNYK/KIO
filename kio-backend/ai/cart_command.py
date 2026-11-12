@@ -133,6 +133,11 @@ def _temp_in(text_norm: str) -> Optional[str]:
         return "HOT"
     if ice and not hot:
         return "ICE"
+    if hot and ice:  # "따뜻한 거 말고 차가운 걸로" — 부정된 쪽이 아닌 온도를 고른다
+        if _RE_NOT_HOT.search(text_norm) and not _RE_NOT_ICE.search(text_norm):
+            return "ICE"
+        if _RE_NOT_ICE.search(text_norm) and not _RE_NOT_HOT.search(text_norm):
+            return "HOT"
     return None
 
 

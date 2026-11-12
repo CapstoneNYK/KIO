@@ -193,7 +193,9 @@ def eval_slots(menus):
 
     def pending_of(res):
         st = res["state"]
-        return st["queue"][0]["pending"] if st else None
+        if not st or st.get("stage") == "more":  # 다 정하고 '더 필요한 것 있으세요?' 단계는 끝난 것으로 본다
+            return None
+        return st["queue"][0]["pending"]
 
     for title, first, answers, want_seq, want_orders in DIALOG_SLOT_CASES:
         orders = entities_to_orders(extract_multi_order(fix_stt_errors(first), names))
@@ -209,7 +211,7 @@ def eval_slots(menus):
             seq.append(pending_of(res))
             done += res["orders"]
             for a in answers:
-                if res["state"] is None:
+                if res["state"] is None or res["state"].get("stage") == "more":
                     break
                 nxt = answer_slot(res["state"], fix_stt_errors(a), menus, [], _detect)
                 if nxt is None:
@@ -230,6 +232,55 @@ def eval_slots(menus):
             ok += 1
     n = len(DIALOG_SLOT_CASES)
     print(f"\n=== [대화형] 옵션 되묻기(슬롯 채우기): {ok}/{n} ({ok / n * 100:.1f}%)")
+    for f in fails:
+        print(f"  ✗ {f['text']}")
+        for p in f["problems"]:
+            print(f"      - {p}")
+    return ok, n, fails
+
+
+def eval_more(menus):
+    """다 정한 뒤 '더 주문할 메뉴나 요청사항 있으세요?' 단계의 답 처리."""
+    from ai.cart_command import detect_cart_command as _detect
+    from ai.dialog import answer_slot, start_dialog
+    from eval.cases_dialog import DIALOG_MORE_CASES
+    names = [m["name"] for m in menus]
+    fails, ok = [], 0
+    for title, first, answers, reply, want in DIALOG_MORE_CASES:
+        orders = entities_to_orders(extract_multi_order(fix_stt_errors(first), names))
+        orders, _ = validate_options([o for o in orders if o["menu"]], menus)
+        res = start_dialog(orders, menus)
+        problems = []
+        if res is None:  # 질문 없이 바로 담기는 주문: 더 필요한 것 단계는 건너뜀 (기존 흐름)
+            got = "pass" if want == "pass" else "시작 안 됨"
+        else:
+            for a in answers:
+                res = answer_slot(res["state"], fix_stt_errors(a), menus, [], _detect)
+            if not res["state"] or res["state"].get("stage") != "more":
+                got = "more 단계 아님"
+            else:
+                r2 = answer_slot(res["state"], fix_stt_errors(reply), menus,
+                                 ["아이스 아메리카노"], _detect)
+                if r2 is None:
+                    got = "pass"
+                elif r2["go_payment"]:
+                    got = "pay"
+                elif r2.get("memo"):
+                    got = "memo"
+                elif r2["orders"] and r2["state"] and r2["state"].get("stage") == "more":
+                    got = "again"
+                elif r2["state"] and r2["state"].get("stage") == "more":
+                    got = "which"
+                else:
+                    got = "?"
+        if got != want:
+            problems.append(f"결과 {got} (기대 {want})")
+        if problems:
+            fails.append({"text": title, "problems": problems})
+        else:
+            ok += 1
+    n = len(DIALOG_MORE_CASES)
+    print(f"\n=== [대화형] 더 주문/요청사항 단계: {ok}/{n} ({ok / n * 100:.1f}%)")
     for f in fails:
         print(f"  ✗ {f['text']}")
         for p in f["problems"]:
@@ -348,6 +399,8 @@ def main():
     report["대화형 / 되묻기 이어 받기"] = {"correct": d_ok, "total": d_n, "accuracy": round(d_ok / d_n * 100, 1), "failures": d_fails}
     s_ok, s_n, s_fails = eval_slots(menus)
     report["대화형 / 옵션 되묻기(슬롯 채우기)"] = {"correct": s_ok, "total": s_n, "accuracy": round(s_ok / s_n * 100, 1), "failures": s_fails}
+    m_ok, m_n, m_fails = eval_more(menus)
+    report["대화형 / 더 주문·요청사항 단계"] = {"correct": m_ok, "total": m_n, "accuracy": round(m_ok / m_n * 100, 1), "failures": m_fails}
     report["intent_rules"] = eval_intent_fast(menus)
     report["장바구니 명령 경로 (로그 케이스)"] = eval_cart_route(menus)
     if "--intent" in sys.argv:
