@@ -12,10 +12,13 @@ type Mode = "idle" | "voice";
 // 음성 창이 열려 있을 때 화면을 직접 만지면 창을 숨기고,
 // 되묻는 대화가 남아 있으면 이만큼 가만히 있을 때 다시 연다.
 const REOPEN_AFTER_MS = 4000;
+// 화면을 만져서 음성 창이 닫혔을 때, 다시 눌러 달라는 말풍선을 보여 주는 시간
+const RESUME_HINT_MS = 8000;
 
 export const AssistantButton = () => {
   const [mode, setMode] = useState<Mode>("idle");
   const [showGreeting, setShowGreeting] = useState(true);
+  const [resumeHint, setResumeHint] = useState(false);
   const { scale, setScale, ttsOn, setTtsOn } = useChatPrefs();
 
   useEffect(() => {
@@ -23,6 +26,12 @@ export const AssistantButton = () => {
     const t = setTimeout(() => setShowGreeting(false), 5000);
     return () => clearTimeout(t);
   }, [showGreeting]);
+
+  useEffect(() => {
+    if (!resumeHint) return;
+    const t = setTimeout(() => setResumeHint(false), RESUME_HINT_MS);
+    return () => clearTimeout(t);
+  }, [resumeHint]);
   const location = useLocation();
 
   useEffect(() => {
@@ -75,6 +84,7 @@ export const AssistantButton = () => {
         const busy = useLearningStore.getState().guideScreen || useCouponStore.getState().scanOpen;
         if (autoClosed.current && !busy) {
           autoClosed.current = false;
+          setResumeHint(false);
           setMode("voice");
         }
       }, REOPEN_AFTER_MS);
@@ -85,6 +95,8 @@ export const AssistantButton = () => {
       if (modeRef.current === "voice") {
         autoClosed.current = true;
         setMode("idle");
+        // 되묻는 질문이 남아 있으면 곧 알아서 다시 열리니, 그렇지 않을 때만 다시 눌러 달라고 안내한다
+        if (!useChatPrefs.getState().dialogActive) setResumeHint(true);
       }
       armReopen();
     };
@@ -99,6 +111,7 @@ export const AssistantButton = () => {
   const handleClick = () => {
     autoClosed.current = false;
     setShowGreeting(false);
+    setResumeHint(false);
     if (mode === "idle") setMode("voice");
     else if (mode === "voice") setMode("idle");
   };
@@ -122,7 +135,7 @@ export const AssistantButton = () => {
             </span>
           </div>
           <button
-            onClick={() => { autoClosed.current = false; setMode("idle"); }}
+            onClick={() => { autoClosed.current = false; setResumeHint(false); setMode("idle"); }}
             className="text-pink-100 hover:text-white transition-colors text-lg leading-none"
           >
             ✕
@@ -165,13 +178,21 @@ export const AssistantButton = () => {
       </div>
 
       <div className="relative flex flex-col items-end shrink-0">
-        {showGreeting && mode === "idle" && (
+        {(showGreeting || resumeHint) && mode === "idle" && (
           <div
             className="kio-chat absolute right-full top-0 mr-3 w-72 bg-white rounded-2xl shadow-xl px-5 py-4 text-gray-800 leading-relaxed border-2 border-pink-300"
             style={{ "--kio-s": scale } as React.CSSProperties}
           >
             <p className="break-keep">
-              말로 주문하고 싶으시면 <span className="font-bold text-pink-600">음성주문</span>을 클릭하세요
+              {resumeHint ? (
+                <>
+                  음성 주문을 이어가고 싶으시면 저를 <span className="font-bold text-pink-600">다시 눌러주세요</span>
+                </>
+              ) : (
+                <>
+                  말로 주문하고 싶으시면 <span className="font-bold text-pink-600">음성주문</span>을 클릭하세요
+                </>
+              )}
             </p>
             <div className="absolute -right-2 top-6 w-4 h-4 bg-white border-t border-r border-pink-100 rotate-45" />
           </div>
@@ -184,7 +205,7 @@ export const AssistantButton = () => {
                 ? "ring-4 ring-pink-400 scale-105"
                 : "hover:ring-4 hover:ring-pink-400 hover:scale-105"
             }
-            ${showGreeting && mode === "idle" ? "animate-kio-bounce" : ""}
+            ${(showGreeting || resumeHint) && mode === "idle" ? "animate-kio-bounce" : ""}
           `}
           title="클릭: 음성 어시스턴트"
         >

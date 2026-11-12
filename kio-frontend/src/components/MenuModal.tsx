@@ -2,7 +2,7 @@ import { useState } from "react";
 import { LuX } from "react-icons/lu";
 import type { MenuItem, MenuOption, Temperature } from "../types/menu";
 import { OptionCounter } from "./OptionCounter";
-import { useCartStore, remainingStock } from "../store/cartStore";
+import { useCartStore, remainingStock, optionExtra, OPTION_PRICES } from "../store/cartStore";
 import { useChatPrefs } from "../store/chatPrefsStore";
 
 interface MenuModalProps {
