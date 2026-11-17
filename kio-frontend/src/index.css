@@ -1,6 +1,21 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
+/* 키오스크 전체 기본 글꼴: Pretendard (Tailwind 의 font-sans 도 같은 글꼴로 맞춘다) */
+@theme {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
+    "Apple SD Gothic Neo", sans-serif;
+}
+html,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
+    "Apple SD Gothic Neo", sans-serif;
+}
+
 @keyframes kio-bounce {
   0%   { transform: translateY(0) scaleX(1) scaleY(1); }
   15%  { transform: translateY(-18px) scaleX(0.92) scaleY(1.1); }

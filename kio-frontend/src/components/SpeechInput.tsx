@@ -91,6 +91,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const ttsOn = useChatPrefs((s) => s.ttsOn) && ttsSupported;
   const spokenCount = useRef(0);
   const greeted = useRef(false);
+  // 결제 안내를 말하는 중에 창이 닫혀도 음성을 끊지 않기 위한 표시
+  const keepSpeaking = useRef(false);
+  const setPackagingHint = useCartStore((s) => s.setPackagingHint);
   const location = useLocation();
   const addItem = useCartStore((s) => s.addItem);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -109,6 +112,17 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const dismissPaymentOverlay = useLearningStore(
     (s) => s.dismissPaymentOverlay
   );
+
+  // 결제 쪽으로 넘어가면서 안내를 끝까지 읽어 준다 (창이 닫혀도 음성은 이어진다)
+  const goToPayment = (method: string | null | undefined, spoken: string) => {
+    setHighlightPaymentMethod(method ?? null);
+    setGuideScreen("order_confirm"); // 먹고가기/가져가기를 먼저 고르게 하고, 고른 뒤 결제수단을 강조한다
+    if (ttsOn && spoken) {
+      keepSpeaking.current = true;
+      speak(spoken);
+    }
+    useChatPrefs.getState().closeChat();
+  };
 
   const applyCartActions = (actions: CartAction[]) => {
     const current = useCartStore.getState().items;
@@ -224,6 +238,13 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       });
       const res = await askApi(query, cartItemNames, dialogRef.current);
       dialogRef.current = res.dialog ?? null;
+      if (res.question && res.question !== query) {
+        // 서버가 음성 인식 오류를 고쳤으면("티카페인"→"디카페인") 말풍선에도 고친 문장을 보여 준다
+        setMessages((prev) => {
+          const idx = prev.map((m) => m.role).lastIndexOf("user");
+          return idx < 0 ? prev : prev.map((m, i) => (i === idx ? { ...m, text: res.question } : m));
+        });
+      }
       if (res.memo) useCartStore.getState().addMemo(res.memo);
       autoListen.current = !!res.dialog; // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다
       useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
@@ -244,10 +265,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           botText = "장바구니가 비어 있어요. 먼저 메뉴를 담아주세요.";
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
         } else {
-          setHighlightPaymentMethod(res.payment_method ?? null);
-          setGuideScreen(res.payment_method ? "payment" : "order_confirm");
-          setMessages([]);
-          useChatPrefs.getState().closeChat();
+          const hint = res.payment_method
+            ? "먹고가기나 가져가기를 먼저 눌러 주세요. 그다음 강조된 결제수단을 눌러 주세요."
+            : "먹고가기나 가져가기를 눌러 주세요.";
+          goToPayment(res.payment_method, `${summarizeForSpeech(botText)} ${hint}`);
         }
         return;
       }
@@ -290,6 +311,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
               : (orderInfo.options ?? []).map((name) => ({ name, count: 1 }));
             const packaging = orderInfo.packaging === true;
             if (packaging) setIsPackaging(true);
+            if (orderInfo.packaging === true) setPackagingHint("take");
+            else if (orderInfo.packaging === false) setPackagingHint("dine");
             if (menuItem)
               addItem(
                 menuItem,
@@ -303,11 +326,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
 
         if (res.intent === "order_and_pay" || res.go_payment) {
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
-          setTimeout(() => {
-            setHighlightPaymentMethod(res.payment_method ?? null);
-            setGuideScreen(res.payment_method ? "payment" : "order_confirm");
-            useChatPrefs.getState().closeChat();
-          }, 1000);
+          // 말풍선의 음성은 messages 효과가 읽으니, 닫혀도 끊기지 않게만 해 둔다
+          keepSpeaking.current = ttsOn;
+          setTimeout(() => goToPayment(res.payment_method, ""), 1000);
           return;
         }
       }
@@ -381,7 +402,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       }
     } else {
       stopListening();
-      stopSpeaking();
+      if (keepSpeaking.current) keepSpeaking.current = false;
+      else stopSpeaking();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -412,8 +434,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     }
     const text = bots
       .map((m) => summarizeForSpeech(m.text, m.recommended))
-      .join(" ")
-      .slice(0, 220);
+      .join(" ");
     speak(text, autoListen.current ? reopen : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);

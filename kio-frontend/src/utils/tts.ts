@@ -55,7 +55,7 @@ function speakWithBrowser(text: string, mine: number, onDone?: () => void) {
   }
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "ko-KR";
-  u.rate = 0.9;
+  u.rate = 1.0;
   if (koVoice) u.voice = koVoice;
   const done = () => {
     if (mine === generation) onDone?.();
@@ -160,9 +160,13 @@ export function summarizeForSpeech(text: string, recommended?: string[]): string
     .replace(/\s+/g, " ")
     .trim();
   const sentences = plain.split(/(?<=[.!?。])\s+/);
-  let out = sentences.slice(0, 2).join(" ");
-  if (out.length > MAX_SPEECH_CHARS) out = sentences[0].slice(0, MAX_SPEECH_CHARS);
-  return out;
+  // 끝 문장이 "결제할까요?", "더 필요한 건 없으세요?"처럼 핵심 안내라서 항상 끝까지 읽는다
+  if (sentences.length <= 2) {
+    const all = sentences.join(" ");
+    return all.length <= MAX_SPEECH_CHARS * 1.5 ? all : `${sentences[0].slice(0, MAX_SPEECH_CHARS)} ${sentences[sentences.length - 1]}`.trim();
+  }
+  const last = sentences[sentences.length - 1];
+  return `${sentences[0].slice(0, Math.max(40, MAX_SPEECH_CHARS - last.length))} ${last}`.trim();
 }
 
 export const GREETING_TEXT =

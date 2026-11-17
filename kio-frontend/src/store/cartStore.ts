@@ -18,6 +18,9 @@ interface CartStore {
   packagingChosen: boolean;
   // 옵션으로 표현되지 않는 요청사항 메모 (주문확인 화면에 표시)
   memo: string;
+  // 말로 "먹고 갈게요/포장할게요"라고 했을 때 주문확인에서 미리 강조해 줄 쪽
+  packagingHint: "dine" | "take" | null;
+  setPackagingHint: (v: "dine" | "take" | null) => void;
   addMemo: (m: string) => void;
   setIsPackaging: (v: boolean) => void;
   // 주문확인 창에서 먹고가기/가져가기를 고르면 장바구니 전체에 같은 값을 적용한다
@@ -53,6 +56,8 @@ export const useCartStore = create<CartStore>((set) => ({
   isPackaging: false,
   packagingChosen: false,
   memo: "",
+  packagingHint: null,
+  setPackagingHint: (v) => set({ packagingHint: v }),
   addMemo: (m) => set((state) => ({ memo: state.memo ? `${state.memo} / ${m}` : m })),
   setIsPackaging: (v) => set({ isPackaging: v }),
   setPackagingAll: (v) =>
@@ -138,5 +143,5 @@ export const useCartStore = create<CartStore>((set) => ({
       }
       return { items: state.items.map((i) => (i.cartId === cartId ? { ...i, options } : i)) };
     }),
-  clear: () => set({ items: [], packagingChosen: false, memo: "" }),
+  clear: () => set({ items: [], packagingChosen: false, packagingHint: null, memo: "" }),
 }));

@@ -51,7 +51,7 @@ def _unify_ae_e(ch: str) -> str:
         return chr(0xAC00 + (initial * 21 + medial) * 28 + final)
     return ch
 
-_STT_DECAF = re.compile(r"[디티키지]\s*카\s*[페패폐]\s*[인임]")
+_STT_DECAF = re.compile(r"[디티키지띠]\s*카\s*[페패폐]\s*[인임]")
 _STT_HOT = re.compile(r"(?<![가-힣])(?:하수로|하스로|하쑤로|핫우로|하수루|핫으루|하슬로|맛대)(?![가-힣])")
 
 _STT_SHOT = re.compile(r"(?:찹|챱|샵|삿|셧|샤)(?=\s*(?:을|를)?\s*(?:더\s*)?추가)")
@@ -153,12 +153,22 @@ def extract_quantity(text: str) -> int:
     return 1
 
 
-def extract_ordinal(text: str) -> Optional[int]:
-    text_norm = normalize_text(text)
-    for key in sorted(ORDINAL_KEYWORDS.keys(), key=len, reverse=True):
-        if normalize_text(key) in text_norm:
-            return ORDINAL_KEYWORDS[key]
-    return None
+_ORDINAL_KEY = {k.replace(" ", ""): k for k in ORDINAL_KEYWORDS}
+_ORDINAL_RX = re.compile(
+    r"(?<!\d)(?:" + "|".join(
+        re.escape(k).replace("\\ ", r"\s*") for k in sorted(ORDINAL_KEYWORDS, key=len, reverse=True)) + ")")
+
+
+def extract_ordinal_segments(text: str) -> list[tuple[int, str]]:
+    """"2번 하나랑 3번 두 개"처럼 번호를 여러 개 말했을 때 (번호, 그 번호 뒤에 붙은 말) 목록. 같은 번호는 한 번만."""
+    found = [(m.start(), m.end(), ORDINAL_KEYWORDS[_ORDINAL_KEY.get(re.sub(r"\s+", "", m.group()))])
+             for m in _ORDINAL_RX.finditer(text)]
+    out: list[tuple[int, str]] = []
+    for i, (_, end, num) in enumerate(found):
+        nxt = found[i + 1][0] if i + 1 < len(found) else len(text)
+        if num not in [n for n, _ in out]:
+            out.append((num, text[end:nxt]))
+    return out
 
 
 def active_keywords(menu_names: Optional[list]) -> dict[str, str]:

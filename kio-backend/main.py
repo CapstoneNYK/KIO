@@ -16,7 +16,7 @@ from ai.intent import classify_intent
 from ai.fast_intent import fast_classify
 from ai.entity import (
     extract_multi_order,
-    extract_ordinal,
+    extract_ordinal_segments,
     extract_quantity,
     extract_attributes,
     extract_options_from_text,
@@ -202,6 +202,9 @@ _CATEGORY_WORDS = (  # 어르신이 메뉴 이름 대신 종류로 말하는 경
 )
 
 
+_CATEGORY_ASK = re.compile(r"종류|뭐\s*(?:가\s*)?있|뭐뭐|어떤\s*(?:게|거|메뉴)|무슨\s*(?:게|거|메뉴)")
+
+
 def _category_question(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
     """"커피 하나 주세요"처럼 종류만 말했을 때 그 종류의 메뉴를 보여 주고 고르게 한다."""
     for rx, cats, label in _CATEGORY_WORDS:
@@ -223,23 +226,67 @@ def _temp_prefix(query: str) -> str | None:
     return "핫" if hot and not ice else "아이스" if ice and not hot else None
 
 
-def _resolve_ordinal_order(query: str) -> dict | None:
-    ordinal = extract_ordinal(query)
-    if ordinal and 1 <= ordinal <= len(_last_recommended_menus):
-        chosen_menu = _last_recommended_menus[ordinal - 1]
-        if _pending_temp and not _temp_prefix(query) and not chosen_menu.startswith(("핫 ", "아이스 ")):
-            chosen_menu = f"{_pending_temp[0]} {chosen_menu}"  # 목록을 보여 주기 전에 말한 온도를 이어 간다
-        _pending_temp.clear()
-        return {
-            "menu": chosen_menu,
-            "quantity": extract_quantity(query),
+_RE_ALL_SHOWN = re.compile(r"[둘셋넷]\s*(?:다|모두|전부)|전부|모두|각각|다\s*(?:주세요|줘|주라|할게|먹)")
+
+
+_RE_EXPLICIT_QTY = re.compile(r"\d+\s*[잔개컵]|(?:한|두|세|네|다섯|여섯)\s*[잔개컵]|하나|둘(?!\s*(?:다|모두|전부))|셋|넷")
+_RE_SHARED_QTY = re.compile(r"씩|각각|[둘셋넷]\s*(?:다|모두|전부)|모두|전부")
+
+
+def _explicit_qty(seg: str) -> int | None:
+    return extract_quantity(seg) if _RE_EXPLICIT_QTY.search(seg) else None
+
+
+_RE_REQUEST_CUE = re.compile(
+    r"저지방|무지방|두유|오트|귀리|아몬드|우유|덜\s*달|달게|달지|시럽|설탕|얼음|휘핑|크림|미지근|싱겁|넣지|"
+    r"빼\s*(?:줘|주세요|달라|고)|많이|적게|조금만|따로|디카페인|빨대|리필|알레르기")
+_RE_REQUEST_NOT = re.compile(r"더\s*(?:주세요|줘|추가)|하나\s*더|한\s*잔\s*더|결제|계산|취소|삭제|지워|얼마|가격|뭐|"
+                             r"있나요|있어요|있어\?|되나요|돼요|가능|알려")
+
+
+def _memo_request(query: str, menus: list[dict], cart_items: list[str]) -> dict | None:
+    """담아 둔 메뉴에 대한 추가 요청("딸기라떼 우유는 저지방으로", "카페라떼는 디카페인으로")은 새 주문이 아니라 요청사항 메모로 적는다."""
+    if not cart_items or not _RE_REQUEST_CUE.search(query) or _RE_REQUEST_NOT.search(query):
+        return None
+    if extract_option_details(query):  # 샷 추가 같은 정식 옵션은 기존 처리
+        return None
+    qn = normalize_text(query)
+    cart_text = normalize_text(" ".join(cart_items))
+    named = [m["name"] for m in menus if normalize_text(m["name"]) in qn]
+    if named and not any(normalize_text(n) in cart_text for n in named):
+        return None  # 아직 안 담은 메뉴를 말했으면 새 주문이다
+    memo = re.sub(r"^(?:근데|그리고|아\s*참|참|그런데)\s*", "", re.sub(r"\s+", " ", query).strip()).rstrip("?.! ")[:60]
+    return {"question": query, "intent": "qa", "answer": f"'{memo}' 요청사항으로 적어 둘게요.", "memo": memo}
+
+
+def _resolve_ordinal_orders(query: str) -> list[dict]:
+    """추천 목록에서 번호로 고른 주문. "2번 하나랑 3번 두 개"처럼 여러 번호는 번호마다 수량을 따로 읽는다."""
+    picks = [(n, seg) for n, seg in extract_ordinal_segments(query) if 1 <= n <= len(_last_recommended_menus)]
+    if not picks and len(_last_recommended_menus) >= 2 and _RE_ALL_SHOWN.search(query):
+        # "둘 다 한 잔씩", "전부 주세요": 방금 보여 준 목록을 모두 고른 것이다
+        picks = [(n, query) for n in range(1, len(_last_recommended_menus) + 1)]
+    if not picks:
+        return []
+    multi = len(picks) > 1 and picks[0][1] != query
+    # "1번 2번 둘 다 두 잔씩"처럼 수량을 한 번만 말했으면 고른 메뉴 모두에 같은 수량을 준다
+    shared = _explicit_qty(picks[-1][1]) if multi and _RE_SHARED_QTY.search(query) else None
+    temp = _pending_temp[0] if _pending_temp and not _temp_prefix(query) else None
+    _pending_temp.clear()
+    entities = []
+    for n, seg in picks:
+        menu = _last_recommended_menus[n - 1]
+        if temp and not menu.startswith(("핫 ", "아이스 ")):
+            menu = f"{temp} {menu}"  # 목록을 보여 주기 전에 말한 온도를 이어 간다
+        entities.append({
+            "menu": menu,
+            "quantity": ((_explicit_qty(seg) or shared or 1) if multi else extract_quantity(query)),
             "attributes": extract_attributes(query),
             "options": extract_options_from_text(query),
             "option_details": extract_option_details(query),
             "packaging": extract_packaging(query),
             "needs_recommendation": False,
-        }
-    return None
+        })
+    return entities
 
 
 def _alternatives_map(sold_out: list[str], menus: list[dict]) -> dict[str, list[str]]:
@@ -269,7 +316,18 @@ def _recommend(query: str):
     # LLM 이 메뉴판에 없는 이름을 지어내면 '1번 주세요'로 없는 메뉴가 담기므로 걸러 낸다
     names = {m["name"] for m in menus}
     result.menus = [n for n in result.menus if n.removeprefix("핫 ").removeprefix("아이스 ") in names]
+    if result.menus:  # LLM 의 "메뉴 - 맛" 목록은 기계 같아서, 고른 메뉴만 받아 문장은 우리가 만든다
+        result.answer = _recommend_answer(result.menus, menus)
     return result
+
+
+def _recommend_answer(picked: list[str], menus: list[dict]) -> str:
+    by_name = {m["name"]: m for m in menus}
+    lines = []
+    for i, name in enumerate(picked, 1):
+        tags = by_name.get(name.removeprefix("핫 ").removeprefix("아이스 "), {}).get("tags") or []
+        lines.append(f"{i}번 {name}" + (f" ({', '.join(tags[:3])})" if tags else ""))
+    return "이런 메뉴는 어떠세요?\n" + "\n".join(lines) + "\n마음에 드는 걸 번호나 이름으로 말씀해 주세요."
 
 
 def _qa_answer(query: str, cart_items: list[str]) -> str:
@@ -330,6 +388,8 @@ def _dialog_response(question: str, res: dict, **extra) -> dict:
         "orders": res["orders"],
         "dialog": res["state"],
         "go_payment": res["go_payment"],
+        # "카드 결제할게요"처럼 되묻는 중에 결제 수단까지 말했으면 결제 화면에서 그 수단을 강조한다
+        "payment_method": extract_payment_method(question) if res["go_payment"] else None,
         "memo": res.get("memo"),
         **extra,
     }
@@ -389,7 +449,7 @@ async def speech_to_text(file: UploadFile = File(...)):
 
 _TTS_CACHE: dict[str, bytes] = {}
 TTS_VOICE = os.getenv("TTS_VOICE", "ko-KR-SunHiNeural")
-TTS_RATE = os.getenv("TTS_RATE", "-8%")
+TTS_RATE = os.getenv("TTS_RATE", "+8%")
 
 
 class TTSRequest(BaseModel):
@@ -465,6 +525,10 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
     if command:
         return {"question": request.query, **command}
 
+    memo_request = _memo_request(request.query, all_menus, request.cart_items)
+    if memo_request:
+        return memo_request
+
     qn = normalize_text(request.query)
     if _RE_POPULAR.search(qn):
         answer, popular = _popular_answer(all_menus)
@@ -473,6 +537,14 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
     if (_RE_DISCOUNT_INFO.search(qn) and not _RE_DISCOUNT_SPECIFIC.search(qn)
             and not extract_menu(request.query, [m["name"] for m in all_menus])):
         return {"question": request.query, "intent": "qa", "answer": _discount_info_answer()}
+
+    if _CATEGORY_ASK.search(qn) and not extract_menu(request.query, [m["name"] for m in all_menus]):
+        category = _category_question(request.query, all_menus)  # "스무디 종류 뭐 있어?" — LLM 없이 목록으로 답한다
+        if category:
+            answer, shown = category
+            _pending_temp[:] = [x for x in [_temp_prefix(request.query)] if x]
+            _last_recommended_menus[:] = shown
+            return {"question": request.query, "intent": "recommend", "answer": answer, "recommended_menus": shown}
 
     temp_answer = _temperature_answer(request.query, all_menus)
     if temp_answer:
@@ -487,11 +559,11 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
         entities = extract_multi_order(request.query, menu_names)
 
         if all(_is_noise_menu(e.get("menu")) for e in entities):
-            ordinal_entity = (_resolve_ordinal_order(request.query) or _resolve_by_recommended(request.query)
-                              or _resolve_last_asked(request.query))
-            ambiguous = None if ordinal_entity else _ambiguous_menu_question(request.query, menus)
-            if ordinal_entity:
-                entities = [ordinal_entity]
+            ordinal_entities = (_resolve_ordinal_orders(request.query)
+                                or [e for e in [_resolve_by_recommended(request.query) or _resolve_last_asked(request.query)] if e])
+            ambiguous = None if ordinal_entities else _ambiguous_menu_question(request.query, menus)
+            if ordinal_entities:
+                entities = ordinal_entities
             elif ambiguous:
                 _pending_temp[:] = [x for x in [_temp_prefix(request.query)] if x]
                 _last_recommended_menus[:] = ambiguous[1]
@@ -552,9 +624,8 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
         menu_names = [m["name"] for m in menus]
         entities = extract_multi_order(request.query, menu_names)
         if all(not e.get("menu") for e in entities):
-            ordinal_entity = _resolve_ordinal_order(request.query)
-            entities = ([ordinal_entity] if ordinal_entity
-                        else apply_discount_menu_fallback(entities, request.query, menu_names))
+            entities = (_resolve_ordinal_orders(request.query)
+                        or apply_discount_menu_fallback(entities, request.query, menu_names))
 
         orders, named, sold_out, stock_notices, notices = _prepare_orders(entities, menus, request.cart_items)
         notices = stock_notices + notices
