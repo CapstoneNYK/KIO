@@ -2,7 +2,7 @@ import re
 import time
 from typing import Optional
 
-from ai.entity import extract_menu, extract_option_details, normalize_text
+from ai.entity import extract_menu, extract_option_details, extract_packaging, normalize_text
 from ai.order import validate_options
 
 
@@ -301,13 +301,58 @@ def _temperature_all(t: str, cart: list, by_name: dict) -> Optional[dict]:
     return _result("modify", msg, [{"type": "set_temperature_all", "temperature": target, "menus": ok}])
 
 
+def _options_by_parts(text: str, t: str, cart: list, target: Optional[str], target_temp: Optional[str],
+                      by_name: dict) -> Optional[dict]:
+    """"아메리카노 하나는 연하게 하나는 샷 추가해줘" — 같은 줄의 잔마다 다른 요청사항을 나눠 적용한다."""
+    if not target or not cart or _RE_CANCEL_STRONG.search(t):
+        return None
+    parts = list(_RE_PART.finditer(t))
+    if len(parts) < 2:
+        return None
+    segments = []
+    for i, pm in enumerate(parts):
+        end = parts[i + 1].start() if i + 1 < len(parts) else len(t)
+        details = extract_option_details(t[pm.end():end])
+        if not details:
+            return None
+        g = pm.group(1)
+        segments.append((int(g) if g.isdigit() else _NUM_WORDS.get(g, 1), details))
+    picked, _ = _pick_lines(cart, target, t, target_temp, allow_every=False)
+    if len(picked) != 1:
+        return None
+    line = picked[0]
+    if sum(n for n, _ in segments) > line["quantity"]:
+        return _result("modify", f"{_eun(target)} {line['quantity']}잔 담겨 있어요. 그 안에서 말씀해 주세요.")
+    info = by_name.get(target, {})
+    actions, said, notices = [], [], []
+    for n, details in segments:
+        order = {"menu": target, "temperature": line["temperature"] or "ICE", "option_details": [dict(d) for d in details]}
+        _, ns = validate_options([order], [info] if info else [])
+        notices += ns
+        kept = order["option_details"]
+        if not kept:
+            return _result("modify", " ".join(ns) or "적용할 수 있는 옵션이 없어요.")
+        new_kinds = {d["kind"] for d in kept}
+        options = [o for o in line["options"] if _kind_of(o["name"]) not in new_kinds] + \
+                  [{"name": d["name"], "count": d.get("count", 1)} for d in kept]
+        actions.append({"type": "set_options", "index": line["index"], "count": n, "options": options})
+        said.append(f"{n}잔에는 '{', '.join(_opt_label({'name': d['name'], 'count': d.get('count', 1)}) for d in kept)}'")
+    msg = f"{target} {', '.join(said)} 옵션을 적용했어요."
+    rest = line["quantity"] - sum(n for n, _ in segments)
+    if rest:
+        msg += f" 나머지 {rest}잔은 그대로예요."
+    return _result("modify", " ".join([msg] + notices), actions)
+
+
 def _temperature_part(text: str, t: str, cart: list, menu: Optional[str], by_name: dict) -> Optional[dict]:
     """"아메리카노 하나는 따뜻하게" — 같은 메뉴 줄의 일부 수량만 온도를 바꾼다."""
     if not menu or menu not in [c["menu"] for c in cart] or _RE_CANCEL_STRONG.search(t):
         return None
     pm = _RE_PART.search(t)
-    target = _temp_in(t)
-    if not pm or not target:
+    if not pm:
+        return None
+    target = _temp_in(t[pm.end():])  # "아이스 아메리카노 하나는 연하게"의 앞쪽 '아이스'는 메뉴를 가리키는 말이다
+    if not target:
         return None
     g = pm.group(1)
     count = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
@@ -353,6 +398,18 @@ def _temperature_correction(t: str, target: Optional[str], temp: Optional[str], 
                    [{"type": "set_temperature", "menu": target, "temperature": temp}])
 
 
+def _packaging_only(text: str, t: str, menu_names: list) -> Optional[dict]:
+    """"가지고 갈게", "포장할게요", "여기서 먹을게요"처럼 메뉴 없이 먹고가기/가져가기만 말한 경우."""
+    if len(t) > 16 or re.search(r"\d", t) or _RE_NON_CART.search(t) or extract_menu(text, menu_names):
+        return None
+    packaging = extract_packaging(text)
+    if packaging is None:
+        return None
+    msg = "가져가시는 걸로 알겠어요. 주문 확인에서 가져가기를 골라 주세요." if packaging else \
+          "매장에서 드시는 걸로 알겠어요. 주문 확인에서 먹고가기를 골라 주세요."
+    return _result("modify", msg, [{"type": "set_packaging", "packaging": packaging}])
+
+
 def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[dict]:
     t = normalize_text(text)
     menu_names = [m["name"] for m in menus]
@@ -369,6 +426,10 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
     resolved = _resolve_pending(text, t, cart, menus, by_name, menu_names)
     if resolved is not None:
         return resolved
+
+    pack_only = _packaging_only(text, t, menu_names)
+    if pack_only is not None:
+        return pack_only
 
     minus = _RE_MINUS_N.search(t)
     if minus and cart:  # "한 잔 빼줘" — 장바구니 줄이 하나(또는 메뉴를 말함)면 그만큼만 줄인다
@@ -398,6 +459,10 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
     part = _temperature_part(text, t, cart, target0, by_name)
     if part is not None:
         return part
+
+    by_parts = _options_by_parts(text, t, cart, target0, target_temp0, by_name)
+    if by_parts is not None:
+        return by_parts
 
     corrected = _temperature_correction(t, target0, target_temp0, cart, by_name)
     if corrected is not None:

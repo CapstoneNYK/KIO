@@ -192,7 +192,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           if (line) removeItem(line.cartId);
         });
       } else if (action.type === "set_options") {
-        const line = current[action.index];
+        // 한 줄을 여러 번 나눠 적용할 수 있으니(하나는 연하게 하나는 샷 추가) 매번 최신 장바구니에서 그 줄을 다시 찾는다
+        const stale = current[action.index];
+        const line = stale && useCartStore.getState().items.find((i) => i.cartId === stale.cartId);
         if (line) {
           if (action.count >= line.quantity) {
             updateOptions(line.cartId, action.options);
@@ -201,6 +203,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
             addItem(line.item, action.count, line.temperature, action.options, line.isPackaging);
           }
         }
+      } else if (action.type === "set_packaging") {
+        // 메뉴 없이 "가지고 갈게요"만 말한 경우: 주문 확인 화면에서 해당 버튼을 미리 강조한다
+        setIsPackaging(action.packaging);
+        setPackagingHint(action.packaging ? "take" : "dine");
       } else if (action.type === "replace_item") {
         const found = lines(action.menu);
         const target = found[found.length - 1];

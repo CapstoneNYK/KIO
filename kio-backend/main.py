@@ -445,6 +445,31 @@ def _prepare_orders(entities: list[dict], menus: list[dict], cart_items: list[st
     return orders, named, sold_out, stock_notices, notices
 
 
+_RE_ORDER_MEMO = re.compile(
+    r"(?:(?:조금|살짝|아주|너무)\s*)?(?:덜|안)\s*달게|달지\s*않게|달지\s*않은\s*걸?로?|덜\s*단\s*걸?로?|(?:조금|많이)\s*달게|싱겁게|"
+    r"(?:저지방|무지방|두유|오트(?:밀)?|귀리|아몬드)\s*우유(?:로)?|우유[는를]?\s*(?:저지방|무지방|두유|오트|귀리|아몬드)\S*|"
+    r"펄\s*(?:많이|적게|빼고|조금)|젤리\s*(?:많이|적게|빼고)|빨대\s*(?:빼|없이)|얼음\s*(?:많이|적게|조금만?|빼고)")
+
+
+def _order_memo(query: str, named: list[dict]) -> dict:
+    """"녹차라떼 덜 달게 따뜻하게 줘"처럼 옵션으로 담을 수 없는 요청이 주문에 섞여 있으면 요청사항 메모로도 남긴다."""
+    if not named or extract_option_details(query):
+        return {}
+    hits = [m.group(0).strip() for m in _RE_ORDER_MEMO.finditer(query)]
+    if not hits:
+        return {}
+    labels = [f"{'아이스' if o.get('temperature') == 'ICE' else '따뜻한'} {o['menu']}" for o in named]
+    return {"memo": " ".join(dict.fromkeys(hits)), "memo_menu": ", ".join(dict.fromkeys(labels))}
+
+
+def _with_memo(resp: dict, query: str, named: list[dict]) -> dict:
+    extra = _order_memo(query, named)
+    if extra:
+        resp.update(extra)
+        resp["answer"] = f"{resp['answer']} '{extra['memo']}' 요청사항도 적어 둘게요."
+    return resp
+
+
 def _order_response(
     question: str,
     orders: list[dict],
@@ -454,14 +479,14 @@ def _order_response(
     notices: list[str] | None = None,
 ) -> dict:
     alternatives = _alternatives_map(sold_out, menus or [])
-    return {
+    return _with_memo({
         "question": question,
         "intent": "order",
         "answer": cart_answer(named, sold_out, alternatives=alternatives, notices=notices),
         "orders": orders,
         "sold_out": sold_out,
         "alternatives": alternatives,
-    }
+    }, question, named)
 
 
 class QueryRequest(BaseModel):
@@ -499,7 +524,7 @@ def _order_and_pay_now(question: str, orders: list[dict], named: list[dict], sol
     label = payment_label(method)
     suffix = f" {label}로 결제 화면으로 이동합니다." if label else " 결제 화면으로 이동합니다."
     alternatives = _alternatives_map(sold_out, menus)
-    return {
+    return _with_memo({
         "question": question,
         "intent": "order_and_pay",
         "answer": cart_answer(named, sold_out, pay_suffix=suffix, alternatives=alternatives, notices=notices),
@@ -507,7 +532,7 @@ def _order_and_pay_now(question: str, orders: list[dict], named: list[dict], sol
         "payment_method": method,
         "sold_out": sold_out,
         "alternatives": alternatives,
-    }
+    }, question, named)
 
 
 @app.get("/")
@@ -705,7 +730,7 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
                 started["answer"] = cart_answer(
                     [], sold_out, alternatives=_alternatives_map(sold_out, menus), notices=keep
                 ) + " " + started["answer"]
-            return _dialog_response(request.query, started, sold_out=sold_out)
+            return _dialog_response(request.query, started, sold_out=sold_out, **_order_memo(request.query, named))
         notices = stock_notices + notices
         return _order_response(request.query, orders, named, sold_out, menus, notices)
     elif intent == "coupon":

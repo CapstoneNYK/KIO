@@ -25,14 +25,26 @@ MENU_ALIASES = [
 ]
 
 
+def _inside_full_name(qn: str, said: str, menus: list[dict]) -> bool:
+    """말한 이름이 우리 메뉴의 정식 이름 안에 이미 들어 있으면(녹차라떼 안의 '녹차') 별칭 풀이를 하지 않는다."""
+    for m in menus:
+        nm = normalize_text(m["name"])
+        if said in nm and nm in qn:
+            return True
+    return False
+
+
 def resolve_owned_aliases(query: str, menus: list[dict], confirmed: list[str]) -> str:
     """"버블티로 두 잔 달라니까"처럼 말한 이름이 우리 메뉴 이름의 일부이고(버블티 ⊂ 흑당버블티) 그 메뉴를 방금 권해서
     손님이 이미 알고 있으면(confirmed), 그 메뉴 이름으로 바꿔 곧바로 주문으로 잇는다. 처음 말했으면 먼저 확인한다."""
+    qn = normalize_text(query)
     for rx, key, _ in MENU_ALIASES:
         hit = rx.search(query)
         if not hit:
             continue
         said = normalize_text(hit.group(0))
+        if _inside_full_name(qn, said, menus):
+            continue
         owners = [m["name"] for m in menus if not m["sold_out"] and normalize_text(key) in normalize_text(m["name"])
                   and said in normalize_text(m["name"])]
         if owners and owners[0] in confirmed:
@@ -48,6 +60,8 @@ def alias_answer(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
         if not hit:
             continue
         said = normalize_text(hit.group(0))
+        if _inside_full_name(qn, said, menus):
+            continue  # "녹차라떼 하나 줘" — 정식 메뉴 이름을 말한 것이라 비슷한 메뉴를 권하지 않는다
         picks = [m["name"] for m in menus if normalize_text(key) in normalize_text(m["name"]) and not m["sold_out"]]
         if not picks:
             continue
