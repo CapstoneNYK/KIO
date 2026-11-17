@@ -328,6 +328,31 @@ def _temperature_part(text: str, t: str, cart: list, menu: Optional[str], by_nam
     return _result("modify", msg, [{"type": "set_temperature_part", "menu": menu, "temperature": target, "count": count}])
 
 
+_RE_TEMP_CORRECT = _rx(
+    r"(?:차갑|차게|시원하|따뜻하|따듯하|뜨겁|뜨거)게?(?:줘|주세요|줄래|할게|할래|해줘|해주세요|해주라|해요)"
+    r"|(?:아이스|핫)(?:로|으로)(?:줘|주세요|줄래|할게|할래|해줘|해주세요|해요)")
+_RE_NEW_QTY = _rx(r"\d+(?:잔|개|컵)|[한두세네다섯]잔|[한두세네]개|하나|둘|셋|넷|더")
+
+
+def _temperature_correction(t: str, target: Optional[str], temp: Optional[str], cart: list, by_name: dict) -> Optional[dict]:
+    """"아니다 디카페인 라떼 그냥 차갑게 줘" — 담아 둔 메뉴를 다른 온도로 달라고 고쳐 말하면 온도를 바꾼다(새 주문이 아니다)."""
+    if not target or not temp or not _RE_TEMP_CORRECT.search(t) or _RE_NEW_QTY.search(t) or _RE_CANCEL_STRONG.search(t):
+        return None
+    lines = [c for c in cart if c["menu"] == target]
+    if not lines:
+        return None
+    differing = [c for c in lines if c["temperature"] != temp]
+    if len(differing) != len(lines) or len(lines) != 1:
+        return None
+    temps = by_name.get(target, {}).get("temps") or []
+    label = "아이스" if temp == "ICE" else "따뜻한"
+    if temps and temp not in temps:
+        only = "아이스" if "ICE" in temps else "따뜻한"
+        return _result("modify", f"{_eun(target)} {only} 음료로만 주문할 수 있어요.")
+    return _result("modify", f"{_eul(target)} {label} 음료로 바꿨어요.",
+                   [{"type": "set_temperature", "menu": target, "temperature": temp}])
+
+
 def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[dict]:
     t = normalize_text(text)
     menu_names = [m["name"] for m in menus]
@@ -373,6 +398,10 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
     part = _temperature_part(text, t, cart, target0, by_name)
     if part is not None:
         return part
+
+    corrected = _temperature_correction(t, target0, target_temp0, cart, by_name)
+    if corrected is not None:
+        return corrected
 
     if (target0 and target0 in cart_menus and _RE_EXISTING.search(t)
             and not _RE_CANCEL_STRONG.search(t) and not _RE_CHANGE.search(t) and not _RE_REPLACE_SPLIT.search(t)):
