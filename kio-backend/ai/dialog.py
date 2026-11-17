@@ -323,6 +323,7 @@ def _advance(queue: list, completed: list, menus: list[dict], prefix: str = "") 
     """큐 맨 앞 주문의 다음 질문을 만들고, 다 끝난 주문은 completed로 옮긴다."""
     by_name = {m["name"]: m for m in menus}
     notes = [prefix] if prefix else []
+    added: list[str] = []  # 담은 음료는 "A, B 담았어요."처럼 한 문장으로 모아 말한다
     lite_seen = False
     while queue:
         head = queue[0]
@@ -336,12 +337,16 @@ def _advance(queue: list, completed: list, menus: list[dict], prefix: str = "") 
             lead = ""
             if completed and not head["asked"]:
                 lead = P.NEXT_MENU.format(menu=order["menu"]) + " "
+            if added:
+                notes.append(P.ADDED.format(items=", ".join(added)))
             answer = " ".join(notes + [lead + _question(slot, order)]).strip()
             return _result({"queue": queue}, completed, answer)
-        notes.append(P.ADDED.format(items=_describe(order)))
+        added.append(_describe(order))
         completed.append(order)
         lite_seen = lite_seen or head.get("lite", False)
         queue.pop(0)
+    if added:
+        notes.append(P.ADDED.format(items=", ".join(added)))
     if lite_seen:
         notes.append(P.OPTIONS_ON_SCREEN)
     if ASK_MORE:  # 바로 결제로 넘어가지 않고 더 주문할 메뉴나 요청사항이 있는지 묻는다
@@ -375,7 +380,8 @@ _DONE = _rx(r"^(?:아니|아뇨|없|괜찮|됐|그게다|이게다|다예요|다
 _DONE_ANY = _rx(r"없어요|없습니다|없는데|없어|그게다|이게다|이대로|결제할게|결제해|괜찮아|됐어요|됐습니다|끝이에요|끝났어")
 
 
-_MORE_QUESTION = re.compile(r"\?|뭐|뭘|무엇|어떤|어떻|어디|언제|종류|얼마|몇|알려|궁금|추천")
+_MORE_QUESTION = re.compile(r"뭐|뭘|무엇|어떤|어떻|어디|언제|종류|얼마|몇|알려|궁금|추천")
+_MORE_REQUEST = re.compile(r"넣어\s*줄래|넣어\s*줘|넣어\s*주세요|빼\s*줄래|빼\s*줘|해\s*줄래|해\s*주세요|넣을\s*거|넣을게|줄래")  # 물음표로 끝나도 부탁이다
 
 
 def _answer_more(state: dict, text: str, menus: list[dict], cart_items, detect_command) -> Optional[dict]:
@@ -403,11 +409,12 @@ def _answer_more(state: dict, text: str, menus: list[dict], cart_items, detect_c
     from ai.fast_intent import fast_classify
     if fast_classify(text, list(by_name)) in ("payment", "order_and_pay", "coupon", "recommend", "qa", "order"):
         return None
-    if _MORE_QUESTION.search(text) or extract_ordinal_segments(text):  # "스무디 종류 뭐 있어?" 같은 질문은 메모가 아니라 답해야 한다
+    asked = _MORE_QUESTION.search(text) or ("?" in text and not _MORE_REQUEST.search(text))
+    if asked or extract_ordinal_segments(text):  # "스무디 종류 뭐 있어?" 같은 질문은 메모가 아니라 답해야 한다
         return None
     if _YES.search(t) and len(t) <= 6:  # "네"만 말하면 무엇인지 묻는다
         return _result({"queue": [], "stage": "more"}, [], P.MORE_WHICH)
-    memo = re.sub(r"\s+", " ", text).strip()[:60]
+    memo = re.sub(r"\s+", " ", text).strip().rstrip("?.! ")[:60]
     res = _result({"queue": [], "stage": "more"}, [], P.MEMO_SAVED.format(memo=memo))
     res["memo"] = memo
     return res

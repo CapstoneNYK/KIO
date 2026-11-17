@@ -1,6 +1,9 @@
 import os
 import re
 import tempfile
+import time
+import asyncio
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 
@@ -15,6 +18,7 @@ from ai.recommend import RecommendOutput, qa_chain, recommend_chain
 from ai.intent import classify_intent
 from ai.fast_intent import fast_classify
 from ai.entity import (
+    MULTI_SPLIT_PATTERN,
     extract_multi_order,
     extract_ordinal_segments,
     extract_quantity,
@@ -27,7 +31,8 @@ from ai.entity import (
     normalize_text,
 )
 from ai.payment import extract_payment_method, get_payment_response, payment_label
-from ai.stt import transcribe as transcribe_audio
+from ai.stt import transcribe as transcribe_audio, warmup as warmup_stt
+from ai.llm import warmup as warmup_llm
 from ai.logging_utils import log_feedback, log_intent_query, log_interaction
 from ai.order import (
     _is_noise_menu,
@@ -40,7 +45,7 @@ from ai.order import (
     validate_options,
 )
 from ai.cart_command import detect_cart_command, parse_cart
-from ai.dialog import _HOT as _HOT_W, _ICE as _ICE_W, answer_slot, current_question, start_dialog
+from ai.dialog import _HOT as _HOT_W, _ICE as _ICE_W, _refers_to, answer_slot, current_question, start_dialog
 from ai.preference import find_alternatives, recommend_by_conditions
 from app.coupon.router import router as coupon_router
 from app.admin import db as admin_db
@@ -53,7 +58,23 @@ from app.admin.router import (
     orders_router,
 )
 
-app = FastAPI()
+def _warmup_models() -> None:
+    t0 = time.perf_counter()
+    try:
+        warmup_stt()
+    except Exception as e:
+        print("[warmup] STT 워밍업 실패:", e)
+    warmup_llm()
+    print(f"[warmup] 모델 준비 완료 {(time.perf_counter() - t0) * 1000:.0f}ms")
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    await asyncio.to_thread(_warmup_models)  # 워밍업이 끝난 뒤부터 요청을 받는다
+    yield
+
+
+app = FastAPI(lifespan=_lifespan)
 
 _frontend_urls = [u.strip() for u in os.getenv("FRONTEND_URL", "http://localhost:5173").split(",") if u.strip()]
 
@@ -239,16 +260,46 @@ def _explicit_qty(seg: str) -> int | None:
 
 _RE_REQUEST_CUE = re.compile(
     r"저지방|무지방|두유|오트|귀리|아몬드|우유|덜\s*달|달게|달지|시럽|설탕|얼음|휘핑|크림|미지근|싱겁|넣지|"
-    r"빼\s*(?:줘|주세요|달라|고)|많이|적게|조금만|따로|디카페인|빨대|리필|알레르기")
+    r"빼\s*(?:줘|주세요|달라|고)|많이|적게|조금만|따로|디카페인|빨대|리필|알레르기|펌프")
 _RE_REQUEST_NOT = re.compile(r"더\s*(?:주세요|줘|추가)|하나\s*더|한\s*잔\s*더|결제|계산|취소|삭제|지워|얼마|가격|뭐|"
                              r"있나요|있어요|있어\?|되나요|돼요|가능|알려")
 
 
-def _memo_request(query: str, menus: list[dict], cart_items: list[str]) -> dict | None:
+def _cart_label(line: str) -> str:
+    """장바구니 줄("아이스 딸기 라떼 ×2 (시럽 적게)")에서 음료 이름만: "아이스 딸기 라떼"."""
+    return re.split(r"\s+×\d+|\s+\(", line, maxsplit=1)[0].strip()
+
+
+_RE_DEICTIC = re.compile(r"여기|거기|이거|그거|이것|그것|방금|이\s*음료|이\s*메뉴")
+
+
+def _memo_menu(query: str, cart_items: list[str], dialog: dict | None = None) -> str | None:
+    """요청사항이 어느 음료에 대한 것인지. 주문서에 "[아이스 딸기 라떼] 우유는 저지방으로"처럼 붙인다.
+    음료를 말했으면 그 음료, 말하지 않았어도 장바구니에 한 종류뿐이면 그 음료, 여럿이면 알 수 없어서 None(주문 전체)."""
+    labels = list(dict.fromkeys(_cart_label(line) for line in cart_items if line.strip()))
+    if not labels:
+        return None
+    qn = normalize_text(query)
+    named = []
+    for lb in labels:
+        menu = re.sub(r"^(?:아이스|따뜻한)\s*", "", lb)
+        if normalize_text(menu) in qn or _refers_to(query, menu):  # "아메리카노에"처럼 조사가 붙어도 찾는다
+            named.append(lb)
+    if named:
+        return ", ".join(named)
+    if len(labels) == 1:
+        return labels[0]
+    last = ((dialog or {}).get("last") or [None])[-1]  # "여기에 시럽 넣어줘" — 방금 담은 음료
+    if last and last.get("menu") and _RE_DEICTIC.search(query):
+        return ("아이스 " if last.get("temperature") == "ICE" else "따뜻한 ") + last["menu"]
+    return None
+
+
+def _memo_request(query: str, menus: list[dict], cart_items: list[str], dialog: dict | None = None) -> dict | None:
     """담아 둔 메뉴에 대한 추가 요청("딸기라떼 우유는 저지방으로", "카페라떼는 디카페인으로")은 새 주문이 아니라 요청사항 메모로 적는다."""
     if not cart_items or not _RE_REQUEST_CUE.search(query) or _RE_REQUEST_NOT.search(query):
         return None
-    if extract_option_details(query):  # 샷 추가 같은 정식 옵션은 기존 처리
+    if extract_option_details(query) and "펌프" not in query:  # 샷 추가 같은 정식 옵션은 기존 처리(시럽 "두 펌프"는 옵션으로 못 담아서 요청사항으로)
         return None
     qn = normalize_text(query)
     cart_text = normalize_text(" ".join(cart_items))
@@ -256,7 +307,8 @@ def _memo_request(query: str, menus: list[dict], cart_items: list[str]) -> dict 
     if named and not any(normalize_text(n) in cart_text for n in named):
         return None  # 아직 안 담은 메뉴를 말했으면 새 주문이다
     memo = re.sub(r"^(?:근데|그리고|아\s*참|참|그런데)\s*", "", re.sub(r"\s+", " ", query).strip()).rstrip("?.! ")[:60]
-    return {"question": query, "intent": "qa", "answer": f"'{memo}' 요청사항으로 적어 둘게요.", "memo": memo}
+    return {"question": query, "intent": "qa", "answer": f"'{memo}' 요청사항으로 적어 둘게요.", "memo": memo,
+            "memo_menu": _memo_menu(query, cart_items, dialog)}
 
 
 def _resolve_ordinal_orders(query: str) -> list[dict]:
@@ -287,6 +339,27 @@ def _resolve_ordinal_orders(query: str) -> list[dict]:
             "needs_recommendation": False,
         })
     return entities
+
+
+def _mix_ordinal_with_named(query: str, entities: list[dict], menu_names: list[str]) -> list[dict]:
+    """"1번으로 따뜻하게 두 잔이랑 레몬에이드 한 잔"처럼 추천 목록의 번호와 메뉴 이름을 함께 말한 주문.
+    번호 부분은 추천 목록에서, 이름 부분은 메뉴 이름으로 따로 읽어 합친다(이름만 읽으면 번호 부분이 빠진다)."""
+    if not _last_recommended_menus or all(_is_noise_menu(e.get("menu")) for e in entities):
+        return entities  # 메뉴 이름이 하나도 없으면 번호만 말한 주문이라 기존 처리로 둔다
+    parts = [p.strip() for p in MULTI_SPLIT_PATTERN.split(fix_stt_errors(query)) if p.strip()]
+    if len(parts) < 2:
+        return entities
+    merged: list[dict] = []
+    ordinal_parts = 0
+    for part in parts:
+        if extract_menu(part, menu_names):
+            merged += [e for e in extract_multi_order(part, menu_names) if not _is_noise_menu(e.get("menu"))]
+            continue
+        picked = _resolve_ordinal_orders(part)
+        if picked:
+            ordinal_parts += 1
+            merged += picked
+    return merged if ordinal_parts and merged else entities
 
 
 def _alternatives_map(sold_out: list[str], menus: list[dict]) -> dict[str, list[str]]:
@@ -519,13 +592,16 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
     if request.dialog:
         slot_res = answer_slot(request.dialog, request.query, all_menus, request.cart_items, detect_cart_command)
         if slot_res is not None:
-            return _dialog_response(request.query, slot_res)
+            resp = _dialog_response(request.query, slot_res)
+            if resp.get("memo"):
+                resp["memo_menu"] = _memo_menu(request.query, request.cart_items, request.dialog)
+            return resp
 
     command = detect_cart_command(request.query, request.cart_items, all_menus)
     if command:
         return {"question": request.query, **command}
 
-    memo_request = _memo_request(request.query, all_menus, request.cart_items)
+    memo_request = _memo_request(request.query, all_menus, request.cart_items, request.dialog)
     if memo_request:
         return memo_request
 
@@ -557,6 +633,7 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
         menus = all_menus
         menu_names = [m["name"] for m in menus]
         entities = extract_multi_order(request.query, menu_names)
+        entities = _mix_ordinal_with_named(request.query, entities, menu_names)
 
         if all(_is_noise_menu(e.get("menu")) for e in entities):
             ordinal_entities = (_resolve_ordinal_orders(request.query)
@@ -623,6 +700,7 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
         menus = all_menus
         menu_names = [m["name"] for m in menus]
         entities = extract_multi_order(request.query, menu_names)
+        entities = _mix_ordinal_with_named(request.query, entities, menu_names)
         if all(not e.get("menu") for e in entities):
             entities = (_resolve_ordinal_orders(request.query)
                         or apply_discount_menu_fallback(entities, request.query, menu_names))

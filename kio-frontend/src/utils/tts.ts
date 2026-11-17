@@ -48,7 +48,7 @@ export function stopSpeaking() {
   if (ttsSupported) window.speechSynthesis.cancel();
 }
 
-function speakWithBrowser(text: string, mine: number, onDone?: () => void) {
+function speakWithBrowser(text: string, mine: number, onDone?: () => void, onStart?: () => void) {
   if (!ttsSupported) {
     onDone?.();
     return;
@@ -59,6 +59,9 @@ function speakWithBrowser(text: string, mine: number, onDone?: () => void) {
   if (koVoice) u.voice = koVoice;
   const done = () => {
     if (mine === generation) onDone?.();
+  };
+  u.onstart = () => {
+    if (mine === generation) onStart?.();
   };
   u.onend = done;
   u.onerror = done;
@@ -87,7 +90,8 @@ async function fetchServerAudio(text: string, signal: AbortSignal): Promise<stri
   }
 }
 
-export async function speak(rawText: string, onDone?: () => void) {
+// onStart: 목소리가 실제로 나오기 시작하는 순간(음성 파일을 받아오는 시간은 빼고 센다)
+export async function speak(rawText: string, onDone?: () => void, onStart?: () => void) {
   const text = toSpoken(rawText);
   if (!text.trim()) {
     onDone?.();
@@ -107,10 +111,11 @@ export async function speak(rawText: string, onDone?: () => void) {
         if (mine === generation) onDone?.();
       };
       a.onerror = () => {
-        if (mine === generation) speakWithBrowser(text, mine, onDone);
+        if (mine === generation) speakWithBrowser(text, mine, onDone, onStart);
       };
       try {
         await a.play();
+        if (mine === generation) onStart?.();
         return;
       } catch {
         // 자동 재생이 막히면 아래 브라우저 음성으로 대신 읽는다
@@ -120,7 +125,7 @@ export async function speak(rawText: string, onDone?: () => void) {
     }
     if (mine !== generation) return;
   }
-  speakWithBrowser(text, mine, onDone);
+  speakWithBrowser(text, mine, onDone, onStart);
 }
 
 const MAX_SPEECH_CHARS = 110;
@@ -166,7 +171,10 @@ export function summarizeForSpeech(text: string, recommended?: string[]): string
     return all.length <= MAX_SPEECH_CHARS * 1.5 ? all : `${sentences[0].slice(0, MAX_SPEECH_CHARS)} ${sentences[sentences.length - 1]}`.trim();
   }
   const last = sentences[sentences.length - 1];
-  return `${sentences[0].slice(0, Math.max(40, MAX_SPEECH_CHARS - last.length))} ${last}`.trim();
+  // 끝 두 문장이 "질문 + 안내"("…요청사항 있으세요? 없으면 '없어요'라고 말씀해 주세요.")면 둘 다 읽는다
+  const prev = sentences[sentences.length - 2];
+  const tail = /[?？]$/.test(prev) ? `${prev} ${last}` : last;
+  return `${sentences[0].slice(0, Math.max(40, MAX_SPEECH_CHARS - tail.length))} ${tail}`.trim();
 }
 
 export const GREETING_TEXT =

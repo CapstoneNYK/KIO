@@ -21,7 +21,7 @@ interface CartStore {
   // 말로 "먹고 갈게요/포장할게요"라고 했을 때 주문확인에서 미리 강조해 줄 쪽
   packagingHint: "dine" | "take" | null;
   setPackagingHint: (v: "dine" | "take" | null) => void;
-  addMemo: (m: string) => void;
+  addMemo: (m: string, menu?: string | null) => void;
   setIsPackaging: (v: boolean) => void;
   // 주문확인 창에서 먹고가기/가져가기를 고르면 장바구니 전체에 같은 값을 적용한다
   setPackagingAll: (v: boolean) => void;
@@ -58,7 +58,12 @@ export const useCartStore = create<CartStore>((set) => ({
   memo: "",
   packagingHint: null,
   setPackagingHint: (v) => set({ packagingHint: v }),
-  addMemo: (m) => set((state) => ({ memo: state.memo ? `${state.memo} / ${m}` : m })),
+  // 어느 음료에 대한 요청인지 알면 "[아이스 딸기 라떼] 우유는 저지방으로"처럼 이름을 붙여 관리자 주문내역에서 연결해 보여 준다
+  addMemo: (m, menu) =>
+    set((state) => {
+      const entry = menu ? `[${menu}] ${m}` : m;
+      return { memo: state.memo ? `${state.memo} / ${entry}` : entry };
+    }),
   setIsPackaging: (v) => set({ isPackaging: v }),
   setPackagingAll: (v) =>
     set((state) => {

@@ -42,6 +42,7 @@ export interface AskResponse {
   dialog?: DialogState | null;
   go_payment?: boolean;
   memo?: string | null; // 손님이 말한 요청사항(주문서에 메모로 남김)
+  memo_menu?: string | null; // 그 요청사항이 어느 음료에 대한 것인지(모르면 주문 전체)
 }
 
 export const sendFeedback = async (query: string, answer: string, intent: string): Promise<void> => {

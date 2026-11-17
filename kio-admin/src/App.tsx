@@ -11,17 +11,30 @@ import { Signup } from "./pages/Signup";
 import { clearToken, getToken, getUsername, UNAUTHORIZED_EVENT } from "./api";
 
 export type PageId = "sales" | "analytics" | "orders" | "menus" | "discounts";
+const PAGE_IDS: PageId[] = ["sales", "analytics", "orders", "menus", "discounts"];
+
+// 주소 뒤의 #/orders 로 현재 화면을 기억해서 새로고침해도 보던 화면에 머문다
+const readPageFromHash = (): PageId => {
+  const id = window.location.hash.replace(/^#\/?/, "");
+  return (PAGE_IDS as string[]).includes(id) ? (id as PageId) : "sales";
+};
 type AuthView = "login" | "signup";
 
 const formatToday = () =>
   new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 
 function App() {
-  const [activePage, setActivePage] = useState<PageId>("sales");
+  const [activePage, setActivePage] = useState<PageId>(readPageFromHash);
   const [isAuthed, setIsAuthed] = useState(() => !!getToken());
   const [authView, setAuthView] = useState<AuthView>("login");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const username = getUsername() ?? "관리자";
+
+  useEffect(() => {
+    const handleHashChange = () => setActivePage(readPageFromHash());
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   useEffect(() => {
     const handleUnauthorized = () => setIsAuthed(false);
@@ -55,7 +68,7 @@ function App() {
     <div className="flex h-screen" style={{ backgroundColor: "#F8F7F5" }}>
       <Sidebar
         activePage={activePage}
-        onSelect={(page) => { setActivePage(page); setSidebarOpen(false); }}
+        onSelect={(page) => { window.location.hash = `/${page}`; setActivePage(page); setSidebarOpen(false); }}
         username={username}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

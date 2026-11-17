@@ -70,6 +70,14 @@ const NUMBER_REF: { pattern: RegExp; index: number }[] = [
   { pattern: /2번|두\s*번째|둘째/, index: 1 },
 ];
 
+// 인사말이 끝나기 전에 마이크를 먼저 열면 스피커 소리(인사말)가 같이 녹음될 수 있어서, 그 부분을 걷어낸다.
+// 인사말 마지막 문장("어떤 음료 드릴까요?") 뒤의 말만 남기고, 인사말만 들어왔으면 빈 문자열을 돌려준다.
+function stripGreetingEcho(text: string): string {
+  const m = text.match(/드릴까요[?.!\s]*/);
+  if (m && m.index !== undefined) return text.slice(m.index + m[0].length).trim();
+  return /도우미|키오예요|말로\s*주문/.test(text) ? "" : text;
+}
+
 export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const {
     transcript,
@@ -88,6 +96,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const dialogRef = useRef<DialogState | null>(null);
   // 질문을 말한 뒤 마이크를 자동으로 다시 켤지
   const autoListen = useRef(false);
+  // 어르신이 인사말이 끝나기 전에 말을 꺼내도 놓치지 않도록, 인사말이 나오기 시작하고 1초 뒤에 마이크를 먼저 연다
+  const earlyMic = useRef(false);
+  const earlyMicTimer = useRef<number | undefined>(undefined);
   const ttsOn = useChatPrefs((s) => s.ttsOn) && ttsSupported;
   const spokenCount = useRef(0);
   const greeted = useRef(false);
@@ -245,7 +256,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           return idx < 0 ? prev : prev.map((m, i) => (i === idx ? { ...m, text: res.question } : m));
         });
       }
-      if (res.memo) useCartStore.getState().addMemo(res.memo);
+      if (res.memo) useCartStore.getState().addMemo(res.memo, res.memo_menu);
       autoListen.current = !!res.dialog; // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다
       useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
       let botText = res.answer;
@@ -380,6 +391,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       useChatPrefs.getState().setDialogActive(false);
       greeted.current = false;
       spokenCount.current = 0;
+      window.clearTimeout(earlyMicTimer.current);
+      earlyMic.current = false;
       stopSpeaking();
     }
   }, [location.pathname, resetCount]);
@@ -387,6 +400,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   useEffect(() => {
     if (isOpen) {
       resetTranscript();
+      earlyMic.current = false;
       // 되묻는 도중에 창이 다시 열렸으면 마지막 질문을 한 번 더 말하고 이어서 듣는다
       const lastBot = dialogRef.current
         ? [...messages].reverse().find((m) => m.role === "bot")
@@ -396,11 +410,22 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         else startListening();
       } else if (ttsOn && !greeted.current && messages.length === 0) {
         greeted.current = true;
-        speak(GREETING_SPEECH, () => startListening());
+        speak(
+          GREETING_SPEECH,
+          () => { if (!earlyMic.current) startListening(); },
+          () => {
+            earlyMicTimer.current = window.setTimeout(() => {
+              earlyMic.current = true;
+              startListening();
+            }, 1000);
+          }
+        );
       } else {
         startListening();
       }
     } else {
+      window.clearTimeout(earlyMicTimer.current);
+      earlyMic.current = false;
       stopListening();
       if (keepSpeaking.current) keepSpeaking.current = false;
       else stopSpeaking();
@@ -410,6 +435,18 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
 
   useEffect(() => {
     if (!listening && transcript) {
+      if (earlyMic.current) {
+        earlyMic.current = false;
+        const spoken = stripGreetingEcho(transcript);
+        if (!spoken) {
+          // 인사말만 녹음된 경우: 주문으로 처리하지 않고 다시 듣는다
+          resetTranscript();
+          startListening();
+          return;
+        }
+        handleAsk(spoken);
+        return;
+      }
       handleAsk(transcript);
     }
   }, [listening, transcript]);

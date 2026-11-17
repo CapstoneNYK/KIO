@@ -29,6 +29,30 @@ select {
   100% { transform: translateY(0) scaleX(1) scaleY(1); }
 }
 
+/* 먹고가기/가져가기 안내: 강조된 버튼 둘레로 분홍 물결 선이 물의 파동처럼 퍼져 나간다 */
+@keyframes kio-wave {
+  0%   { inset: 0; border-radius: 1rem; opacity: 0.9; }
+  100% { inset: -16px; border-radius: 2rem; opacity: 0; }
+}
+.kio-wave {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #f472b6;
+  border-radius: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  animation: kio-wave 1.8s ease-out infinite;
+}
+.kio-wave-2 { animation-delay: 0.6s; }
+.kio-wave-3 { animation-delay: 1.2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kio-wave {
+    animation: none;
+    display: none;
+  }
+}
+
 .animate-kio-bounce {
   animation: kio-bounce 1.4s ease-in-out infinite;
   transform-origin: center bottom;

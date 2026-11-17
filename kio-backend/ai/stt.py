@@ -1,4 +1,5 @@
 import os
+import re
 from functools import lru_cache
 
 from faster_whisper import WhisperModel
@@ -45,6 +46,32 @@ def _load_model() -> WhisperModel:
     )
 
 
+# Whisper는 조용하거나 잡음뿐인 구간에서 학습 데이터의 자막 문구를 지어내곤 한다("감사합니다", "시청해 주셔서 감사합니다").
+# 키오스크에서 손님이 할 일이 없는 말은 바로 버리고, "감사합니다"처럼 말할 수도 있는 짧은 말은 인식 확신이 낮을 때만 버린다.
+_HALLUCINATION_ALWAYS = re.compile(r"시청해주셔서|시청해주신|구독과?좋아요|좋아요와?구독|자막제공|다음영상|mbc뉴스|한글자막|번역")
+_HALLUCINATION_IF_UNSURE = {"감사합니다", "감사해요", "고맙습니다", "수고하셨습니다", "안녕히계세요", "안녕히가세요"}
+
+
+def _is_hallucination(text: str, no_speech_prob: float, avg_logprob: float) -> bool:
+    norm = re.sub(r"[\s.,!?~…]", "", text).lower()
+    if not norm:
+        return True
+    if _HALLUCINATION_ALWAYS.search(norm):
+        return True
+    return norm in _HALLUCINATION_IF_UNSURE and (no_speech_prob > 0.4 or avg_logprob < -0.9)
+
+
+def warmup() -> None:
+    """서버 시작 시 모델을 메모리에 올리고 더미 오디오로 한 번 돌려 첫 요청 지연을 없앤다."""
+    import numpy as np
+
+    model = _load_model()
+    segments, _ = model.transcribe(
+        np.zeros(16000, dtype=np.float32), language="ko", beam_size=BEAM_SIZE, vad_filter=False
+    )
+    list(segments)  # 제너레이터를 소비해야 실제 디코딩이 실행된다
+
+
 def transcribe(audio_path: str, language: str = "ko") -> str:
     model = _load_model()
     segments, _info = model.transcribe(
@@ -54,6 +81,10 @@ def transcribe(audio_path: str, language: str = "ko") -> str:
         vad_parameters={"min_silence_duration_ms": 500},
         beam_size=BEAM_SIZE,
         initial_prompt=_VOCAB_PROMPT,
+        condition_on_previous_text=False,  # 앞 문장이 다음 문장에 번지며 같은 말을 반복해 지어내는 것을 막는다
     )
-    text = "".join(segment.text for segment in segments)
+    text = "".join(
+        segment.text for segment in segments
+        if not _is_hallucination(segment.text, segment.no_speech_prob, segment.avg_logprob)
+    )
     return text.strip()

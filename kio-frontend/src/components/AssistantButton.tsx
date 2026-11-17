@@ -167,7 +167,7 @@ export const AssistantButton = () => {
               }`}
               aria-pressed={ttsOn}
             >
-              {ttsOn ? "🔊 소리 켜짐" : "🔇 소리 꺼짐"}
+              {ttsOn ? "소리 켜짐" : "소리 꺼짐"}
             </button>
           )}
         </div>
