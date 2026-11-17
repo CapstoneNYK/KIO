@@ -27,6 +27,7 @@ _RE_CANCEL_STRONG = _rx(r"취소|삭제|지워|지우|제거|필요없|안마실
 _RE_CANCEL_WEAK = _rx(r"빼줘|빼주|빼요|빼고싶|빼버려|빼자|빼라|빼")
 _OPTION_WORDS = tuple(normalize_text(w) for w in ("시럽", "크림", "샷", "얼음", "휘핑", "우유", "설탕", "토핑", "연하게"))
 
+_RE_OPTION_CHANGE = _rx(r"우유|두유|오트|귀리|아몬드|저지방|무지방|시럽|샷|크림|휘핑|설탕|얼음|토핑")
 _RE_CHANGE = _rx(r"바꿔|바꾸|바꿀|바꿔줘|변경|수정|고쳐|줄여|늘려")
 _RE_REPLACE_SPLIT = _rx(r"말고|대신")
 
@@ -446,6 +447,8 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
         if _RE_MORE.search(t):
             return None
         qty_match = _RE_QTY.search(t)
+        if not qty_match and _RE_OPTION_CHANGE.search(t):
+            return None  # "아이스 딸기라떼 우유는 저지방으로 바꿔줘" — 온도가 아니라 요청사항
         temp_req = target_temp
         if not (qty_match or temp_req):
             return None

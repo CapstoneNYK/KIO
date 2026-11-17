@@ -136,7 +136,20 @@ function copula(word: string): string {
   return isHangul && (code - 0xac00) % 28 === 0 ? "예요" : "이에요";
 }
 
+// 목록이 이보다 길면 메뉴를 하나씩 읽지 않고, 화면을 보고 번호나 이름을 말하라고만 안내한다
+const MAX_SPOKEN_ITEMS = 4;
+
+function longListSpeech(text: string, count: number): string {
+  const first = text.split("\n").map((l) => l.trim()).find((l) => l && !/^\d+\s*(?:번|\.)\s*\S/.test(l)) ?? "";
+  const intro = first.split(/(?<=[.!?。])\s+/)[0]?.replace(/[?？]$/, "").trim();
+  const head = intro && intro.length <= 60 ? intro.replace(/[.。]?$/, ".") : `메뉴가 ${count}가지 있어요.`;
+  return `${head} 화면을 보시고 번호나 이름으로 말씀해 주세요.`;
+}
+
 export function summarizeForSpeech(text: string, recommended?: string[]): string {
+  if (recommended && recommended.length > MAX_SPOKEN_ITEMS) {
+    return longListSpeech(text, recommended.length);
+  }
   if (recommended && recommended.length > 0) {
     const list = recommended.map((m, i) => `${i + 1}번 ${m}`).join(", ");
     return `추천 메뉴는 ${list}예요. 원하시는 번호를 말씀해 주세요.`;
@@ -144,6 +157,9 @@ export function summarizeForSpeech(text: string, recommended?: string[]): string
 
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const numbered = lines.filter((l) => /^\d+\s*(?:번|\.)\s*\S/.test(l));
+  if (numbered.length > MAX_SPOKEN_ITEMS) {
+    return longListSpeech(text, numbered.length);
+  }
   if (numbered.length >= 2) {
     const names = numbered.map((l) =>
       l.replace(/^\d+\s*(?:번|\.)\s*/, "").split(/[:(]/)[0].trim()

@@ -34,6 +34,11 @@ ORDINAL_KEYWORDS: dict[str, int] = {
     "세번째": 3, "세 번째": 3, "3번째": 3, "3번": 3,
     "네번째": 4, "네 번째": 4, "4번째": 4, "4번": 4,
     "다섯번째": 5, "다섯 번째": 5, "5번째": 5, "5번": 5,
+    "여섯번째": 6, "여섯 번째": 6, "6번째": 6, "6번": 6,
+    "일곱번째": 7, "일곱 번째": 7, "7번째": 7, "7번": 7,
+    "여덟번째": 8, "여덟 번째": 8, "8번째": 8, "8번": 8,
+    "아홉번째": 9, "아홉 번째": 9, "9번째": 9, "9번": 9,
+    "열번째": 10, "열 번째": 10, "10번째": 10, "10번": 10,  # 추천·검색 목록이 10개까지 나온다
 }
 
 
@@ -67,11 +72,14 @@ _STT_MENU = [  # 어르신 발음·STT에서 자주 틀리는 메뉴 이름
     (re.compile(r"마[키끼]아[또토]"), "마키아토"),
     (re.compile(r"에스프레[쏘소]"), "에스프레소"),
     (re.compile(r"쥬스"), "주스"),
-    (re.compile(r"(?<![가-힣])이스(?![가-힣])"), "아이스"),  # "이스 아메리카노"
+    (re.compile(r"(?<![가-힣])이스(?![가-힣])"), "아이스"),
+    (re.compile(r"(?<![가-힣])[팔필](?=\s*(?:많이|적게|조금|빼|추가|더\s*주|듬뿍|넉넉))"), "펄"),  # 펄 많이 -> 팔 많이  # "이스 아메리카노"
     (re.compile(r"연하[나내네계](?![가-힣])"), "연하게"),
     (re.compile(r"레[모몬]\s*[네나]이[드트도]"), "레몬에이드"),  # 레모네이드
     (re.compile(r"(?<=[가-힣])에이[트도]"), "에이드"),  # 레몬에이트·자몽에이도
     (re.compile(r"(?<![가-힣])아메(?!리)"), "아메리카노"),
+    (re.compile(r"삼[성송동숭]\s*[페패]이"), "삼성페이"),  # 삼동페이
+    (re.compile(r"애[플풀]\s*[페패]이"), "애플페이"),
 ]
 _EN_WORDS = [  # 영어로 말하거나 영어 섞어 말하는 손님: 소문자로 바꾼 뒤 한국어로 옮긴다
     (re.compile(r"\bamericano\b"), "아메리카노"), (re.compile(r"\bcaf[eé]\s*latte\b|\blatte\b"), "카페라떼"),
@@ -480,7 +488,7 @@ def extract_all_menus_from_text(text: str, menu_names: list = None) -> list:
 
     return found
 
-_DISTRIBUTIVE = re.compile(normalize_text(r"씩|둘다|모두|전부|다같이"))
+_DISTRIBUTIVE = re.compile(normalize_text(r"씩|둘다|모두|전부|다같이") + r"|다(?=따뜻|따듯|뜨겁|뜨거|핫|아이스|차갑|차게|시원)")  # "…두 개 다 따뜻하게"
 
 
 def _share_trailing_temperature(results: list, last_part: str) -> None:
@@ -595,6 +603,8 @@ def extract_multi_order(text: str, menu_names: list = None) -> list:
             return results
 
     menu_qty_pairs = extract_all_menus_from_text(text, menu_names)
+    if len({p[0] for p in menu_qty_pairs}) == 1 and not re.search(r"\d|[한두세네다]\s*(?:잔|개|컵)|하나|둘|셋|넷", text):
+        menu_qty_pairs = menu_qty_pairs[:1]  # "캐모마일 있죠 캐모마일"처럼 같은 메뉴를 되풀이해 말한 것
     if len(menu_qty_pairs) > 1:
         attrs = extract_attributes(text)
         results = []

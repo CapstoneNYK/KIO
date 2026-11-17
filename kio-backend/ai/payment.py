@@ -6,6 +6,10 @@ _METHOD_KEYWORDS: dict[str, str] = {
     "카드결제": "card",
     "카드": "card",
     "앱카드": "appcard",
+    "삼성페이": "appcard",
+    "애플페이": "appcard",
+    "구글페이": "appcard",
+    "삼성월렛": "appcard",
     "모바일상품권": "voucher",
     "기프트카드": "giftcard",
     "기프트": "giftcard",
@@ -53,6 +57,11 @@ _SHORT_LABELS: dict[str, str] = {
 }
 
 
+import re
+
+_RE_MOBILE_PAY = re.compile(r"삼성페이|애플페이|구글페이|삼성월렛")
+
+
 def payment_label(method: str | None) -> str:
     return _SHORT_LABELS.get(method or "", "")
 
@@ -69,5 +78,7 @@ def get_payment_response(query: str) -> tuple[str, str | None]:
     method = extract_payment_method(query)
     if method:
         label = _METHOD_LABELS[method]
+        if method == "appcard" and _RE_MOBILE_PAY.search(query.replace(" ", "")):
+            return "삼성페이·애플페이는 앱카드로 결제하시면 돼요. 앱카드로 결제를 진행할게요.", method
         return f"{label}로 결제를 진행할게요.", method
     return "결제를 진행할게요. 원하시는 결제수단을 선택해 주세요.", None

@@ -23,14 +23,24 @@ type Message = {
   reported?: boolean;
 };
 
+const NUMBERED_LINE = /^(\d+)\s*(?:번|\.)\s*(.+)$/;
+
+// 한 줄로 길게 이어진 안내는 문장마다 줄을 바꿔서 보여 준다(읽어 주는 음성은 원문 그대로)
+const splitSentences = (line: string) =>
+  line.split(/(?<=[.!?。])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+
 function BotText({ text }: { text: string }) {
+  const rows = text.split("\n").flatMap((line) => (NUMBERED_LINE.test(line) ? [line] : splitSentences(line)));
+  // 되묻는 질문("…있으세요?")부터는 앞 내용과 간격을 벌려서 지금 답할 것이 눈에 띄게 한다
+  const askAt = rows.findIndex((row, i) => i > 0 && /[?？]$/.test(row) && !NUMBERED_LINE.test(row));
   return (
     <div className="flex flex-col gap-1.5">
-      {text.split("\n").map((line, idx) => {
-        const m = line.match(/^(\d+)\s*(?:번|\.)\s*(.+)$/);
-        if (!m) return <p key={idx} className="text-[1em] leading-relaxed break-keep">{line}</p>;
+      {rows.map((line, idx) => {
+        const m = line.match(NUMBERED_LINE);
+        const gap = idx === askAt ? " mt-2" : "";
+        if (!m) return <p key={idx} className={`text-[1em] leading-relaxed break-keep${gap}`}>{line}</p>;
         return (
-          <p key={idx} className="flex items-start gap-2 text-[1em] leading-relaxed break-keep">
+          <p key={idx} className={`flex items-start gap-2 text-[1em] leading-relaxed break-keep${gap}`}>
             <span className="mt-0.5 flex h-[1.5em] w-[1.5em] shrink-0 items-center justify-center rounded-full bg-pink-500 text-[0.8em] font-bold text-white">
               {m[1]}
             </span>

@@ -30,6 +30,7 @@ from ai.entity import (
     fix_stt_errors,
     normalize_text,
 )
+from ai.menu_match import alias_answer, ingredient_answer, resolve_owned_aliases
 from ai.payment import extract_payment_method, get_payment_response, payment_label
 from ai.stt import transcribe as transcribe_audio, warmup as warmup_stt
 from ai.llm import warmup as warmup_llm
@@ -99,7 +100,8 @@ app.mount("/uploads/menu-images", StaticFiles(directory=UPLOAD_DIR), name="menu-
 _last_recommended_menus: list[str] = []
 _last_asked: list[str] = []      # 방금 가격·재료 등을 물어본 메뉴 ("그럼 그걸로 주세요"의 '그걸')
 _pending_temp: list[str] = []    # "따뜻한 커피"처럼 종류를 고르기 전에 말한 온도 ('핫'/'아이스')
-_RE_THAT_ONE = re.compile(r"그럼|그걸|그거|그것|거기|이걸|이거")
+_RE_AFFIRM = re.compile(r"^(?:네|넵|예|응|어|음|그래|그래요|좋아|좋아요|그럼|맞아|맞아요|그걸로|그거|그걸로요|그걸로할게|그걸로주세요|그걸로줘)[.!~요]*$")
+_RE_THAT_ONE = re.compile(r"그럼|그걸|그거|그것|거기|이걸|이거|저걸|저거|그걸루")
 
 _DISCOUNT_QUESTION_PATTERN = re.compile(
     r"(\?|되나요|되나|돼요|되나여|가능해|가능한가|뭐야|뭐예요|뭔가요|얼마|무엇|알려줘)"
@@ -185,6 +187,19 @@ def _resolve_by_recommended(query: str) -> dict | None:
     }
 
 
+def _resolve_single_recommended(query: str) -> dict | None:
+    """방금 메뉴를 하나만 권했다면 "그걸로 두 잔 줘", "어 그거 하나"는 그 메뉴를 가리킨다."""
+    if len(_last_recommended_menus) != 1 or not _RE_THAT_ONE.search(query):
+        return None
+    menu = _last_recommended_menus[0]
+    _last_recommended_menus.clear()  # 한 번 주문에 쓰면 비워서, 나중의 "그거"가 옛 추천을 다시 주문하지 않게 한다
+    return {
+        "menu": menu, "quantity": extract_quantity(query), "attributes": extract_attributes(query),
+        "options": extract_options_from_text(query), "option_details": extract_option_details(query),
+        "packaging": extract_packaging(query), "needs_recommendation": False,
+    }
+
+
 def _resolve_last_asked(query: str) -> dict | None:
     """"카페라떼 얼마예요?" → "그럼 아이스로 하나 주세요": 방금 물어본 메뉴를 가리키는 말이면 그 메뉴로 받는다."""
     if len(_last_asked) != 1 or not _RE_THAT_ONE.search(query):
@@ -260,7 +275,7 @@ def _explicit_qty(seg: str) -> int | None:
 
 _RE_REQUEST_CUE = re.compile(
     r"저지방|무지방|두유|오트|귀리|아몬드|우유|덜\s*달|달게|달지|시럽|설탕|얼음|휘핑|크림|미지근|싱겁|넣지|"
-    r"빼\s*(?:줘|주세요|달라|고)|많이|적게|조금만|따로|디카페인|빨대|리필|알레르기|펌프")
+    r"빼\s*(?:줘|주세요|달라|고)|많이|적게|조금만|따로|디카페인|빨대|리필|알레르기|펌프|펄|타피오카|젤리")
 _RE_REQUEST_NOT = re.compile(r"더\s*(?:주세요|줘|추가)|하나\s*더|한\s*잔\s*더|결제|계산|취소|삭제|지워|얼마|가격|뭐|"
                              r"있나요|있어요|있어\?|되나요|돼요|가능|알려")
 
@@ -307,6 +322,8 @@ def _memo_request(query: str, menus: list[dict], cart_items: list[str], dialog: 
     if named and not any(normalize_text(n) in cart_text for n in named):
         return None  # 아직 안 담은 메뉴를 말했으면 새 주문이다
     memo = re.sub(r"^(?:근데|그리고|아\s*참|참|그런데)\s*", "", re.sub(r"\s+", " ", query).strip()).rstrip("?.! ")[:60]
+    trimmed = re.sub(r"\s*(?:달라고|해달라고)?\s*(?:해\s*줄래|해\s*주세요|해\s*줘|해\s*주라|부탁(?:해요|드려요|해)?)$", "", memo).strip()
+    memo = trimmed if len(trimmed) >= 2 else memo  # "펄 많이 달라고 해줄래" -> "펄 많이"
     return {"question": query, "intent": "qa", "answer": f"'{memo}' 요청사항으로 적어 둘게요.", "memo": memo,
             "memo_menu": _memo_menu(query, cart_items, dialog)}
 
@@ -588,6 +605,10 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
 
     request.query = fix_stt_errors(request.query)
     all_menus = admin_db.get_menus()
+    request.query = resolve_owned_aliases(request.query, all_menus, _last_recommended_menus)  # 이미 권한 "버블티" -> "흑당버블티"
+    if len(_last_recommended_menus) == 1 and not request.dialog and _RE_AFFIRM.match(normalize_text(request.query)):
+        request.query = f"{_last_recommended_menus[0]} 하나 주세요"  # 하나만 권한 뒤 "응"·"그걸로" 하고 답하면 그 메뉴를 주문한다
+        _last_recommended_menus.clear()
 
     if request.dialog:
         slot_res = answer_slot(request.dialog, request.query, all_menus, request.cart_items, detect_cart_command)
@@ -622,6 +643,11 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
             _last_recommended_menus[:] = shown
             return {"question": request.query, "intent": "recommend", "answer": answer, "recommended_menus": shown}
 
+    for matched in (alias_answer(request.query, all_menus), ingredient_answer(request.query, all_menus)):
+        if matched:  # 메뉴판에 없는 이름 -> 비슷한 메뉴 / 재료·과일이 들어간 메뉴 목록
+            _last_recommended_menus[:] = matched[1]
+            return {"question": request.query, "intent": "recommend", "answer": matched[0], "recommended_menus": matched[1]}
+
     temp_answer = _temperature_answer(request.query, all_menus)
     if temp_answer:
         return {"question": request.query, "intent": "qa", "answer": temp_answer}
@@ -637,7 +663,8 @@ async def _handle_ask_inner(request: QueryRequest) -> dict:
 
         if all(_is_noise_menu(e.get("menu")) for e in entities):
             ordinal_entities = (_resolve_ordinal_orders(request.query)
-                                or [e for e in [_resolve_by_recommended(request.query) or _resolve_last_asked(request.query)] if e])
+                                or [e for e in [_resolve_by_recommended(request.query) or _resolve_single_recommended(request.query)
+                                              or _resolve_last_asked(request.query)] if e])
             ambiguous = None if ordinal_entities else _ambiguous_menu_question(request.query, menus)
             if ordinal_entities:
                 entities = ordinal_entities

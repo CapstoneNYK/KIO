@@ -96,7 +96,7 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
               className="relative mx-5 mt-5 mb-3 rounded-xl overflow-hidden bg-black"
               style={{ aspectRatio: "5 / 2" }}
             >
-              <video ref={ref} className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} autoPlay muted playsInline />
+              <video ref={ref} className="w-full h-full object-cover" autoPlay muted playsInline />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-4/5 h-3/4 border-2 border-white/80 rounded-xl" />
               </div>
