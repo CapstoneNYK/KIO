@@ -68,7 +68,7 @@ INITIAL_MENUS = [
     (22, "히비스커스",          3000, "티",      '["HOT","ICE"]', 0),
 ]
 
-DEFAULT_SIZES = ["S", "M", "L"]
+DEFAULT_SIZES = ["16oz"]  # 원사이즈 매장: 16oz 한 가지
 INITIAL_MENU_ATTRS = {
     "아메리카노":          (True,  ["쌉쌀", "산미", "깔끔"]),
     "카페라떼":            (True,  ["고소", "부드러운"]),
@@ -157,6 +157,15 @@ def init_db() -> None:
                 description    TEXT    NOT NULL DEFAULT '',
                 active         INTEGER NOT NULL DEFAULT 1,
                 image_url      TEXT,
+                created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+            );
+
+            CREATE TABLE IF NOT EXISTS faqs (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                question       TEXT    NOT NULL,
+                keywords       TEXT    NOT NULL DEFAULT '',
+                answer         TEXT    NOT NULL,
+                active         INTEGER NOT NULL DEFAULT 1,
                 created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
         """)
@@ -391,6 +400,56 @@ def delete_discount(discount_id: int) -> bool:
 
 
 def _discount_row(row: sqlite3.Row) -> dict:
+    d = dict(row)
+    d["active"] = bool(d["active"])
+    return d
+
+
+# ── 자주 묻는 질문(FAQ): 키오스크가 LLM 없이 바로 답하는 매장 안내 ──
+def get_faqs(active_only: bool = False) -> list[dict]:
+    sql = "SELECT * FROM faqs" + (" WHERE active = 1" if active_only else "") + " ORDER BY id"
+    with get_conn() as conn:
+        rows = conn.execute(sql).fetchall()
+    return [_faq_row(r) for r in rows]
+
+
+def get_faq(faq_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM faqs WHERE id=?", (faq_id,)).fetchone()
+    return _faq_row(row) if row else None
+
+
+def create_faq(question: str, keywords: str, answer: str, active: bool = True) -> dict:
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO faqs (question, keywords, answer, active) VALUES (?,?,?,?)",
+            (question, keywords, answer, int(active)),
+        )
+        row = conn.execute("SELECT * FROM faqs WHERE id=?", (cur.lastrowid,)).fetchone()
+    return _faq_row(row)
+
+
+def update_faq(faq_id: int, **fields) -> dict | None:
+    allowed = {"question", "keywords", "answer", "active"}
+    updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    if not updates:
+        return get_faq(faq_id)
+    if "active" in updates:
+        updates["active"] = int(updates["active"])
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_conn() as conn:
+        conn.execute(f"UPDATE faqs SET {set_clause} WHERE id=?", (*updates.values(), faq_id))
+        row = conn.execute("SELECT * FROM faqs WHERE id=?", (faq_id,)).fetchone()
+    return _faq_row(row) if row else None
+
+
+def delete_faq(faq_id: int) -> bool:
+    with get_conn() as conn:
+        affected = conn.execute("DELETE FROM faqs WHERE id=?", (faq_id,)).rowcount
+    return affected > 0
+
+
+def _faq_row(row: sqlite3.Row) -> dict:
     d = dict(row)
     d["active"] = bool(d["active"])
     return d

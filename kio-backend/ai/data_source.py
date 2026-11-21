@@ -30,6 +30,12 @@ def get_discounts(active_only: bool = True) -> list:
     return _db().get_discounts(active_only=active_only)
 
 
+# 관리자가 등록한 자주 묻는 질문(FAQ). 데이터 제공 객체가 FAQ 를 모르면 빈 목록
+def get_faqs(active_only: bool = True) -> list:
+    getter = getattr(_db(), "get_faqs", None)
+    return getter(active_only=active_only) if getter else []
+
+
 def discount_methods() -> dict:
     return _db().DISCOUNT_METHODS
 

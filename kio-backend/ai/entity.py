@@ -1,6 +1,7 @@
 # [entity.py] 사용자 말에서 '메뉴·수량·온도·옵션·포장 여부'를 뽑아내는 파일(이 프로젝트의 말 해석 기반).
 # 크게 세 부분: ① 음성인식(STT) 오타 교정 ② 한 가지 항목 추출(extract_*) ③ 여러 메뉴 주문 분해(extract_multi_order).
 import re
+from ai.stt_fixes import apply_custom_fixes
 from typing import Dict, Optional
 from ai.dictionary import MENU_KEYWORDS, ATTRIBUTE_KEYWORDS
 from ai.vocab import LEVEL_MORE
@@ -44,6 +45,9 @@ ORDINAL_KEYWORDS: dict[str, int] = {
 _STT_DECAF = re.compile(r"[디티키지띠]\s*카\s*[페패폐]\s*[인임]")
 # '샷 추가'를 비슷한 소리로 잘못 들은 경우("셔츠가루", "셧추가", "숏추가", "샤츠 가루" …)
 _STT_SHOT_ADD = re.compile(r"(?<![가-힣])(?:셔츠|셧|섯|샤츠|슛|숏|샷츠|셔터)\s*(?:가루|가르|추가|까루)")
+# "샷 추가해 주세요"를 "셔츠 갈아주세요/셧 까라줘"로 들은 경우 — 뒤에 부탁 말(주세요·줘·해…)이 올 때만 고친다("셔츠 갈아입어요" 같은 말은 건드리지 않는다)
+_STT_SHOT_ADD_VERB = re.compile(
+    r"(?<![가-힣])(?:셔츠|셧|섯|샤츠|슛|숏|샷츠|셔터|샷|삿)\s*(?:갈아|가라|까라|갈라|까자|가자)(?=\s*(?:주|줘|줄|드려|해|할|하))")
 # "디카페 라떼"처럼 '인'을 빼고 줄여 말한 경우도 디카페인으로(이미 '인'이 붙은 말은 위 규칙이 처리)
 _STT_DECAF_SHORT = re.compile(r"[디티키지띠]\s*카\s*[페패폐](?!\s*[인임])")
 # '핫으로'를 잘못 들은 경우('하수로', '맛대' …)
@@ -65,6 +69,8 @@ _STT_MENU = [  # 어르신 발음·STT에서 자주 틀리는 메뉴 이름
     (re.compile(r"마[키끼]아[또토]"), "마키아토"),
     (re.compile(r"에스프레[쏘소]"), "에스프레소"),
     (re.compile(r"쥬스"), "주스"),
+    (re.compile(r"주차\s*[대돼됐](?![가-힣])"), "주차돼"),  # '여기 주차돼?' -> '여기 주차대'(주차 가능 여부 질문)
+    (re.compile(r"[머먼버][블뿔볼]\s*티"), "버블티"),  # 흑당머블티 -> 흑당버블티
     (re.compile(r"(?<![가-힣])이스(?![가-힣])"), "아이스"),
     (re.compile(r"(?<![가-힣])[팔필](?=\s*(?:많이|적게|조금|빼|추가|더\s*주|듬뿍|넉넉))"), "펄"),  # 펄 많이 -> 팔 많이  # "이스 아메리카노"
     (re.compile(r"연하[나내네계](?![가-힣])"), "연하게"),
@@ -120,12 +126,14 @@ def _collapse_repeats(text: str) -> str:
 # 위 교정 규칙을 순서대로 적용하는 함수. 순서가 중요함: 반복 제거 → 영어→한글 → 교정표 → 말머리 '아' 제거 → 샷 교정
 def fix_stt_errors(text: str) -> str:
     text = _collapse_repeats(text)
+    text = apply_custom_fixes(text)  # data/stt_fixes.json 에 사용자가 추가한 보정(코드 수정 없이)
     text = _english_to_korean(text)
     text = _STT_PLEASE.sub("한 잔 ", text)
     text = _STT_PLEASE_WORD.sub("주세요", text)
     text = _STT_DECAF.sub("디카페인", text)
     text = _STT_DECAF_SHORT.sub("디카페인", text)
     text = _STT_SHOT_ADD.sub("샷 추가", text)
+    text = _STT_SHOT_ADD_VERB.sub("샷 추가해", text)
     text = _STT_HOT.sub("핫으로", text)
     text = _STT_TEA_T.sub("티", text)
     text = _STT_DISCOUNT.sub("할인혜택", text)

@@ -43,6 +43,10 @@ def _inside_full_name(qn: str, said: str, menus: list[dict]) -> bool:
 
 # '버블티로 두 잔 달라니까'처럼 말한 이름이 우리 메뉴 이름의 일부(버블티 ⊂ 흑당버블티)이고, 그 메뉴를 방금 권해서
 # 손님이 이미 아는 상태(confirmed)면 정식 메뉴 이름으로 바꿔 바로 주문으로 잇는다. 처음 말한 거면 먼저 확인(alias_answer)한다.
+# 이름 바로 뒤에 붙어 '재료·형태'를 말하는 단어(녹차가루, 녹차잎, 녹차티백 …) — 메뉴 이름이 아니라는 표시
+_RE_INGREDIENT_TAIL = re.compile(r"\s?(?:가루|분말|잎|티백|시럽|원액)")
+
+
 def resolve_owned_aliases(query: str, menus: list[dict], confirmed: list[str]) -> str:
     """"버블티로 두 잔 달라니까"처럼 말한 이름이 우리 메뉴 이름의 일부이고(버블티 ⊂ 흑당버블티) 그 메뉴를 방금 권해서
     손님이 이미 알고 있으면(confirmed), 그 메뉴 이름으로 바꿔 곧바로 주문으로 잇는다. 처음 말했으면 먼저 확인한다."""
@@ -54,6 +58,8 @@ def resolve_owned_aliases(query: str, menus: list[dict], confirmed: list[str]) -
         said = normalize_text(hit.group(0))
         if _inside_full_name(qn, said, menus):
             continue
+        if _RE_INGREDIENT_TAIL.match(query[hit.end():]):
+            continue  # "녹차가루 뭉치지 않게"의 '녹차'는 재료 이야기라 메뉴 이름으로 바꾸지 않는다
         owners = [m["name"] for m in menus if not m["sold_out"] and normalize_text(key) in normalize_text(m["name"])
                   and said in normalize_text(m["name"])]
         if owners and owners[0] in confirmed:
@@ -85,8 +91,7 @@ def alias_answer(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
             head = f"{_josa(said_text, '은', '는')} {_josa(name, '이', '가')} 있어요."
         else:
             head = f"{_josa(said_text, '은', '는')} 없지만 {_josa(name, '이', '가')} 비슷해요."
-        return (f"{head} {taste}\n1번 {name}\n"
-                f"{_josa(name, '으로', '로')} 드릴까요? 번호나 이름으로 말씀해 주세요."), [name]
+        return (f"{head} {taste}\n{_josa(name, '으로', '로')} 드릴까요?"), [name]
     return None
 
 

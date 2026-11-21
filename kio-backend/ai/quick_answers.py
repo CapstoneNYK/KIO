@@ -22,6 +22,8 @@ RE_DISCOUNT_INFO = re.compile(
 )
 
 
+# '전체적인 할인혜택'처럼 전부 보여 달라는 말이면 장바구니와 상관없이 모든 할인을 보여 준다
+RE_DISCOUNT_ALL = re.compile(normalize_text(r"전체|모든|모두|전부|다\s*(?:알려|보여)|종류"))
 RE_DISCOUNT_SPECIFIC = re.compile(normalize_text(r"kt|티멤버십|t멤버십|우주|cj|씨제이|쿠폰|바코드"))
 
 
@@ -31,16 +33,51 @@ RE_POPULAR = re.compile(
 
 
 # 진행 중인 할인 목록을 DB 에서 읽어 번호 목록 문구로 만든다(LLM 안 씀)
-def discount_info_answer() -> str:
+# 할인 설명 첫 줄에 '아이스 아메리카노 구매 시'처럼 특정 메뉴가 조건으로 적혀 있으면 그 메뉴(와 온도)를 돌려준다. 조건이 없으면 None
+def _discount_menu_condition(first_line: str, menus: list[dict]) -> tuple[str, str | None] | None:
+    names = sorted((m["name"] for m in menus), key=len, reverse=True)
+    hit = next((n for n in names if n in first_line), None)
+    if not hit:
+        return None
+    pos = first_line.find(hit)
+    temp = "ICE" if first_line[max(0, pos - 4):pos].strip().startswith("아이스") else (
+        "HOT" if first_line[max(0, pos - 4):pos].strip().startswith(("핫", "따뜻")) else None)
+    return hit, temp
+
+
+# 받침 있으면 first, 없거나 한글이 아니면 second (영문으로 끝나는 이름은 '는/를' 로 읽는다)
+def _pick(first: str, second: str, word: str) -> str:
+    ch = word.strip()[-1:]
+    return first if ch and "가" <= ch <= "힣" and (ord(ch) - 0xAC00) % 28 else second
+
+
+def discount_info_answer(cart_items: list | None = None, menus: list[dict] | None = None, show_all: bool = False) -> str:
+    """진행 중인 할인 안내. 장바구니에 메뉴가 담겨 있으면 그 주문에 지금 적용되는 할인만 보여 준다(메뉴 조건이 있는 할인은 해당 메뉴가 있을 때만)."""
+    from ai.cart_command import parse_cart
     discounts = data_source.get_discounts(active_only=True)
     if not discounts:
         return "지금은 진행 중인 할인이 없어요."
-    lines = []
-    for i, d in enumerate(discounts, 1):
+    cart = [] if show_all else parse_cart(cart_items or [])
+    menus = menus if menus is not None else data_source.get_menus()
+    shown, hidden = [], []
+    for d in discounts:
         first = (d.get("description") or "").strip().split("\n")[0]
-        lines.append(f"{i}. {d['name']}: {first}" if first else f"{i}. {d['name']}")
-    return ("지금 받을 수 있는 할인이에요.\n" + "\n".join(lines) +
-            "\n결제할 때 해당 수단을 선택하거나 '쿠폰 쓸게요'라고 말씀해 주세요.")
+        cond = _discount_menu_condition(first, menus) if cart else None
+        if cond and not any(c["menu"] == cond[0] and (not cond[1] or c["temperature"] == cond[1]) for c in cart):
+            hidden.append((d, cond))
+            continue
+        shown.append((d, first))
+    if not shown:
+        shown, hidden = [(d, (d.get("description") or "").strip().split("\n")[0]) for d in discounts], []
+    lines = [f"{i}. **{d['name']}**: {first}" if first else f"{i}. **{d['name']}**" for i, (d, first) in enumerate(shown, 1)]
+    head = "지금 담은 메뉴에 적용되는 할인이에요." if cart else "지금 받을 수 있는 할인이에요."
+    tail = ""
+    if hidden:  # 조건 메뉴가 없어서 빠진 할인은 한 줄로만 알려 준다
+        d, (menu, temp) = hidden[0]
+        label = ("아이스 " if temp == "ICE" else "따뜻한 " if temp == "HOT" else "") + menu
+        name = f"**{d['name']}**"
+        tail = f"\n{name}{_pick('은', '는', d['name'])} **{label}**{_pick('을', '를', label)} 담으면 받을 수 있어요."
+    return head + "\n" + "\n".join(lines) + tail + "\n결제할 때 해당 수단을 선택하거나 '쿠폰 쓸게요'라고 말씀해 주세요."
 
 
 # 최근 일주일 판매량 상위 3개(품절 제외)를 번호 목록으로 안내. (문구, 메뉴이름들) 반환 — 이름들은 '1번 주세요' 선택에 쓰인다
@@ -50,8 +87,8 @@ def popular_answer(menus: list[dict]) -> tuple[str, list[str]]:
            if t["name"] in by_name and not by_name[t["name"]]["sold_out"]][:3]
     if not top:
         return ("아직 집계된 판매 기록이 없어요. 원하시는 맛이나 온도를 말씀해 주시면 추천해 드릴게요.", [])
-    lines = [f"{i}번 {t['name']} ({t['count']}잔 판매)" for i, t in enumerate(top, 1)]
-    return ("최근 일주일 동안 가장 많이 팔린 메뉴예요.\n" + "\n".join(lines) +
+    lines = [f"{i}번 {t['name']}" for i, t in enumerate(top, 1)]  # 판매량 숫자는 보여 주지 않고 순위만
+    return ("최근 일주일 동안 가장 많이 팔린 메뉴 순위예요.\n" + "\n".join(lines) +
             "\n번호로 말씀하시면 바로 담아드려요.", [t["name"] for t in top])
 
 
@@ -194,7 +231,7 @@ def _has_batchim(word: str) -> bool:
 # ── 사이즈 질문: 이 매장은 한 가지 사이즈만 판매한다 ──
 RE_SIZE_WORD = re.compile(normalize_text(
     r"사이즈|크기|라지|스몰|미디엄|톨|그란데|벤티|큰거|큰걸|큰것|큰사이즈|작은거|작은걸|작은것|용량|몇ml|몇온스|양많이|양을?많이|곱빼기"))
-SIZE_ANSWER = "저희는 **원사이즈**라서 한 가지 사이즈만 가능해요."
+SIZE_ANSWER = "저희는 **원사이즈**라서 **16oz** 한 가지 사이즈만 가능해요."
 
 
 def size_answer(query: str, menus: list[dict]) -> str | None:

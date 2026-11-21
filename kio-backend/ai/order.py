@@ -160,9 +160,7 @@ def limit_by_stock(orders: list[dict], menus: list[dict], in_cart: dict[str, int
 def allowed_option_labels(menu_info: dict) -> list[str]:
     labels = [OPTION_LABELS[k] for k, cats in OPTION_ALLOWED_CATEGORIES.items()
               if k != "light" and menu_info.get("category") in cats]
-    if menu_info.get("sizes"):
-        labels.append("사이즈")
-    return labels
+    return labels  # 사이즈는 16oz 한 가지뿐이라 고를 수 있는 옵션으로 안내하지 않는다
 
 
 # 메뉴가 지원하지 않는 옵션을 걸러내고 안내 문구 생성.
@@ -192,9 +190,9 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
             ok = True
             if kind in OPTION_ALLOWED_CATEGORIES:
                 ok = info["category"] in OPTION_ALLOWED_CATEGORIES[kind]
-            elif kind == "size":
-                size = d["name"].split()[-1]
-                ok = size in info.get("sizes", [])
+            elif kind == "size":  # 사이즈는 16oz 한 가지라서 S/M/L 같은 선택은 받지 않고 안내만 한다
+                notices.append("사이즈는 **16oz** 한 가지라서 따로 고르지 않아도 돼요.")
+                continue
             if ok:
                 kept.append(d)
                 continue

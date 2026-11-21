@@ -1,3 +1,5 @@
+import { getSessionId } from "../utils/session";
+
 export type Intent = "recommend" | "qa" | "order" | "coupon" | "payment" | "order_and_pay" | "cancel" | "modify" | "dialog";
 
 export interface OptionDetail {
@@ -62,7 +64,7 @@ export const askApi = async (
   const response = await fetch("/api/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, cart_items: cartItems, dialog }),
+    body: JSON.stringify({ query, cart_items: cartItems, dialog, session_id: getSessionId() }),
   });
   if (!response.ok) throw new Error(`서버 오류: ${response.status}`);
   return response.json();

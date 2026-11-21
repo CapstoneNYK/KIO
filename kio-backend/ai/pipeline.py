@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from functools import partial
 
 from ai import data_source
+from ai.faq import faq_answer
 from ai.cart_command import detect_cart_command, parse_cart
 from ai.dialog import answer_slot, current_question, start_dialog
 from ai.entity import extract_attributes, extract_menu, extract_multi_order, fix_stt_errors
@@ -48,6 +49,8 @@ from ai.preference import recommend_by_conditions
 from ai.quick_answers import (
     CATEGORY_ASK,
     DISCOUNT_QUESTION_PATTERN,
+    RE_DISCOUNT_ALL,
+    RE_ORDER_WORDS,
     RE_DISCOUNT_INFO,
     RE_DISCOUNT_SPECIFIC,
     RE_POPULAR,
@@ -65,7 +68,9 @@ from ai.session import current_state, set_session
 
 # ── 응답을 만드는 보조 함수들 ──
 # LLM(Ollama)이 꺼져 있거나 늦을 때 쓰는 대체 답변
-_LLM_FAIL_ANSWER = "지금은 답변을 준비하지 못했어요. 다시 한 번 말씀해 주세요."
+# 답을 모르거나 유추도 안 될 때: 키오스크가 억지로 답하지 않고 직원에게 묻도록 안내한다
+_LLM_FAIL_ANSWER = "죄송해요, 제가 답해 드리기 어려운 내용이에요. **카운터 직원**에게 문의해 주세요."
+_UNKNOWN_MARKERS = ("알 수 없", "알수 없", "모르겠", "정보가 없", "답변드리기 어렵", "답변할 수 없")
 
 
 # 추천: ① 규칙 기반(맛·온도 조건) 먼저 → 없으면 ② LLM 체인. LLM 이 메뉴판에 없는 이름을 지어내면 걸러 낸다
@@ -96,13 +101,20 @@ def recommend_answer(picked: list[str], menus: list[dict]) -> str:
     for i, name in enumerate(picked, 1):
         tags = by_name.get(name.removeprefix("핫 ").removeprefix("아이스 "), {}).get("tags") or []
         lines.append(f"{i}번 {name}" + (f" ({', '.join(tags[:3])})" if tags else ""))
+    if len(picked) == 1:  # 한 잔만 추천할 때는 번호 없이 자연스럽게 권한다
+        name = picked[0]
+        tags = by_name.get(name.removeprefix("핫 ").removeprefix("아이스 "), {}).get("tags") or []
+        return f"이건 어떠세요? {name}" + (f" ({', '.join(tags[:3])})" if tags else "") + "\n이걸로 드릴까요?"
     return "이런 메뉴는 어떠세요?\n" + "\n".join(lines) + "\n마음에 드는 걸 번호나 이름으로 말씀해 주세요."
 
 
 # 메뉴·할인 질문은 LLM(qa_chain)에 맡긴다. 실패하면 대체 문구
 def qa_answer(query: str, cart_items: list[str]) -> str:
     try:
-        return qa_chain.invoke({"question": query, "cart_items": cart_items})
+        answer = qa_chain.invoke({"question": query, "cart_items": cart_items})
+        if not answer or not str(answer).strip() or any(w in str(answer) for w in _UNKNOWN_MARKERS):
+            return _LLM_FAIL_ANSWER  # LLM 이 '모른다'고 하면 직원 안내로 바꾼다
+        return answer
     except Exception as e:
         print("안내 답변 오류:", e)
         return _LLM_FAIL_ANSWER
@@ -334,12 +346,16 @@ def _step_quick_answers(ctx: Ctx) -> dict | None:
     query, menus = ctx.query, ctx.menus
     menu_names = [m["name"] for m in menus]
     qn = normalize_text(query)
+    if not RE_ORDER_WORDS.search(qn):  # 관리자가 등록한 FAQ(화장실·와이파이…)는 주문 말이 아닐 때 먼저 답한다
+        faq = faq_answer(query)
+        if faq:
+            return {"question": query, "intent": "qa", "answer": faq}
     if RE_POPULAR.search(qn):
         answer, popular = popular_answer(menus)
         remember_recommended(popular)
         return {"question": query, "intent": "recommend", "answer": answer, "recommended_menus": popular}
     if RE_DISCOUNT_INFO.search(qn) and not RE_DISCOUNT_SPECIFIC.search(qn) and not extract_menu(query, menu_names):
-        return {"question": query, "intent": "qa", "answer": discount_info_answer()}
+        return {"question": query, "intent": "qa", "answer": discount_info_answer(ctx.cart_items, menus, bool(RE_DISCOUNT_ALL.search(qn)))}
 
     if CATEGORY_ASK.search(qn) and not extract_menu(query, menu_names):
         category = category_question(query, menus)  # "스무디 종류 뭐 있어?" — LLM 없이 목록으로 답한다

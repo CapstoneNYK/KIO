@@ -316,7 +316,10 @@ def recommend_by_conditions(text: str, menus: list) -> Optional[Recommendation]:
     if relaxed:
         head = (f"'{'·'.join(reversed(relaxed))}' 조건까지 모두 맞는 메뉴는 없어서, "
                 f"그 조건을 빼고 {c.describe(required)}로 골라봤어요.")
-    answer = head + "\n" + "\n".join(lines) + "\n원하는 번호를 말씀해 주세요."
+    if len(picked) == 1:  # 한 잔만 추천할 때는 번호 없이 자연스럽게 권한다
+        answer = f"{head}\n이건 어떠세요? {_display_name(picked[0], c)} ({picked[0]['price']:,}원)\n이걸로 드릴까요?"
+    else:
+        answer = head + "\n" + "\n".join(lines) + "\n원하는 번호를 말씀해 주세요."
     return Recommendation(
         answer=answer,
         menus=[_display_name(m, c) for m in picked],

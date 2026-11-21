@@ -10,7 +10,7 @@ INTERACTION_LOG = os.path.join(DATA_DIR, "interaction_logs.jsonl")
 FEEDBACK_LOG = os.path.join(DATA_DIR, "feedback_logs.jsonl")
 
 # 답변에 이 문구가 들어 있으면 '제대로 못 알아들음(fallback)'으로 표시
-_FALLBACK_MARKERS = ("다시 한 번 말씀", "다시 말씀해", "찾지 못", "알 수 없", "어떤 메뉴를 주문하시겠어요", "오류가 발생")
+_FALLBACK_MARKERS = ("다시 한 번 말씀", "다시 말씀해", "찾지 못", "알 수 없", "어떤 메뉴를 주문하시겠어요", "오류가 발생", "직원에게 문의")
 
 
 # JSONL 한 줄 추가(실패해도 서비스에는 영향 없게 예외를 삼킴)
@@ -70,3 +70,4 @@ def log_interaction(raw: str, cart_items: list[str], result: dict) -> None:
 # 사용자 피드백(질문·답변·의도) 기록
 def log_feedback(query: str, answer: str, intent: str | None) -> None:
     _append(FEEDBACK_LOG, {"query": query, "answer": (answer or "").replace("**", ""), "intent": intent, "logged_at": _now()})
+

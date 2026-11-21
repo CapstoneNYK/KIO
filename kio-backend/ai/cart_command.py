@@ -158,8 +158,8 @@ def _pick_lines(cart: list, target: str, t: str, target_temp: Optional[str], all
     if _RE_LAST.search(t):
         return [lines[-1]], None
     listing = ", ".join(f"{n + 1}) {_line_text(c)}" for n, c in enumerate(lines))
-    return [], (f"장바구니에 {_eun(target)} {len(lines)}줄 있어요. {listing}. "
-                f"'처음 것', '마지막 것', '전부'처럼 말씀해 주세요.")
+    how = "'처음 것', '마지막 것', '전부'처럼" if allow_every else "'1번', '처음 것', '마지막 것'처럼"
+    return [], (f"장바구니에 {_eun(target)} {len(lines)}줄 있어요. {listing}. 어느 쪽인지 {how} 말씀해 주세요.")
 
 
 # 약한 취소어('빼')가 정말 메뉴 취소인지 판단 — 바로 앞 6글자에 옵션 단어가 있으면 옵션 빼기라서 제외
@@ -201,6 +201,8 @@ _RE_DISMISS = _rx(r"아니|됐어|됐아|그만|안할래|괜찮|그냥둬|그�
 _RE_ORD_N = _rx(r"(\d+)번(?:째)?|(첫|두|세|네)번째")
 _ORD_WORD = {"첫": 1, "두": 2, "세": 3, "네": 4}
 _RE_PENDING_LAST = _rx(r"마지막|맨끝|나중|뒤에")
+_RE_PLAIN_LINE = _rx(r"옵션\s*(?:없|안)|기본|그냥|아무것도\s*(?:없|안)")  # '옵션 없는 거'
+_RE_NEW_ORDER_QTY = _rx(r"\d+(?:잔|개|컵)|[한두세네다섯]잔|[한두세네]개|하나|둘|셋|넷|더")  # 추가 주문으로 보이는 수량 표현
 # 주문/결제 말투 — 되묻기 답변이 아니라 새 주문으로 보이는 경우를 걸러냄. [겹침] fast_intent._RE_ORDER_VERB 과 비슷
 _RE_ORDER_TALK = _rx(r"주세요|주셔|줘|담아|주문|결제|계산")
 
@@ -280,6 +282,13 @@ def _resolve_pending(text, t, cart, menus, by_name, menu_names):
                 by_t = [c for c in lines if c["temperature"] == temp]
                 if len(by_t) == 1:
                     chosen = by_t
+            if not chosen:  # '연하게 한 거' / '옵션 없는 거' 처럼 이미 붙은 옵션으로 고른다
+                with_opt = [c for c in lines if any(normalize_text(o["name"]) in t for o in c["options"])]
+                plain = [c for c in lines if not c["options"]] if _RE_PLAIN_LINE.search(t) else []
+                for cand in (with_opt, plain):
+                    if len(cand) == 1:
+                        chosen = cand
+                        break
         if not chosen:
             return None
         pending.clear()
@@ -633,6 +642,15 @@ def _detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[d
 
     # [6] 담긴 메뉴를 가리키며 옵션을 말하면 옵션 변경('방금 담은 아메리카노 샷 추가')
     if (target0 and target0 in cart_menus and _RE_EXISTING.search(t)
+            and not _RE_CANCEL_STRONG.search(t) and not _RE_CHANGE.search(t) and not _RE_REPLACE_SPLIT.search(t)):
+        new_details = extract_option_details(text)
+        if new_details:
+            return _set_options(t, cart, target0, target_temp0, new_details, by_name)
+
+    # [6-b] '아메리카노에 샷 추가해줘' — 담긴 메뉴 이름 바로 뒤에 '에/에는'이 붙으면(담은 말이 없어도) 새 주문이 아니라 담긴 메뉴의 옵션 변경.
+    #       같은 메뉴가 여러 줄이면 _set_options 가 '어느 줄이요?'를 되묻는다. 수량('한 잔')이나 '해서'가 붙은 말은 새 주문이라 건드리지 않는다
+    if (target0 and target0 in cart_menus and not _RE_NEW_ORDER_QTY.search(t)
+            and re.search(re.escape(normalize_text(target0)) + r"(?:에는|에다가|에다|에도|에)(?!서)", t)
             and not _RE_CANCEL_STRONG.search(t) and not _RE_CHANGE.search(t) and not _RE_REPLACE_SPLIT.search(t)):
         new_details = extract_option_details(text)
         if new_details:

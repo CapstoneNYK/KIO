@@ -6,12 +6,13 @@ import { MenuAnalytics } from "./pages/MenuAnalytics";
 import { OrderHistory } from "./pages/OrderHistory";
 import { MenuManagement } from "./pages/MenuManagement";
 import { DiscountManagement } from "./pages/DiscountManagement";
+import { FaqManagement } from "./pages/FaqManagement";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { clearToken, getToken, getUsername, UNAUTHORIZED_EVENT } from "./api";
 
-export type PageId = "sales" | "analytics" | "orders" | "menus" | "discounts";
-const PAGE_IDS: PageId[] = ["sales", "analytics", "orders", "menus", "discounts"];
+export type PageId = "sales" | "analytics" | "orders" | "menus" | "discounts" | "faqs";
+const PAGE_IDS: PageId[] = ["sales", "analytics", "orders", "menus", "discounts", "faqs"];
 
 // 주소 뒤의 #/orders 로 현재 화면을 기억해서 새로고침해도 보던 화면에 머문다
 const readPageFromHash = (): PageId => {
@@ -54,6 +55,7 @@ function App() {
     orders: "주문 내역",
     menus: "메뉴 관리",
     discounts: "할인 혜택 관리",
+    faqs: "자주 묻는 질문(FAQ)",
   };
 
   if (!isAuthed) {
@@ -109,6 +111,7 @@ function App() {
           {activePage === "orders" && <OrderHistory />}
           {activePage === "menus" && <MenuManagement />}
           {activePage === "discounts" && <DiscountManagement />}
+          {activePage === "faqs" && <FaqManagement />}
         </main>
       </div>
     </div>
