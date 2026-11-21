@@ -52,6 +52,29 @@ def remember_pending_temp(query: str) -> None:
     current_state().pending_temp[:] = [x for x in [temp_prefix(query)] if x]
 
 
+# 추천한 말과 보여 준 메뉴를 기억한다. 새 요청이면 이전에 보여 준 목록을 비우고, 같은 요청의 '다른 거'면 이어서 쌓는다
+def note_recommendation(query: str, menus: list[str], same_request: bool = False) -> None:
+    st = current_state()
+    if not same_request:
+        st.shown.clear()
+        st.last_reco_query = query
+    st.shown.extend(n.removeprefix("핫 ").removeprefix("아이스 ") for n in menus if n)
+
+
+# "다른 거 없어?", "다른 걸로 추천해줘", "딴 거 보여줘" — 방금 추천에 이어 다른 메뉴를 달라는 말
+RE_ANOTHER = re.compile(normalize_text(
+    r"^(?:그럼|그러면|음|아|혹시)?(?:다른|딴|또다른|또)(?:것|거|걸|건|메뉴|음료)?(?:로|은|는|도)?(?:좀|더)?"
+    r"(?:없|있|추천|보여|뭐|알려|말고|줘|주세요)"))
+
+
+# '다른 거'를 물었고 이어받을 추천이 있으면 (원래 추천 말, 이미 보여 준 메뉴들), 아니면 None
+def another_request(query: str) -> tuple[str, list[str]] | None:
+    st = current_state()
+    if st.last_reco_query and RE_ANOTHER.search(normalize_text(query)):
+        return st.last_reco_query, list(st.shown)
+    return None
+
+
 # 추천 메뉴가 하나뿐일 때 '응/그걸로' 만 말하면 그 메뉴를 한 잔 주문하는 문장으로 바꿔 준다(아니면 None).
 # 한 번 쓰면 기억을 비운다. 열린 되묻기(dialog)가 있으면 그 답일 수 있으니 건드리지 않는다.
 def affirm_to_order(query: str, has_dialog: bool) -> str | None:

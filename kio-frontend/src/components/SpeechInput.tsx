@@ -1,5 +1,5 @@
 import { useServerSTT } from "../utils/serverSttUtil";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { askApi, sendFeedback } from "../api/askApi";
 import type { CartAction, DialogState } from "../api/askApi";
@@ -29,6 +29,17 @@ const NUMBERED_LINE = /^(\d+)\s*(?:번|\.)\s*(.+)$/;
 const splitSentences = (line: string) =>
   line.split(/(?<=[.!?。])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
 
+// **굵게** 로 표시된 부분(담은 메뉴·수량 등 중요한 내용)을 굵은 강조색 글씨로 그린다
+function renderBold(line: string): ReactNode {
+  return line.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+      <strong key={i} className="font-bold text-pink-600">{part.slice(2, -2)}</strong>
+    ) : (
+      part
+    )
+  );
+}
+
 function BotText({ text }: { text: string }) {
   const rows = text.split("\n").flatMap((line) => (NUMBERED_LINE.test(line) ? [line] : splitSentences(line)));
   // 되묻는 질문("…있으세요?")부터는 앞 내용과 간격을 벌려서 지금 답할 것이 눈에 띄게 한다
@@ -38,13 +49,13 @@ function BotText({ text }: { text: string }) {
       {rows.map((line, idx) => {
         const m = line.match(NUMBERED_LINE);
         const gap = idx === askAt ? " mt-2" : "";
-        if (!m) return <p key={idx} className={`text-[1em] leading-relaxed break-keep${gap}`}>{line}</p>;
+        if (!m) return <p key={idx} className={`text-[1em] leading-relaxed break-keep${gap}`}>{renderBold(line)}</p>;
         return (
           <p key={idx} className={`flex items-start gap-2 text-[1em] leading-relaxed break-keep${gap}`}>
             <span className="mt-0.5 flex h-[1.5em] w-[1.5em] shrink-0 items-center justify-center rounded-full bg-pink-500 text-[0.8em] font-bold text-white">
               {m[1]}
             </span>
-            <span className="font-semibold">{m[2]}</span>
+            <span className="font-semibold">{renderBold(m[2])}</span>
           </p>
         );
       })}
@@ -244,7 +255,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     const msg = messages[index];
     if (!msg?.asked || msg.reported) return;
     setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, reported: true } : m)));
-    sendFeedback(msg.asked, msg.text, msg.intent ?? "").catch(() => {});
+    sendFeedback(msg.asked, msg.text.replace(/\*\*/g, ""), msg.intent ?? "").catch(() => {});
   };
 
   const handleAsk = async (query: string) => {
@@ -273,7 +284,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         });
       }
       if (res.memo) useCartStore.getState().addMemo(res.memo, res.memo_menu);
-      autoListen.current = !!res.dialog; // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다
+      // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다.
+      // 메뉴를 추천했으면 손님이 '1번 주세요'처럼 고를 차례이므로 대화 상태가 없어도 마이크를 다시 켠다.
+      autoListen.current =
+        !!res.dialog || (res.intent === "recommend" && (res.recommended_menus?.length ?? 0) > 0);
       useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
       let botText = res.answer;
 
@@ -292,9 +306,15 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           botText = "장바구니가 비어 있어요. 먼저 메뉴를 담아주세요.";
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
         } else {
+          // "가져갈게, 교환권 쓸게"처럼 포장/매장을 같이 말했으면 그 버튼도 함께 강조한다
+          if (res.packaging === true || res.packaging === false) {
+            setIsPackaging(res.packaging);
+            setPackagingHint(res.packaging ? "take" : "dine");
+          }
+          const packName = res.packaging === true ? "가져가기" : res.packaging === false ? "먹고가기" : "먹고가기나 가져가기";
           const hint = res.payment_method
-            ? "먹고가기나 가져가기를 먼저 눌러 주세요. 그다음 강조된 결제수단을 눌러 주세요."
-            : "먹고가기나 가져가기를 눌러 주세요.";
+            ? `강조된 ${packName}를 먼저 눌러 주세요. 그다음 강조된 결제수단을 눌러 주세요.`
+            : `${packName}를 눌러 주세요.`;
           goToPayment(res.payment_method, `${summarizeForSpeech(botText)} ${hint}`);
         }
         return;

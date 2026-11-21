@@ -32,6 +32,18 @@ _RE_CART_WIDE = _rx(r"주문|장바구니|처음부터|다시시작")
 _RE_EXISTING = _rx(r"담은|담아둔|시킨|넣은|주문한|담긴|장바구니|있는|방금|아까|처음에")
 # '하나는/두 잔만' 처럼 일부 수량을 가리키는 표현. [겹침] dialog._PART, entity._UNIT_START 와 같은 역할
 _RE_PART = _rx(r"(\d+|한|하나|두|둘|세|셋|네|넷)(?:개|잔)?(?:는|만|은)")
+# '아메리카노 중에 하나 샷 추가' — 담긴 것 중 일부만 가리키는 표현(수량이 group 1)
+_RE_PART_IN = _rx(r"중(?:에서|에)?(\d+|한|하나|두|둘|세|셋|네|넷)(?:개|잔)?(?:을|를|만)?")
+
+
+# '하나는'/'중에 하나' 형태의 부분 수량 표현을 말한 순서대로 모은다(겹치면 앞의 것만)
+def _part_matches(t: str) -> list:
+    found = sorted(list(_RE_PART.finditer(t)) + list(_RE_PART_IN.finditer(t)), key=lambda m: m.start())
+    out: list = []
+    for m in found:
+        if not out or m.start() >= out[-1].end():
+            out.append(m)
+    return out
 # '한 잔 빼줘/두 잔 줄여' — 수량을 일부만 줄이는 표현
 _RE_MINUS_N = _rx(r"(\d+|한|하나|두|둘|세|셋)(?:잔|개|컵)(?:만|은|는)?(?:빼|취소|줄여|줄이|덜)")
 # '그거 취소해줘' — 지시어로 가리키는 취소
@@ -320,6 +332,35 @@ def _set_options(t, cart, target, target_temp, new_details, by_name, forced=None
     return _result("modify", " ".join([msg] + notices),
                    [{"type": "set_options", "index": line["index"], "count": count, "options": options}])
 
+# '연하게 한 아이스 아메리카노에는 시럽 추가해주세요' — 메뉴 앞에서 '이미 그 옵션이 붙은 줄'을 가리키고, 뒤에서 새로 더할 옵션을 말한 경우
+#  (줄, 새 옵션들)을 돌려준다. 같은 메뉴가 2줄 이상이고 가리킨 줄이 하나로 정해질 때만, 아니면 None
+_RE_DESCRIBES = _rx(r"(?:한|해둔|해놓은|된|넣은|들어간|붙은|있는|추가한|추가된)(?:아이스|따뜻한|핫|차가운)?$")
+
+
+def _line_by_option_description(text: str, t: str, cart: list, target: Optional[str], target_temp: Optional[str]):
+    if not target:
+        return None
+    lines = [c for c in cart if c["menu"] == target]
+    if len(lines) < 2:
+        return None
+    name = normalize_text(target)
+    pos = t.find(name)
+    if pos <= 0:
+        return None
+    prefix, after = t[:pos], t[pos + len(name):]
+    if not _RE_DESCRIBES.search(prefix):
+        return None
+    described = extract_option_details(prefix)
+    new_details = extract_option_details(after)
+    if not described or not new_details:
+        return None
+    kinds = {d["kind"] for d in described}
+    matched = [c for c in lines if kinds <= {_kind_of(o["name"]) for o in c["options"]}]
+    if target_temp:
+        matched = [c for c in matched if c["temperature"] == target_temp] or matched
+    return (matched[0], new_details) if len(matched) == 1 else None
+
+
 # 옵션 이름 앞글자로 종류(shot/syrup/cream/light/size) 판별용 표
 _KIND_PREFIX = (("샷", "shot"), ("시럽", "syrup"), ("크림", "cream"), ("휘핑", "cream"), ("연하게", "light"), ("사이즈", "size"))
 
@@ -375,8 +416,12 @@ def _options_by_parts(text: str, t: str, cart: list, target: Optional[str], targ
     """"아메리카노 하나는 연하게 하나는 샷 추가해줘" — 같은 줄의 잔마다 다른 요청사항을 나눠 적용한다."""
     if not target or not cart or _RE_CANCEL_STRONG.search(t):
         return None
-    parts = list(_RE_PART.finditer(t))
-    if len(parts) < 2:
+    parts = _part_matches(t)
+    # '샷 추가 해주고 하나는 연하게' — 수량 없이 앞에 말한 옵션은 '나머지 잔'에 적용한다(lead)
+    lead = extract_option_details(t[:parts[0].start()]) if len(parts) == 1 else None
+    # '아이스 아메리카노 한 잔은 시럽 추가' — 한 부분만 말해도 담긴 그 메뉴의 그만큼에만 옵션을 적용한다
+    # (이 경우 새로 담는 게 아니라 담긴 메뉴 수정이어야 하므로 장바구니에 그 메뉴가 있을 때만)
+    if len(parts) < 2 and not lead and (not parts or target not in [c["menu"] for c in cart]):
         return None
     segments = []
     for i, pm in enumerate(parts):
@@ -390,6 +435,11 @@ def _options_by_parts(text: str, t: str, cart: list, target: Optional[str], targ
     if len(picked) != 1:
         return None
     line = picked[0]
+    if lead:
+        left = line["quantity"] - sum(n for n, _ in segments)
+        if left < 1:
+            return None
+        segments.insert(0, (left, lead))
     if sum(n for n, _ in segments) > line["quantity"]:
         return _result("modify", f"{_eun(target)} {line['quantity']}잔 담겨 있어요. 그 안에서 말씀해 주세요.")
     info = by_name.get(target, {})
@@ -560,8 +610,13 @@ def _detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[d
     if part is not None:
         return part
 
-    # [5-c] 잔별로 다른 옵션 적용
-    by_parts = _options_by_parts(text, t, cart, target0, target_temp0, by_name)
+    # [5-c] 잔별로 다른 옵션 적용. 메뉴를 안 말해도('샷 추가 해주고 하나는 연하게') 2잔 이상 담긴 가장 최근 줄에 적용한다
+    parts_target = target0
+    if not target0 and _part_matches(t):
+        multi = [c for c in cart if c["quantity"] >= 2]
+        if multi:
+            parts_target = multi[-1]["menu"]
+    by_parts = _options_by_parts(text, t, cart, parts_target, target_temp0, by_name)
     if by_parts is not None:
         return by_parts
 
@@ -569,6 +624,12 @@ def _detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[d
     corrected = _temperature_correction(t, target0, target_temp0, cart, by_name)
     if corrected is not None:
         return corrected
+
+    # [5-e] '연하게 한 아이스 아메리카노에는 시럽 추가' — 같은 메뉴가 여러 줄이면 이미 가진 옵션으로 줄을 가리키고 새 옵션을 더한다
+    described = _line_by_option_description(text, t, cart, target0, target_temp0)
+    if described is not None:
+        line, new_details = described
+        return _set_options(t, cart, target0, target_temp0, new_details, by_name, forced=[line])
 
     # [6] 담긴 메뉴를 가리키며 옵션을 말하면 옵션 변경('방금 담은 아메리카노 샷 추가')
     if (target0 and target0 in cart_menus and _RE_EXISTING.search(t)

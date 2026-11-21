@@ -94,6 +94,11 @@ def fast_classify(query: str, menu_names: Optional[list] = None) -> Optional[str
     if _RE_DISCOUNT_MENU.search(t) and _RE_ORDER_VERB.search(t) and not menu and not has_pay_verb and not re.search(normalize_text("얼마|어떻게|뭐|나요|까요|있어요"), t):
         return "order"
 
+    # [7-a] "디카페인 라떼 두 잔 줄래?" — 물음표만 있고 다른 질문 표현은 없는 '주문 요청'(메뉴 + 줘/줄래/주세요)은 order
+    if (is_question and menu and _RE_ORDER_VERB.search(t)
+            and not _RE_QUESTION.search(t.replace("?", "")) and not has_pay_verb and not method):
+        return "order"
+
     # [7] 여기까지 안 걸렸는데 질문 표현이 있으면 확신 없음 → LLM
     if is_question:
         return None

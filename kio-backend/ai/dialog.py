@@ -258,6 +258,50 @@ def _split_count(text: str, qty: int) -> Optional[int]:
     return None
 
 
+# '한 잔은 샷 추가해주고 한 잔은 연하게' → [(잔 수, 옵션들), …]. 잔마다 다른 옵션을 말했을 때만(옵션을 말한 부분이 둘 이상) 돌려준다.
+#  수량 없이 앞에 말한 옵션('샷 추가 해주고 한 잔은 연하게')은 나머지 잔에 적용하고, 말하지 않은 잔은 기본(옵션 없음)으로 둔다.
+def _parts_options(text: str, qty: int) -> Optional[list]:
+    if qty < 2:
+        return None
+    t = normalize_text(text)
+    ms = list(_PART.finditer(t))
+    if not ms:
+        return None
+    segs = []
+    for i, m in enumerate(ms):
+        seg = t[m.end(): ms[i + 1].start() if i + 1 < len(ms) else len(t)]
+        details = [] if _PLAIN.search(seg) else [d for d in extract_option_details(seg) if not d["name"].endswith("없음")]
+        segs.append((to_int(m.group(1), _COUNT_WORDS, 1), details))
+    lead = [d for d in extract_option_details(t[:ms[0].start()]) if not d["name"].endswith("없음")]
+    used = sum(n for n, _ in segs)
+    if lead and used < qty:
+        segs.insert(0, (qty - used, lead))
+        used = qty
+    if sum(1 for _, d in segs if d) < 2 or used > qty:
+        return None
+    if used < qty:
+        segs.append((qty - used, []))
+    return segs
+
+
+# 잔마다 다른 옵션을 주문 줄 여러 개로 나눠 반영한다(첫 줄은 지금 주문, 나머지는 큐에 끼워 넣음). 확인 문구를 돌려준다
+def _apply_parts(queue: list, head: dict, segs: list) -> str:
+    import copy
+    base = copy.deepcopy(head["order"])
+    done = list(head["asked"]) + ["extras", "shot", "light"]
+    notes = []
+    for i, (n, details) in enumerate(segs):
+        o = head["order"] if i == 0 else copy.deepcopy(base)
+        o["quantity"] = n
+        for d in details:
+            _add_option(o, d)
+        notes.append(f"{_qty_text(n)}은 {', '.join(d['name'] for d in details) + '로' if details else '기본으로'}")
+        if i > 0:
+            queue.insert(i, {"order": o, "asked": list(done), "pending": None, "retries": 0, "lite": head.get("lite", False)})
+    head["asked"] = list(done)
+    return ", ".join(notes) + " 할게요."
+
+
 # '한 잔은 따뜻하게 한 잔은 차갑게' → (따뜻한 잔 수, 아이스 잔 수). 합이 전체 수량과 같을 때만 인정
 def _temp_split(text: str, qty: int) -> Optional[tuple[int, int]]:
     """"한 잔은 따뜻하게 한 잔은 차갑게" — 잔마다 온도를 다르게 말했으면 (따뜻한 잔 수, 아이스 잔 수)."""
@@ -770,6 +814,12 @@ def answer_slot(state: dict, text: str, menus: list[dict],
         answer = f"{P.ACK[slot]['yes']} {_question(head['pending'], order)}"
         return _result({"queue": queue}, [], answer)
 
+    # [9-b2] 잔마다 다른 옵션을 말했으면('한 잔은 샷 추가 한 잔은 연하게') 잔별로 주문을 나눠 각각 반영
+    if slot in ("shot", "light", "extras") and value != "no":
+        segs = _parts_options(text, order.get("quantity", 1))
+        if segs:
+            ack = _apply_parts(queue, head, segs)
+            return _advance(queue, [], menus, ack)
     # [9-c] 일부 수량에만 옵션을 걸었으면(예: 한 잔만 연하게) 주문을 둘로 나눔
     n = (_split_count(text, order.get("quantity", 1))
          if slot in ("shot", "light", "extras") and value != "no" else None)

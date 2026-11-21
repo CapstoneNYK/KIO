@@ -24,6 +24,8 @@ class ConversationState:
     last_recommended: list = field(default_factory=list)   # 방금 추천/안내한 메뉴 이름들 ("1번 주세요", "그걸로"의 대상)
     last_asked: list = field(default_factory=list)         # 방금 가격·재료 등을 물어본 메뉴 ("그럼 그걸로 주세요")
     pending_temp: list = field(default_factory=list)       # "따뜻한 커피"처럼 종류 고르기 전에 말한 온도 ('핫'/'아이스')
+    last_reco_query: str = ""                               # 마지막으로 '추천해줘'라고 한 말("다른 거 없어?"가 이어받을 조건)
+    shown: list = field(default_factory=list)              # 그 요청으로 이미 보여 준 추천 메뉴 이름들(다음 추천에서 뺀다)
     touched: float = field(default_factory=time.time)      # 마지막으로 쓴 시각
 
 

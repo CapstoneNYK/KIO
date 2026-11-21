@@ -133,3 +133,75 @@ def category_question(query: str, menus: list[dict]) -> tuple[str, list[str]] | 
         more = " 그 밖의 메뉴는 화면에서 볼 수 있어요." if len(names) > len(shown) else ""
         return f"{label}는 이런 메뉴가 있어요. 어느 걸로 드릴까요?\n{lines}\n번호나 이름으로 말씀해 주세요.{more}", shown
     return None
+
+
+# ── "바닐라라떼 있어?" / "바닐라라떼 얼마야?" — 메뉴판(DB)만 보고 짧게 답한다(장바구니·할인 얘기는 하지 않는다) ──
+RE_HAS_MENU = re.compile(normalize_text(r"있(?:어|나|니|습니까|을까)|팔(?:아|아요|까|고)|파나|파냐|판매"))
+RE_PRICE_ASK = re.compile(normalize_text(r"얼마|가격|몇원|몇천원|비싸|값"))
+# 주문하는 말이 섞여 있으면 이 안내가 아니라 주문 흐름이 맡는다
+RE_ORDER_WORDS = re.compile(normalize_text(r"주세요|주라|줄래|담아|주문|(?<!알려)줘$|(?<!알려)줘요$|할게|하겠"))
+
+
+# 질문에서 말한 메뉴들을 말한 순서대로 찾는다(긴 이름 우선, 겹치면 하나만)
+def _menus_in(query: str, menus: list[dict]) -> list[dict]:
+    qn = normalize_text(query)
+    found, taken = [], []
+    for m in sorted(menus, key=lambda m: -len(m["name"])):
+        n = normalize_text(m["name"])
+        pos = qn.find(n)
+        if pos < 0 or any(not (pos + len(n) <= a or pos >= b) for a, b in taken):
+            continue
+        taken.append((pos, pos + len(n)))
+        found.append((pos, m))
+    return [m for _, m in sorted(found, key=lambda x: x[0])]
+
+
+def _won(price: int) -> str:
+    return f"{price:,}원"
+
+
+def menu_info_answer(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
+    """메뉴 이름이 들어 있는 '있어요?' / '얼마예요?' 질문의 답(문구, 메뉴 이름들). 해당 없으면 None."""
+    qn = normalize_text(query)
+    if RE_ORDER_WORDS.search(qn):
+        return None
+    asks_price, asks_has = bool(RE_PRICE_ASK.search(qn)), bool(RE_HAS_MENU.search(qn))
+    if not (asks_price or asks_has):
+        return None
+    found = _menus_in(query, menus)
+    if not found or len(found) > 3:
+        return None
+    names = [m["name"] for m in found]
+    if asks_price:  # 가격만 짧게
+        parts = [f"{m['name']}{'은' if _has_batchim(m['name']) else '는'} {_won(m['price'])}" for m in found]
+        sold = [m["name"] for m in found if m.get("sold_out")]
+        tail = f" {', '.join(sold)}{'은' if _has_batchim(sold[-1]) else '는'} 지금 품절이에요." if sold else ""
+        return ", ".join(parts) + "이에요." + tail, names
+    lines = []
+    for m in found:
+        if m.get("sold_out"):
+            lines.append(f"{m['name']}{'은' if _has_batchim(m['name']) else '는'} 있지만 지금 품절이에요.")
+        else:
+            lines.append(f"네, {m['name']}{'은' if _has_batchim(m['name']) else '는'} 있어요. {_won(m['price'])}이에요.")
+    return " ".join(lines), names
+
+
+def _has_batchim(word: str) -> bool:
+    ch = word.strip()[-1:]
+    return bool(ch) and "가" <= ch <= "힣" and (ord(ch) - 0xAC00) % 28 != 0
+
+
+# ── 사이즈 질문: 이 매장은 한 가지 사이즈만 판매한다 ──
+RE_SIZE_WORD = re.compile(normalize_text(
+    r"사이즈|크기|라지|스몰|미디엄|톨|그란데|벤티|큰거|큰걸|큰것|큰사이즈|작은거|작은걸|작은것|용량|몇ml|몇온스|양많이|양을?많이|곱빼기"))
+SIZE_ANSWER = "저희는 **원사이즈**라서 한 가지 사이즈만 가능해요."
+
+
+def size_answer(query: str, menus: list[dict]) -> str | None:
+    """"사이즈 뭐 있어요?" / "라지로 주세요" — 사이즈를 고를 수 없다고 안내한다. 사이즈 말이 없으면 None."""
+    qn = normalize_text(query)
+    if not RE_SIZE_WORD.search(qn):
+        return None
+    if RE_ORDER_WORDS.search(qn) and _menus_in(query, menus):
+        return None  # "아메리카노 라지로 주세요"는 주문 흐름이 받는다
+    return SIZE_ANSWER

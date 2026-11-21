@@ -236,10 +236,11 @@ def cart_answer(
             f"{' ' + str(o['quantity']) + '잔' if o.get('quantity', 1) > 1 else ''}{_option_text(o)}"
             for o in named
         )
+        bold = f"**{items_str}**" + _josa(items_str, "을", "를")[len(items_str):]  # 담은 메뉴는 굵게(프론트가 **…** 를 굵게 그린다)
         if pay_suffix is None:
-            parts.append(f"{_josa(items_str, '을', '를')} 장바구니에 담았습니다.")
+            parts.append(f"{bold} 장바구니에 담았습니다.")
         else:
-            parts.append(f"{_josa(items_str, '을', '를')} 장바구니에 담고{pay_suffix}")
+            parts.append(f"{bold} 장바구니에 담고{pay_suffix}")
     for name in sold_out:
         text = f"{_josa(name, '은', '는')} 현재 품절이에요."
         alts = (alternatives or {}).get(name)

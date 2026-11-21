@@ -42,6 +42,10 @@ ORDINAL_KEYWORDS: dict[str, int] = {
 # ──── ① 음성인식(STT) 오타 교정 규칙 ────
 # 디카페인을 비슷한 소리로 잘못 들은 경우 교정
 _STT_DECAF = re.compile(r"[디티키지띠]\s*카\s*[페패폐]\s*[인임]")
+# '샷 추가'를 비슷한 소리로 잘못 들은 경우("셔츠가루", "셧추가", "숏추가", "샤츠 가루" …)
+_STT_SHOT_ADD = re.compile(r"(?<![가-힣])(?:셔츠|셧|섯|샤츠|슛|숏|샷츠|셔터)\s*(?:가루|가르|추가|까루)")
+# "디카페 라떼"처럼 '인'을 빼고 줄여 말한 경우도 디카페인으로(이미 '인'이 붙은 말은 위 규칙이 처리)
+_STT_DECAF_SHORT = re.compile(r"[디티키지띠]\s*카\s*[페패폐](?!\s*[인임])")
 # '핫으로'를 잘못 들은 경우('하수로', '맛대' …)
 _STT_HOT = re.compile(r"(?<![가-힣])(?:하수로|하스로|하쑤로|핫우로|하수루|핫으루|하슬로|맛대)(?![가-힣])")
 
@@ -120,6 +124,8 @@ def fix_stt_errors(text: str) -> str:
     text = _STT_PLEASE.sub("한 잔 ", text)
     text = _STT_PLEASE_WORD.sub("주세요", text)
     text = _STT_DECAF.sub("디카페인", text)
+    text = _STT_DECAF_SHORT.sub("디카페인", text)
+    text = _STT_SHOT_ADD.sub("샷 추가", text)
     text = _STT_HOT.sub("핫으로", text)
     text = _STT_TEA_T.sub("티", text)
     text = _STT_DISCOUNT.sub("할인혜택", text)

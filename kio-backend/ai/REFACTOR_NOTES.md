@@ -22,3 +22,10 @@
 - ai/session.py : 세션별 상태 + set_session/current_state(요청마다 ContextVar)
 - QueryRequest.session_id : 프론트가 안 보내면 "" 하나를 공유(예전 동작). 키오스크마다 분리하려면 프론트가 UUID 를 만들어 /api/ask 에 보내면 된다
 - eval/sim_elder.py 는 main 대신 ai.pipeline 을 부르도록 바꿨다
+
+
+## 로그 기반 수정 (4건)
+1. "다른 거 없어?" — `session.last_reco_query/shown` + `followup.another_request` + `pipeline._step_another`: 직전 추천 조건을 이어받아 이미 보여 준 메뉴를 빼고 다시 추천.
+2. 잔별 옵션 — `cart_command._options_by_parts`: "샷 추가 해주고 하나는 연하게"처럼 수량 없이 앞에 말한 옵션을 나머지 잔에 적용(메뉴 이름이 없으면 2잔 이상 담긴 가장 최근 줄).
+3. 먹고 가기 — `dialog_response`/`order_and_pay_now`: 포장/매장을 같이 말하면 `orders[].packaging`(False=매장) 및 결제 이동 시 최상위 `packaging` 으로 전달. 프론트가 결제 화면에서 이 값을 강조해야 함.
+4. 없는 메뉴 — `menu_match.missing_menu_answer`: "블루베리 주스"처럼 재료+종류 조합이 메뉴판에 없으면 "메뉴에 없어요 + 비슷한 메뉴"로 안내(번호로 주문 가능).

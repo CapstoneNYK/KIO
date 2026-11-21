@@ -42,6 +42,7 @@ export interface AskResponse {
   cart_actions?: CartAction[];
   dialog?: DialogState | null;
   go_payment?: boolean;
+  packaging?: boolean | null; // 결제로 넘어가며 같이 말한 포장/매장(true=가져가기, false=먹고가기)
   memo?: string | null; // 손님이 말한 요청사항(주문서에 메모로 남김)
 }
 

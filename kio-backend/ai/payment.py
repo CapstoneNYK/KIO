@@ -16,6 +16,8 @@ _METHOD_KEYWORDS: dict[str, str] = {
     "구글페이": "appcard",
     "삼성월렛": "appcard",
     "모바일상품권": "voucher",
+    "모바일교환권": "voucher",
+    "교환권": "voucher",
     "기프트카드": "giftcard",
     "기프트": "giftcard",
     "KT VIP": "kt",
@@ -61,6 +63,15 @@ _SHORT_LABELS: dict[str, str] = {
 _RE_MOBILE_PAY = re.compile(r"삼성페이|애플페이|구글페이|삼성월렛")
 
 
+# 받침이 있으면 '으로', 없거나 ㄹ 받침이면 '로'
+def _ro(word: str) -> str:
+    ch = word.strip()[-1:]
+    if ch and "가" <= ch <= "힣":
+        jong = (ord(ch) - 0xAC00) % 28
+        return "으로" if jong not in (0, 8) else "로"
+    return "로"
+
+
 # 결제수단 코드 → 짧은 이름(없으면 빈 문자열)
 def payment_label(method: str | None) -> str:
     return _SHORT_LABELS.get(method or "", "")
@@ -82,5 +93,5 @@ def get_payment_response(query: str) -> tuple[str, str | None]:
         label = _METHOD_LABELS[method]
         if method == "appcard" and _RE_MOBILE_PAY.search(query.replace(" ", "")):
             return "삼성페이·애플페이는 앱카드로 결제하시면 돼요. 앱카드로 결제를 진행할게요.", method
-        return f"{label}로 결제를 진행할게요.", method
+        return f"{label}{_ro(label)} 결제를 진행할게요.", method
     return "결제를 진행할게요. 원하시는 결제수단을 선택해 주세요.", None

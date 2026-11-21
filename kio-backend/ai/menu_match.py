@@ -140,3 +140,64 @@ def ingredient_answer(query: str, menus: list[dict]) -> tuple[str, list[str]] | 
     lines = "\n".join(f"{i}번 {m['name']}{_price(m)}" for i, m in enumerate(picks[:MAX_SHOWN], 1))
     return (f"{_josa(label, '이', '가')} 들어간 메뉴는 {len(picks)}가지예요. 어느 걸로 드릴까요?\n{lines}\n"
             f"번호나 이름으로 말씀해 주세요."), names
+
+
+# ── 메뉴판에 없는 '재료 + 종류' 이름(예: 블루베리 주스) 안내 ──
+# 주문·질문에 '블루베리 주스'처럼 재료와 음료 종류를 붙여 말했는데 그 조합이 메뉴에 없으면,
+# 다른 메뉴로 잘못 담지 않고 "메뉴에 없어요 + 비슷한 메뉴"를 보여 준다.
+_TYPE_WORDS = {"주스": "주스", "쥬스": "주스", "스무디": "스무디", "에이드": "에이드", "라떼": "라떼"}
+# 재료·맛 단어(메뉴 이름에서 뽑은 단어와 합쳐 쓴다)
+_FLAVOR_WORDS = ("딸기", "바나나", "블루베리", "망고", "복숭아", "사과", "키위", "수박", "멜론", "포도", "청포도", "오렌지",
+                 "레몬", "자몽", "라임", "파인애플", "토마토", "체리", "코코넛", "유자", "초코", "녹차", "말차", "바닐라",
+                 "카라멜", "헤이즐넛", "민트", "오레오", "고구마", "흑당", "요거트", "생과일")
+
+
+# 메뉴 이름들에서 재료 단어 모으기: 띄어쓰기 단어 + '딸기라떼'처럼 끝이 종류 단어면 앞부분
+def _flavor_vocab(menus: list[dict]) -> list[str]:
+    vocab = {normalize_text(w) for w in _FLAVOR_WORDS}
+    for m in menus:
+        for tok in m["name"].split():
+            n = normalize_text(tok)
+            for tw in _TYPE_WORDS:
+                if n.endswith(tw) and len(n) > len(tw):
+                    n = n[: -len(tw)]
+                    break
+            if len(n) >= 2 and n not in _TYPE_WORDS:
+                vocab.add(n)
+    return sorted(vocab, key=len, reverse=True)
+
+
+def missing_menu_answer(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
+    """"블루베리 주스 줘" — 재료+종류 조합이 메뉴판에 없으면 (안내 문구, 비슷한 메뉴 이름들). 있거나 해당 없으면 None."""
+    qn = normalize_text(query)
+    vocab = _flavor_vocab(menus)
+    names_n = [(m, normalize_text(m["name"])) for m in menus]
+    for tw, ttype in _TYPE_WORDS.items():
+        pos = qn.find(normalize_text(tw))
+        if pos <= 0:
+            continue
+        # 종류 단어 바로 앞에서부터 재료 단어를 거꾸로 모은다("딸기 바나나 블루베리 주스" → 블루베리, 바나나, 딸기)
+        flavors, head = [], qn[:pos]
+        while head:
+            hit = next((f for f in vocab if head.endswith(f)), None)
+            if not hit:
+                break
+            flavors.insert(0, hit)
+            head = head[: -len(hit)]
+        if not flavors:
+            continue
+        if any(normalize_text(ttype) in nn and all(f in nn for f in flavors) for _, nn in names_n):
+            continue  # 그런 메뉴가 있다
+        ranked = sorted(
+            (m for m, nn in names_n if not m.get("sold_out") and (any(f in nn for f in flavors) or normalize_text(ttype) in nn)),
+            key=lambda m: (-sum(f in normalize_text(m["name"]) for f in flavors),
+                           0 if normalize_text(ttype) in normalize_text(m["name"]) else 1, m.get("id", 0)))
+        if not any(any(f in normalize_text(m["name"]) for f in flavors) for m in ranked):
+            ranked = [m for m in ranked if normalize_text(ttype) in normalize_text(m["name"])]
+        shown = [m["name"] for m in ranked[:4]]
+        phrase = f"{' '.join(flavors)} {ttype}"
+        if not shown:
+            return f"**{phrase}**{_josa(phrase, '은', '는')[len(phrase):]} 메뉴에 없어요. 다른 메뉴를 말씀해 주세요.", []
+        lines = "\n".join(f"{i}번 {n}" for i, n in enumerate(shown, 1))
+        return (f"**{phrase}**{_josa(phrase, '은', '는')[len(phrase):]} 메뉴에 없어요. 비슷한 메뉴는 이런 게 있어요.\n{lines}\n번호나 이름으로 말씀해 주세요.", shown)
+    return None

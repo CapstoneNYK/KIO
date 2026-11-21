@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { tpass_poster, t_poster, kt_poster, cafe_logo } from "../assets";
 import { useDiscountStore } from "../store/discountStore";
 import { useChatPrefs } from "../store/chatPrefsStore";
+import { useCategoryStore } from "../store/categoryStore";
 
 const FALLBACK_POSTERS = [tpass_poster, t_poster, kt_poster];
 const SLIDE_INTERVAL = 3500;
@@ -51,6 +52,11 @@ export const Splash = () => {
       return () => clearTimeout(timeout);
     }
   }, [transitionEnabled]);
+
+  // 처음 화면으로 돌아오면 카테고리를 '전체'로 되돌려, 다음 손님이 마지막에 보던 카테고리가 아니라 전체 메뉴부터 보게 한다
+  useEffect(() => {
+    useCategoryStore.getState().setCategory("전체");
+  }, []);
 
   const dotIndex = currentIndex % POSTERS.length;
   const openChat = useChatPrefs((s) => s.openChat);

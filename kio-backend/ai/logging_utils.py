@@ -57,7 +57,7 @@ def log_interaction(raw: str, cart_items: list[str], result: dict) -> None:
         "raw": raw,
         "fixed": result.get("question", raw),
         "intent": result.get("intent"),
-        "answer": result.get("answer"),
+        "answer": (result.get("answer") or "").replace("**", "") or None,  # 굵게 표시(**) 는 화면용이라 로그에는 뺀다
         "orders": [{"menu": o.get("menu"), "quantity": o.get("quantity"), "temperature": o.get("temperature")}
                    for o in result.get("orders", [])],
         "cart_actions": result.get("cart_actions"),
@@ -69,4 +69,4 @@ def log_interaction(raw: str, cart_items: list[str], result: dict) -> None:
 
 # 사용자 피드백(질문·답변·의도) 기록
 def log_feedback(query: str, answer: str, intent: str | None) -> None:
-    _append(FEEDBACK_LOG, {"query": query, "answer": answer, "intent": intent, "logged_at": _now()})
+    _append(FEEDBACK_LOG, {"query": query, "answer": (answer or "").replace("**", ""), "intent": intent, "logged_at": _now()})

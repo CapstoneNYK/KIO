@@ -147,6 +147,7 @@ function longListSpeech(text: string, count: number): string {
 }
 
 export function summarizeForSpeech(text: string, recommended?: string[]): string {
+  text = text.replace(/\*\*/g, ""); // 말풍선용 굵게 표시(**…**)는 소리로 읽지 않는다
   if (recommended && recommended.length > MAX_SPOKEN_ITEMS) {
     return longListSpeech(text, recommended.length);
   }
