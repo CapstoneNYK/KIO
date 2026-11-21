@@ -1,66 +1,90 @@
+# [cart_command.py] 이미 담긴 장바구니를 말로 고치는 명령(취소·수량 변경·온도 변경·옵션 변경·교체)을 감지·처리한다.
+# 진입점은 detect_cart_command(): 명령이 아니면 None 을 돌려 주문/질문 흐름이 이어받게 한다.
+# 반환값은 {intent, answer, cart_actions:[…]} — cart_actions 를 프론트가 실제 장바구니에 반영한다.
 import re
 import time
+from contextvars import ContextVar
 from typing import Optional
 
-from ai.entity import extract_menu, extract_option_details, extract_packaging, normalize_text
+from ai.entity import extract_menu, extract_option_details, extract_packaging
+from ai.vocab import HOT_CORE, HOT_EXTRA_CART, ICE_CORE, ICE_EXTRA_CART
+from ai.korean import NUM_WORDS_10, has_final as _has_final, normalize_text, rx as _rx, rx_keep, to_int, unify_ae_e
 from ai.order import validate_options
 
 
-def _rx(pattern: str) -> "re.Pattern":
-    return re.compile(normalize_text(pattern))
 
+# ──── 장바구니 명령 감지용 정규식 ────
+# 결제 '후' 취소/환불 요청 → 키오스크에서는 불가, 직원 안내
 _RE_POST_PAY = _rx(r"(결제|계산|주문)(?:을|를)?(?:한|했|된|완료|끝).{0,8}(취소|환불)|환불")
+# '전부 취소/장바구니 비워/처음부터' — 장바구니 전체 삭제 표현
 _RE_ALL = _rx(
     r"(?:다|전부|전체|모두|싹|주문|장바구니)(?:를|을|은|는|다)?(?:다)?"
     r"(?:취소|삭제|지워|지우|비워|비우|초기화|리셋)|처음부터|다시시작|전부빼|다빼|모두빼"
 )
+# '방금/마지막/아까 것' (뒤쪽 줄 선택), 아래 _RE_FIRST 는 '처음/첫' (앞쪽 줄 선택)
 _RE_LAST = _rx(r"(방금|마지막|아까|조금전|금방)(?:것|거|껀|걸|담은|넣은)?")
 _RE_FIRST = _rx(r"처음|먼저|첫|맨처음|제일처음")
+# '전부/모두/전체' — 같은 메뉴가 여러 줄일 때 전부 대상으로 삼는 표현
 _RE_EVERY = _rx(r"전부|모두|전체|싹|다(?=취소|빼|삭제|지워|지우|없애)")
+# '주문/장바구니/처음부터' — 특정 메뉴가 아니라 장바구니 전체를 가리키는 말
 _RE_CART_WIDE = _rx(r"주문|장바구니|처음부터|다시시작")
+# '담은/시킨/장바구니에 있는' — 이미 담긴 것을 가리키는 표현
 _RE_EXISTING = _rx(r"담은|담아둔|시킨|넣은|주문한|담긴|장바구니|있는|방금|아까|처음에")
+# '하나는/두 잔만' 처럼 일부 수량을 가리키는 표현. [겹침] dialog._PART, entity._UNIT_START 와 같은 역할
 _RE_PART = _rx(r"(\d+|한|하나|두|둘|세|셋|네|넷)(?:개|잔)?(?:는|만|은)")
+# '한 잔 빼줘/두 잔 줄여' — 수량을 일부만 줄이는 표현
 _RE_MINUS_N = _rx(r"(\d+|한|하나|두|둘|세|셋)(?:잔|개|컵)(?:만|은|는)?(?:빼|취소|줄여|줄이|덜)")
+# '그거 취소해줘' — 지시어로 가리키는 취소
 _RE_THAT = _rx(r"(?:그거|그건|이거|이건|그걸|이걸)(?:는|은)?(?:좀)?(?:취소|빼|삭제|지워)")
 
+# 취소어: 강한 것(취소·삭제·지워 …)은 그 자체로 취소로 본다.
+# 약한 것('빼')은 '시럽 빼줘'처럼 옵션을 빼는 말일 수 있어서 _weak_cancel_applies() 로 따로 걸러낸다.
+# [겹침] dialog._CANCEL 에도 비슷한 취소 표현 목록이 있다.
 _RE_CANCEL_STRONG = _rx(r"취소|삭제|지워|지우|제거|필요없|안마실|안할래|안먹")
 _RE_CANCEL_WEAK = _rx(r"빼줘|빼주|빼요|빼고싶|빼버려|빼자|빼라|빼")
+# '빼' 앞에 이 단어(시럽·샷·얼음…)가 있으면 메뉴 취소가 아니라 옵션 빼기로 본다
 _OPTION_WORDS = tuple(normalize_text(w) for w in ("시럽", "크림", "샷", "얼음", "휘핑", "우유", "설탕", "토핑", "연하게"))
 
+# 옵션(우유 종류·시럽·샷 …) 변경 표현. _RE_CHANGE 는 '바꿔/변경/수정' 같은 변경 동사
 _RE_OPTION_CHANGE = _rx(r"우유|두유|오트|귀리|아몬드|저지방|무지방|시럽|샷|크림|휘핑|설탕|얼음|토핑")
 _RE_CHANGE = _rx(r"바꿔|바꾸|바꿀|바꿔줘|변경|수정|고쳐|줄여|늘려")
+# 'A 말고 B', 'A 대신 B' — 메뉴 교체 표현
 _RE_REPLACE_SPLIT = _rx(r"말고|대신")
 
+# 숫자 표현 / 숫자 단어 변환표.
+# [겹침] entity.QUANTITY_MAP, entity._NUM_WORDS, entity._UNIT_NUM, dialog._COUNT_WORDS, preference._NUM_WORDS 와 같은 표를 각자 따로 들고 있다.
 _NUM = r"(\d+|한|하나|두|둘|세|셋|네|넷|다섯|여섯|일곱|여덟|아홉|열)"
-_NUM_WORDS = {"한": 1, "하나": 1, "두": 2, "둘": 2, "세": 3, "셋": 3, "네": 4, "넷": 4,
-              "다섯": 5, "여섯": 6, "일곱": 7, "여덟": 8, "아홉": 9, "열": 10}
+_NUM_WORDS = NUM_WORDS_10
+# 수량 변경 표현('두 개로 바꿔'). _RE_MORE('하나 더')는 '추가 주문'이라 수량 변경이 아니다.
 _RE_QTY = _rx(_NUM + r"(?:(?:개|잔|병)(?:만|으로|로)?|(?:으로|로|만))(?:바꿔|변경|수정|해줘|해주세요|줄여|늘려|할게|만)?")
 _RE_MORE = _rx(r"(?:\d+|한|하나|두|둘|세|셋|네|넷)(?:개|잔|병)?더")
-_RE_HOT = _rx(r"핫|따뜻|따듯|따스|따숩|따땃|따끈|뜨끈|뜨거|뜨겁|뜨듯|뜨신|hot")
-_RE_ICE = _rx(r"아이스|차가|차갑|시원|ice")
+# 온도 표현. [겹침] 이 파일 아래의 _HOT_W/_ICE_W, dialog._HOT/_ICE, preference._RE_HOT/_RE_ICE 와 단어 목록이 조금씩 다르다
+#        (예: 여기 _RE_ICE 에는 '얼음'·'아아'가 없고, _ICE_W 에는 '냉'이 있음)
+_RE_HOT = _rx("|".join([HOT_CORE, HOT_EXTRA_CART]))
+_RE_ICE = _rx("|".join([ICE_CORE, ICE_EXTRA_CART]))
 
+# '결제/카드/쿠폰/할인…' 이 들어 있으면 장바구니 명령이 아니라 결제 쪽 말로 본다
 _RE_NON_CART = _rx(r"결제|카드|쿠폰|계산|카카오|네이버|할인|상품권|멤버십")
 
+# 수량 변경 최대치
 MAX_QTY = 20
 
 
-def _has_final(word: str) -> bool:
-    ch = word[-1]
-    code = ord(ch)
-    return 0xAC00 <= code <= 0xD7A3 and (code - 0xAC00) % 28 != 0
-
-
+# 단어 + 을/를. [겹침] order._josa() 가 같은 기능(조사 붙이기)을 따로 구현하고 있다.
 def _eul(word: str) -> str:
     return f"{word}{'을' if _has_final(word) else '를'}"
 
 
+# 단어 + 은/는 ([겹침] order._josa 와 동일 기능)
 def _eun(word: str) -> str:
     return f"{word}{'은' if _has_final(word) else '는'}"
 
+# 프론트가 보내는 장바구니 한 줄 문자열 파싱 정규식. 예: '아이스 아메리카노 ×2 (샷추가, 포장)'
 _CART_LINE = re.compile(r"^(?:(아이스|따뜻한) )?(.+?)(?: ×(\d+))?(?: \((.*)\))?$")
 _OPT_COUNT = re.compile(r"^(.*?)(?: ×(\d+))?$")
 
 
+# 장바구니 문자열 목록 → [{menu, temperature, quantity, options, packaging, index}] 로 변환
 def parse_cart(cart_items: list) -> list:
     parsed = []
     for i, raw in enumerate(cart_items or []):
@@ -85,10 +109,12 @@ def parse_cart(cart_items: list) -> list:
     return parsed
 
 
+# 옵션 한 개를 '샷추가 ×2' 형태 문자열로
 def _opt_label(o: dict) -> str:
     return f"{o['name']} ×{o['count']}" if o.get("count", 1) > 1 else o["name"]
 
 
+# 장바구니 한 줄 dict → 사용자에게 읽어 주는 문자열로
 def _line_text(c: dict) -> str:
     temp = "아이스 " if c["temperature"] == "ICE" else "따뜻한 " if c["temperature"] == "HOT" else ""
     qty = f" ×{c['quantity']}" if c.get("quantity", 1) > 1 else ""
@@ -96,12 +122,15 @@ def _line_text(c: dict) -> str:
     return f"{temp}{c['menu']}{qty}" + (f" ({', '.join(extra)})" if extra else "")
 
 
+# 장바구니 전체를 '현재 장바구니: …' 문장으로
 def _cart_text(cart: list) -> str:
     if not cart:
         return "장바구니가 비어 있어요."
     return "현재 장바구니: " + ", ".join(_line_text(c) for c in cart)
 
 
+# 같은 메뉴가 여러 줄일 때 어느 줄을 대상으로 할지 결정. 온도로 좁힘 → '전부' → '처음/마지막' 순.
+# 그래도 못 정하면 (빈 목록, 되묻는 문장)을 돌려 사용자가 고르게 한다.
 def _pick_lines(cart: list, target: str, t: str, target_temp: Optional[str], allow_every: bool = True):
     lines = [c for c in cart if c["menu"] == target]
     if target_temp:
@@ -121,6 +150,7 @@ def _pick_lines(cart: list, target: str, t: str, target_temp: Optional[str], all
                 f"'처음 것', '마지막 것', '전부'처럼 말씀해 주세요.")
 
 
+# 약한 취소어('빼')가 정말 메뉴 취소인지 판단 — 바로 앞 6글자에 옵션 단어가 있으면 옵션 빼기라서 제외
 def _weak_cancel_applies(t: str) -> bool:
     for m in _RE_CANCEL_WEAK.finditer(t):
         before = t[max(0, m.start() - 6):m.start()]
@@ -129,6 +159,7 @@ def _weak_cancel_applies(t: str) -> bool:
     return False
 
 
+# 문장에서 온도(HOT/ICE)를 뽑는다. 둘 다 있으면 '말고' 로 부정된 쪽을 버리고 나머지를 선택
 def _temp_in(text_norm: str) -> Optional[str]:
     hot, ice = bool(_RE_HOT.search(text_norm)), bool(_RE_ICE.search(text_norm))
     if hot and not ice:
@@ -143,51 +174,81 @@ def _temp_in(text_norm: str) -> Optional[str]:
     return None
 
 
+# 이 파일의 공통 반환 형식 {intent, answer, cart_actions}
 def _result(intent: str, answer: str, actions: Optional[list] = None) -> dict:
     return {"intent": intent, "answer": answer, "cart_actions": actions or []}
 
-_PENDING: dict = {}
+# '어느 메뉴/어느 줄이요?' 되묻기 상태를 임시로 저장(90초 유효).
+# 세션(키오스크) 번호별로 따로 저장한다. session_id 를 안 넘기면 "" 하나만 쓰므로 예전처럼 서버 전체가 하나를 공유한다.
+_PENDING_STORE: dict[str, dict] = {}
+_SID: ContextVar[str] = ContextVar("cart_command_sid", default="")
 PENDING_TTL_SEC = 90
+# 되묻기에 대한 '아니/됐어/그대로' — 하던 걸 그만두는 표현
 _RE_DISMISS = _rx(r"아니|됐어|됐아|그만|안할래|괜찮|그냥둬|그대로")
+# '2번', '첫번째' — 되묻기에서 몇 번째 줄인지 고르는 표현. [겹침] fast_intent._RE_ORDINAL, entity.ORDINAL_KEYWORDS
 _RE_ORD_N = _rx(r"(\d+)번(?:째)?|(첫|두|세|네)번째")
 _ORD_WORD = {"첫": 1, "두": 2, "세": 3, "네": 4}
 _RE_PENDING_LAST = _rx(r"마지막|맨끝|나중|뒤에")
+# 주문/결제 말투 — 되묻기 답변이 아니라 새 주문으로 보이는 경우를 걸러냄. [겹침] fast_intent._RE_ORDER_VERB 과 비슷
 _RE_ORDER_TALK = _rx(r"주세요|주셔|줘|담아|주문|결제|계산")
 
 
+# 지금 처리 중인 세션의 되묻기 상태 dict (없으면 빈 dict 를 만들어 돌려줌)
+def _pending() -> dict:
+    return _PENDING_STORE.setdefault(_SID.get(), {})
+
+
+# 오래된 세션의 되묻기 상태를 정리(키오스크가 많아져도 메모리가 계속 늘지 않게)
+def _prune_pending() -> None:
+    now = time.time()
+    for sid in [k for k, v in _PENDING_STORE.items() if not v or now - v.get("ts", 0) > PENDING_TTL_SEC]:
+        del _PENDING_STORE[sid]
+
+
+# 되묻기 상태 저장(이전 상태는 덮어씀)
 def _set_pending(**kw) -> None:
-    _PENDING.clear()
-    _PENDING.update(kw, ts=time.time())
+    _prune_pending()
+    p = _pending()
+    p.clear()
+    p.update(kw, ts=time.time())
 
 
-def clear_pending() -> None:
-    _PENDING.clear()
+# 되묻기 상태 비우기. session_id 를 주면 그 세션만, 안 주면 전부(예전 동작)
+def clear_pending(session_id: Optional[str] = None) -> None:
+    if session_id is None:
+        _PENDING_STORE.clear()
+    else:
+        _PENDING_STORE.pop(session_id, None)
 
 
+# 이전에 되묻기를 했고(90초 이내) 이번 말이 그 답이면 처리한다. 종류(kind):
+#   which_menu : '어떤 메뉴를 취소할까요?' → 메뉴 이름이 나오면 취소 실행
+#   pick_line  : '어느 줄이요?' → 번호/처음/마지막/온도로 줄을 골라 취소 또는 옵션 적용
 def _resolve_pending(text, t, cart, menus, by_name, menu_names):
-    if not _PENDING:
+    pending = _pending()
+    if not pending:
         return None
-    if time.time() - _PENDING["ts"] > PENDING_TTL_SEC:
-        _PENDING.clear()
+    if time.time() - pending["ts"] > PENDING_TTL_SEC:
+        pending.clear()
         return None
     if len(t) > 16:
         return None
-    p = dict(_PENDING)
+    p = dict(pending)
     if _RE_DISMISS.search(t) and not extract_menu(text, menu_names):
-        _PENDING.clear()
+        pending.clear()
         return _result(p["intent"], "알겠어요. 장바구니는 그대로 둘게요.")
 
     if p["kind"] == "which_menu":
         target = extract_menu(text, menu_names)
         if target and target in [c["menu"] for c in cart] and not _RE_ORDER_TALK.search(t):
-            _PENDING.clear()
-            return detect_cart_command(f"{target} 취소해줘", [_cart_raw(c) for c in cart], menus)
+            pending.clear()
+            return _detect_cart_command(f"{target} 취소해줘", [_cart_raw(c) for c in cart], menus)  # 같은 세션 안에서 다시 호출
         return None
 
     if p["kind"] == "pick_line":
         lines = [c for c in cart if c["menu"] == p["menu"]]
         if not lines:
-            _PENDING.clear()
+            pending.clear()
             return None
         chosen = None
         m = _RE_ORD_N.search(t)
@@ -209,7 +270,7 @@ def _resolve_pending(text, t, cart, menus, by_name, menu_names):
                     chosen = by_t
         if not chosen:
             return None
-        _PENDING.clear()
+        pending.clear()
         if p["verb"] == "cancel":
             msg = (f"{_eul(p['menu'])} 모두 장바구니에서 뺐어요." if len(chosen) > 1
                    else f"'{_line_text(chosen[0])}' 줄을 장바구니에서 뺐어요.")
@@ -218,10 +279,13 @@ def _resolve_pending(text, t, cart, menus, by_name, menu_names):
     return None
 
 
+# 장바구니 줄을 다시 문자열로 되돌림(_line_text 와 동일)
 def _cart_raw(c: dict) -> str:
     return _line_text(c)
 
 
+# 담긴 메뉴에 옵션(샷·연하게 등)을 적용. 줄 선택 → 메뉴가 허용하는 옵션만 남김(validate_options) →
+# 일부 수량만 지정했으면 그 수량만 적용 → set_options 액션 생성
 def _set_options(t, cart, target, target_temp, new_details, by_name, forced=None):
     if forced:
         picked, ask = forced, None
@@ -242,7 +306,7 @@ def _set_options(t, cart, target, target_temp, new_details, by_name, forced=None
     pm = _RE_PART.search(t)
     if pm:
         g = pm.group(1)
-        count = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
+        count = to_int(g, _NUM_WORDS, 1)
     if count < 1 or count > line["quantity"]:
         return _result("modify", f"{_eun(target)} {line['quantity']}잔 담겨 있어요. 그 안에서 말씀해 주세요.")
 
@@ -256,23 +320,27 @@ def _set_options(t, cart, target, target_temp, new_details, by_name, forced=None
     return _result("modify", " ".join([msg] + notices),
                    [{"type": "set_options", "index": line["index"], "count": count, "options": options}])
 
+# 옵션 이름 앞글자로 종류(shot/syrup/cream/light/size) 판별용 표
 _KIND_PREFIX = (("샷", "shot"), ("시럽", "syrup"), ("크림", "cream"), ("휘핑", "cream"), ("연하게", "light"), ("사이즈", "size"))
 
 
+# 옵션 이름 → 종류
 def _kind_of(name: str) -> Optional[str]:
     for prefix, kind in _KIND_PREFIX:
         if name.startswith(prefix):
             return kind
     return None
 
-_HOT_W = r"(?:핫|따뜻|따듯|따스|따숩|따땃|따끈|뜨끈|뜨듯|뜨신|뜨거|뜨겁|하시라고|하신대|하시래|하시다고|핫이)"
-_ICE_W = r"(?:아이스|차갑|차가|시원|냉)"
-_RE_NOT_ICE = re.compile(_ICE_W + r"\S{0,3}\s*(?:가\s*)?(?:아니|말고|싫|빼)")
-_RE_NOT_HOT = re.compile(_HOT_W + r"\S{0,3}\s*(?:가\s*)?(?:아니|말고|싫|빼)")
+# 온도 단어 + 부정 표현('아이스 아니고', '뜨거운 건 싫어'). [겹침] 위 _RE_HOT/_RE_ICE 와 별도 목록(여기에만 '하시라고/냉' 등이 있음)
+_HOT_W = unify_ae_e(r"(?:핫|따뜻|따듯|따스|따숩|따땃|따끈|뜨끈|뜨듯|뜨신|뜨거|뜨겁|하시라고|하신대|하시래|하시다고|핫이)")
+_ICE_W = unify_ae_e(r"(?:아이스|차갑|차가|시원|냉)")
+_RE_NOT_ICE = rx_keep(_ICE_W + r"\S{0,3}\s*(?:가\s*)?(?:아니|말고|싫|빼)")
+_RE_NOT_HOT = rx_keep(_HOT_W + r"\S{0,3}\s*(?:가\s*)?(?:아니|말고|싫|빼)")
 _RE_TEMP_ALL = re.compile(r"(?:다|전부|모두|전체|죄다|다들|다\s*같이)\s*")
-_RE_TEMP_VERB = re.compile(r"(?:바꿔|바꾸|변경|[해헤]\s*주|[해헤]\s*줘|로\s*줘|으로|라고|이라고|이래|하시|하신)")
+_RE_TEMP_VERB = rx_keep(r"(?:바꿔|바꾸|변경|[해헤]\s*주|[해헤]\s*줘|로\s*줘|으로|라고|이라고|이래|하시|하신)")
 
 
+# '다 아이스로 바꿔', '뜨거운 거 아니고 차갑게' — 장바구니 전체 온도 변경. 메뉴가 그 온도를 지원하는지 확인해 ok/skipped 로 나눔
 def _temperature_all(t: str, cart: list, by_name: dict) -> Optional[dict]:
     if not cart or _RE_CANCEL_STRONG.search(t):
         return None
@@ -301,6 +369,7 @@ def _temperature_all(t: str, cart: list, by_name: dict) -> Optional[dict]:
     return _result("modify", msg, [{"type": "set_temperature_all", "temperature": target, "menus": ok}])
 
 
+# '아메리카노 하나는 연하게 하나는 샷 추가' — 같은 줄의 잔마다 다른 옵션을 나눠 적용
 def _options_by_parts(text: str, t: str, cart: list, target: Optional[str], target_temp: Optional[str],
                       by_name: dict) -> Optional[dict]:
     """"아메리카노 하나는 연하게 하나는 샷 추가해줘" — 같은 줄의 잔마다 다른 요청사항을 나눠 적용한다."""
@@ -316,7 +385,7 @@ def _options_by_parts(text: str, t: str, cart: list, target: Optional[str], targ
         if not details:
             return None
         g = pm.group(1)
-        segments.append((int(g) if g.isdigit() else _NUM_WORDS.get(g, 1), details))
+        segments.append((to_int(g, _NUM_WORDS, 1), details))
     picked, _ = _pick_lines(cart, target, t, target_temp, allow_every=False)
     if len(picked) != 1:
         return None
@@ -344,6 +413,7 @@ def _options_by_parts(text: str, t: str, cart: list, target: Optional[str], targ
     return _result("modify", " ".join([msg] + notices), actions)
 
 
+# '아메리카노 하나만 따뜻하게' — 같은 줄의 일부 수량만 온도 변경
 def _temperature_part(text: str, t: str, cart: list, menu: Optional[str], by_name: dict) -> Optional[dict]:
     """"아메리카노 하나는 따뜻하게" — 같은 메뉴 줄의 일부 수량만 온도를 바꾼다."""
     if not menu or menu not in [c["menu"] for c in cart] or _RE_CANCEL_STRONG.search(t):
@@ -355,7 +425,7 @@ def _temperature_part(text: str, t: str, cart: list, menu: Optional[str], by_nam
     if not target:
         return None
     g = pm.group(1)
-    count = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
+    count = to_int(g, _NUM_WORDS, 1)
     lines = [c for c in cart if c["menu"] == menu]
     line = lines[-1]
     temps = by_name.get(menu, {}).get("temps") or []
@@ -373,12 +443,15 @@ def _temperature_part(text: str, t: str, cart: list, menu: Optional[str], by_nam
     return _result("modify", msg, [{"type": "set_temperature_part", "menu": menu, "temperature": target, "count": count}])
 
 
+# '그냥 차갑게 줘'처럼 온도를 고쳐 말하는 표현
 _RE_TEMP_CORRECT = _rx(
     r"(?:차갑|차게|시원하|따뜻하|따듯하|뜨겁|뜨거)게?(?:줘|주세요|줄래|할게|할래|해줘|해주세요|해주라|해요)"
     r"|(?:아이스|핫)(?:로|으로)(?:줘|주세요|줄래|할게|할래|해줘|해주세요|해요)")
 _RE_NEW_QTY = _rx(r"\d+(?:잔|개|컵)|[한두세네다섯]잔|[한두세네]개|하나|둘|셋|넷|더")
 
 
+# 담아 둔 메뉴를 '아니다 그냥 차갑게 줘'로 고쳐 말하면 새 주문이 아니라 온도 변경으로 처리(수량 말이 있으면 새 주문으로 봄)
+# [겹침] _temperature_all / _temperature_part / 이 함수 + dialog._temp_fix 가 모두 '온도 바꾸기'를 다루므로 호출 순서가 중요함(detect_cart_command 참고)
 def _temperature_correction(t: str, target: Optional[str], temp: Optional[str], cart: list, by_name: dict) -> Optional[dict]:
     """"아니다 디카페인 라떼 그냥 차갑게 줘" — 담아 둔 메뉴를 다른 온도로 달라고 고쳐 말하면 온도를 바꾼다(새 주문이 아니다)."""
     if not target or not temp or not _RE_TEMP_CORRECT.search(t) or _RE_NEW_QTY.search(t) or _RE_CANCEL_STRONG.search(t):
@@ -398,6 +471,7 @@ def _temperature_correction(t: str, target: Optional[str], temp: Optional[str], 
                    [{"type": "set_temperature", "menu": target, "temperature": temp}])
 
 
+# 메뉴 없이 '포장할게요/여기서 먹을게요'만 말한 경우
 def _packaging_only(text: str, t: str, menu_names: list) -> Optional[dict]:
     """"가지고 갈게", "포장할게요", "여기서 먹을게요"처럼 메뉴 없이 먹고가기/가져가기만 말한 경우."""
     if len(t) > 16 or re.search(r"\d", t) or _RE_NON_CART.search(t) or extract_menu(text, menu_names):
@@ -410,27 +484,50 @@ def _packaging_only(text: str, t: str, menu_names: list) -> Optional[dict]:
     return _result("modify", msg, [{"type": "set_packaging", "packaging": packaging}])
 
 
-def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[dict]:
+# 장바구니 명령 감지 메인 함수. 검사 순서(= 우선순위):
+#  1) 결제 후 취소/환불 → 직원 안내
+#  2) 이전 되묻기에 대한 답(_resolve_pending)
+#  3) 포장/매장만 말한 경우
+#  4) '한 잔 빼줘' (수량 일부 감소)
+#  5) 전체 온도 변경 → 일부 수량 온도 → 잔별 옵션 → 온도 정정
+#  6) 담긴 메뉴에 옵션 추가('아메리카노 샷 추가')
+#  7) 취소어/변경어/교체어/전체삭제 중 하나라도 있는지 판정 → 없으면 None
+#  8) 교체('A 말고 B') → 전체 삭제 → 취소 → 변경(수량/온도) 순으로 처리
+# 명령이 아니면 None.
+def detect_cart_command(text: str, cart_items: list, menus: list, session_id: str = "") -> Optional[dict]:
+    """장바구니 명령 감지. session_id 는 키오스크(세션)별 되묻기 상태를 분리하기 위한 값(안 주면 하나를 공유)."""
+    token = _SID.set(session_id)
+    try:
+        return _detect_cart_command(text, cart_items, menus)
+    finally:
+        _SID.reset(token)
+
+
+def _detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[dict]:
     t = normalize_text(text)
     menu_names = [m["name"] for m in menus]
     by_name = {m["name"]: m for m in menus}
     cart = parse_cart(cart_items)
     cart_menus = [c["menu"] for c in cart]
 
+    # [1] 이미 결제한 주문은 키오스크에서 취소 불가
     if _RE_POST_PAY.search(t):
         return _result(
             "cancel",
             "이미 결제한 주문은 키오스크에서 취소할 수 없어요. 카운터 직원에게 말씀해 주세요.",
         )
 
+    # [2] 직전 되묻기에 대한 답이면 여기서 끝
     resolved = _resolve_pending(text, t, cart, menus, by_name, menu_names)
     if resolved is not None:
         return resolved
 
+    # [3] 포장/매장 선택만 말한 경우
     pack_only = _packaging_only(text, t, menu_names)
     if pack_only is not None:
         return pack_only
 
+    # [4] '한 잔 빼줘' — 줄이 하나(또는 메뉴를 말함)면 그만큼만 줄이고, 수량 이상이면 아예 제거
     minus = _RE_MINUS_N.search(t)
     if minus and cart:  # "한 잔 빼줘" — 장바구니 줄이 하나(또는 메뉴를 말함)면 그만큼만 줄인다
         want = extract_menu(text, menu_names)
@@ -438,7 +535,7 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
         if len(lines) == 1:
             line = lines[0]
             g = minus.group(1)
-            n = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
+            n = to_int(g, _NUM_WORDS, 1)
             if n >= line["quantity"]:
                 return _result("cancel", f"{_eul(line['menu'])} 장바구니에서 뺐어요.",
                                [{"type": "remove_item", "menu": line["menu"], "temperature": line["temperature"]}])
@@ -447,33 +544,41 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
                            [{"type": "set_quantity", "menu": line["menu"], "quantity": left,
                              "temperature": line["temperature"]}])
 
+    # [5-a] 메뉴 이름 없이 말했거나 '다 …' 표현이면 장바구니 전체 온도 변경인지 먼저 확인
     tall = None
     if not extract_menu(text, menu_names) or _RE_TEMP_ALL.search(t):
         tall = _temperature_all(t, cart, by_name)
     if tall is not None:
         return tall
 
+    # 이후 공통으로 쓸 값: 말한 메뉴 / 말한 온도
     target0 = extract_menu(text, menu_names)
     target_temp0 = _temp_in(t)
 
+    # [5-b] 일부 수량만 온도 변경
     part = _temperature_part(text, t, cart, target0, by_name)
     if part is not None:
         return part
 
+    # [5-c] 잔별로 다른 옵션 적용
     by_parts = _options_by_parts(text, t, cart, target0, target_temp0, by_name)
     if by_parts is not None:
         return by_parts
 
+    # [5-d] 온도 정정
     corrected = _temperature_correction(t, target0, target_temp0, cart, by_name)
     if corrected is not None:
         return corrected
 
+    # [6] 담긴 메뉴를 가리키며 옵션을 말하면 옵션 변경('방금 담은 아메리카노 샷 추가')
     if (target0 and target0 in cart_menus and _RE_EXISTING.search(t)
             and not _RE_CANCEL_STRONG.search(t) and not _RE_CHANGE.search(t) and not _RE_REPLACE_SPLIT.search(t)):
         new_details = extract_option_details(text)
         if new_details:
             return _set_options(t, cart, target0, target_temp0, new_details, by_name)
 
+    # [7] 이 말이 어떤 종류의 명령인지 플래그로 정리: 전체삭제 / 취소 / 변경 / 교체
+    #     (특정 메뉴를 말하면서 '다 취소'라고 하면 장바구니 전체가 아니라 그 메뉴만 대상)
     has_all = bool(_RE_ALL.search(t))
     menu_wide = has_all and bool(target0) and not _RE_CART_WIDE.search(t)
     if menu_wide:
@@ -482,9 +587,11 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
     has_change = bool(_RE_CHANGE.search(t))
     has_replace = bool(_RE_REPLACE_SPLIT.search(t))
 
+    # 아무 명령 표현도 없으면 이 함수의 대상이 아님
     if not (has_all or has_cancel or has_change or has_replace):
         return None
 
+    # [8-a] 'A 말고 B' 교체: 담긴 A 를 빼고 B 를 담음(B 품절이면 안내)
     if has_replace:
         m = _RE_REPLACE_SPLIT.search(t)
         left, right = t[:m.start()], t[m.end():]
@@ -501,13 +608,16 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
         if from_menu and from_menu not in cart_menus and to_menu and not has_cancel and not has_change:
             return None
 
+    # [8-b] 장바구니 전체 비우기
     if has_all:
         if not cart:
             return _result("cancel", "장바구니가 이미 비어 있어요.")
         return _result("cancel", "장바구니를 모두 비웠어요. 처음부터 다시 주문해 주세요.", [{"type": "remove_all"}])
 
+    # [8-c] 이후는 취소 / 변경 처리에 쓸 대상 메뉴·온도
     target, target_temp = target0, target_temp0
 
+    # [8-c] 취소: 메뉴 없이 '방금 거 취소' → 마지막 줄 / 메뉴가 있으면 줄 선택 후 제거(여러 줄이면 되묻기) / 아무 대상도 없으면 '어떤 메뉴를 취소할까요?'
     if has_cancel:
         if not target and (_RE_LAST.search(t) or _RE_THAT.search(t)):
             if not cart:
@@ -537,6 +647,8 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
             f"어떤 메뉴를 취소할까요? 전부 지우려면 '전부 취소'라고 말씀해 주세요. {_cart_text(cart)}",
         )
 
+    # [8-d] 변경: '하나 더'는 변경이 아니라 추가 주문 → None / 옵션 변경은 여기서 처리 안 함 /
+    #        수량 변경(재고·최대 수량 검사) 또는 온도 변경(메뉴가 지원하는 온도인지 검사)
     if has_change:
         if _RE_MORE.search(t):
             return None
@@ -560,7 +672,7 @@ def detect_cart_command(text: str, cart_items: list, menus: list) -> Optional[di
 
         if qty_match:
             g = qty_match.group(1)
-            qty = int(g) if g.isdigit() else _NUM_WORDS.get(g, 1)
+            qty = to_int(g, _NUM_WORDS, 1)
             if qty < 1 or qty > MAX_QTY:
                 return _result("modify", f"수량은 1~{MAX_QTY}개 사이로 말씀해 주세요.")
             stock = by_name.get(menu, {}).get("stock")

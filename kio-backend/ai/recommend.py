@@ -1,3 +1,5 @@
+# [recommend.py] LLM(Ollama)으로 답하는 두 가지 체인: ① qa_chain(메뉴·할인 질문 답변) ② recommend_chain(취향 기반 추천).
+# 규칙 기반 추천은 preference.py 에 있다. 메뉴/할인 정보는 data_source(기본: app.admin.db)에서 읽어 프롬프트에 넣는다.
 import json
 import re
 
@@ -7,12 +9,15 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from ai.dictionary import MENU_DICTIONARY
 from ai.llm import get_llm
-from app.admin import db as admin_db
+from ai import data_source
 
 
+# 질문 답변용 LLM (temperature=0 → 항상 같은 답)
 _qa_llm = get_llm(temperature=0)
 
 
+# 질문 속 줄임말(아아, 뜨아 …)을 MENU_DICTIONARY 로 풀어 쓴다(긴 키부터 치환).
+# [겹침] dictionary.py 의 MENU_KEYWORDS / ATTRIBUTE_KEYWORDS / MENU_DICTIONARY 가 같은 줄임말 키를 각자 따로 들고 있다.
 def _normalize_with_dictionary(question: str) -> str:
     normalized = question
     for key in sorted(MENU_DICTIONARY.keys(), key=len, reverse=True):
@@ -21,8 +26,9 @@ def _normalize_with_dictionary(question: str) -> str:
     return normalized
 
 
+# DB 메뉴 → 프롬프트용 목록 문자열(이름·가격·카테고리·맛 태그·카페인·품절)
 def _build_menu_context() -> str:
-    menus = admin_db.get_menus()
+    menus = data_source.get_menus()
     if not menus:
         return "현재 등록된 메뉴가 없습니다."
     return "\n".join(
@@ -32,16 +38,18 @@ def _build_menu_context() -> str:
     )
 
 
+# DB 에서 활성 할인 정보 → 프롬프트용 문자열
 def _build_discount_context() -> str:
-    discounts = admin_db.get_discounts(active_only=True)
+    discounts = data_source.get_discounts(active_only=True)
     if not discounts:
         return "등록된 할인 정보가 없습니다."
     sections = []
     for d in discounts:
-        method_label = admin_db.DISCOUNT_METHODS.get(d["method_code"], d["method_code"])
+        method_label = data_source.discount_methods().get(d["method_code"], d["method_code"])
         sections.append(f"[{d['name']} - {method_label}]\n{d['description']}")
     return "\n\n".join(sections)
 
+# QA 프롬프트: 메뉴 + 할인(포스터 OCR 오타 보정 안내 포함) + 현재 장바구니 + 질문. 한국어로만, 간결하게, 모르면 '알 수 없습니다'
 _qa_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 안내 전문가입니다.
 아래 메뉴 목록과 할인 혜택 정보를 바탕으로 질문에 답변해주세요.
@@ -70,11 +78,13 @@ T멤버십 할인은 아메리카노(핫/아이스 온도 무관)에 적용됩�
 답변:
 """)
 
+# 장바구니 → 프롬프트용 목록 문자열
 def _build_cart_context(cart_items: list[str]) -> str:
     if not cart_items:
         return "장바구니가 비어 있습니다."
     return "\n".join(f"- {item}" for item in cart_items)
 
+# QA 파이프라인: {질문 정규화, 메뉴, 할인, 장바구니} → 프롬프트 → LLM → 문자열
 qa_chain = (
     {
         "question": RunnableLambda(lambda x: _normalize_with_dictionary(x["question"]) if isinstance(x, dict) else _normalize_with_dictionary(x)),
@@ -88,10 +98,12 @@ qa_chain = (
 )
 
 
+# 추천 결과 형식: 답변 문장 + 추천 메뉴 이름 목록
 class RecommendOutput(BaseModel):
     answer: str
     menus: list[str]
 
+# 추천 프롬프트: 목록에 있는 메뉴만, 맛 설명은 목록의 '맛' 단어만 쓰도록 제한하고 JSON 으로만 응답하게 함
 _recommend_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음료 추천 전문가입니다.
 아래는 현재 주문 가능한 메뉴 목록입니다.
@@ -113,11 +125,14 @@ _recommend_prompt = ChatPromptTemplate.from_template("""
 }}
 """)
 
+# 추천용 LLM (temperature=0.7 → 조금 다양하게)
 _recommend_llm = get_llm(temperature=0.7)
 
+# 응답에서 { … } JSON 덩어리를 찾는 정규식. [겹침] menu_analyzer._parse 도 같은 방식으로 JSON 을 뽑는다.
 _JSON_BLOCK_PATTERN = re.compile(r"\{.*\}", re.DOTALL)
 
 
+# LLM 응답에서 JSON 을 꺼내 RecommendOutput 으로 변환. JSON 이 아니면 응답 전체를 답변으로, 메뉴 목록은 비움
 def _parse_recommend_output(raw: str) -> RecommendOutput:
     match = _JSON_BLOCK_PATTERN.search(raw)
     if match:
@@ -131,6 +146,7 @@ def _parse_recommend_output(raw: str) -> RecommendOutput:
             pass
     return RecommendOutput(answer=raw.strip(), menus=[])
 
+# 추천 파이프라인: 질문 + 메뉴 목록 → 프롬프트 → LLM → 문자열 → RecommendOutput
 recommend_chain = (
     {
         "question": RunnablePassthrough(),

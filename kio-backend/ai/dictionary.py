@@ -1,3 +1,7 @@
+# 별명/줄임말/표기 → 정식 메뉴 이름(entity.extract_menu 가 사용). 예: '아아' → 아메리카노.
+# [겹침] '아아·뜨아·아라·뜨라·아바라·아카라'는 아래 MENU_DICTIONARY 에도 있고, '뜨아·따아·뜨라'는 ATTRIBUTE_KEYWORDS(hot)에도 있다.
+#        → 한 단어가 '메뉴'와 '온도' 양쪽으로 동시에 해석된다(의도된 동작이지만 고칠 때 주의).
+# [dictionary.py] 사전 모음(말 해석용). 서로 비슷한 키가 여러 사전에 있으니 고칠 때 세 곳을 같이 확인할 것.
 MENU_KEYWORDS: dict[str, str] = {
     "아아": "아메리카노",
     "뜨아": "아메리카노",
@@ -41,6 +45,8 @@ MENU_KEYWORDS: dict[str, str] = {
     "라떼": "카페라떼",
 }
 
+# 속성 단어 → 'hot' / 'ice' / 'sweet' (entity.extract_attributes 가 문자열 포함으로 검사).
+# [겹침] 온도 단어 목록이 dialog._HOT/_ICE, cart_command._RE_HOT/_RE_ICE/_HOT_W/_ICE_W, preference._RE_HOT/_RE_ICE 에도 따로 있다.
 ATTRIBUTE_KEYWORDS: dict[str, str] = {
     "달달한": "sweet",
     "달콤한": "sweet",
@@ -79,6 +85,7 @@ ATTRIBUTE_KEYWORDS: dict[str, str] = {
     "차거운": "ice",
 }
 
+# QA(LLM) 질문을 풀어 쓰기 위한 치환표(recommend._normalize_with_dictionary 가 사용). 예: '아아' → '아이스 아메리카노', '카페인 없는' → '디카페인'
 MENU_DICTIONARY: dict[str, str] = {
     "아아": "아이스 아메리카노",
     "뜨아": "따뜻한 아메리카노",

@@ -1,11 +1,17 @@
+# [order.py] 해석된 말(entity) → 실제 주문(order) 변환과 검증: 온도/옵션 정리, 품절·재고 처리, 장바구니 안내 문구 생성.
+# 공용 도우미 _josa()(을/를·은/는 붙이기)도 여기 있어서 dialog.py, menu_match.py 가 가져다 쓴다.
 import re
+# 할인 이름 → 대상 메뉴. 메뉴 말 없이 'T멤버십 할인되는 거'라고만 하면 이 메뉴로 채운다. (대소문자 두 가지 표기를 따로 둠)
 DISCOUNT_MENU_MAP = {
     "T멤버십": "아메리카노",
     "tmembership": "아메리카노",
 }
 
+# 메뉴처럼 잘못 인식된 잡음 단어(T, KT, CJ …) — 메뉴가 아닌 것으로 취급
 NOISE_TOKENS = {"T", "KT", "CJ", "SKT"}
 
+# 옵션 종류별로 허용되는 메뉴 카테고리(예: 샷 추가는 커피/디카페인/티만).
+# [겹침] 아래 DIALOG_ASK_CATEGORIES 의 shot/light 는 이 표와 똑같은 값이다(되묻기용은 화면에서 고를 수 있는 것만 남긴 부분집합).
 OPTION_ALLOWED_CATEGORIES = {
     "shot": {"커피", "디카페인", "티"},
     "light": {"커피", "디카페인"},
@@ -13,10 +19,12 @@ OPTION_ALLOWED_CATEGORIES = {
     "cream": {"커피", "디카페인", "스무디"},
 }
 # 대화형으로 되묻는 옵션: 주문 화면(MenuModal)에서 실제로 고를 수 있는 것만
+# 대화형으로 '되묻는' 옵션 → 허용 카테고리. 주문 화면(MenuModal)에서 실제로 고를 수 있는 것만
 DIALOG_ASK_CATEGORIES = {
     "shot": {"커피", "디카페인", "티"},
     "light": {"커피", "디카페인"},
 }
+# 옵션 종류 → 사용자에게 보여 줄 이름
 OPTION_LABELS = {
     "shot": "샷 추가",
     "light": "연하게",
@@ -26,6 +34,8 @@ OPTION_LABELS = {
 }
 
 
+# 단어 끝 글자 받침 유무에 따라 조사를 붙인다(은/는, 이/가, 을/를 …). 한글이 아니면 '은(는)'처럼 둘 다 표기.
+# [겹침] cart_command._eul/_eun 이 같은 기능을 따로 구현하고 있다.
 def _josa(word: str, with_final: str, without_final: str) -> str:
     stripped = re.sub(r"\s*\([^)]*\)\s*$", "", word).rstrip(") ")
     code = ord(stripped[-1]) if stripped else 0
@@ -34,6 +44,7 @@ def _josa(word: str, with_final: str, without_final: str) -> str:
     return f"{word}{with_final}({without_final})"
 
 
+# 메뉴가 비었거나 2글자 이하이거나 잡음 단어(T/KT/CJ…)면 '메뉴가 아님'으로 판정
 def _is_noise_menu(menu: str | None) -> bool:
     if not menu:
         return True
@@ -41,6 +52,7 @@ def _is_noise_menu(menu: str | None) -> bool:
     return len(cleaned) <= 2 or cleaned.upper() in NOISE_TOKENS
 
 
+# 모든 항목이 잡음 메뉴일 때, 말 속에 할인 이름(T멤버십 등)이 있으면 그 할인 대상 메뉴(아이스 1잔)로 대체
 def apply_discount_menu_fallback(entities: list[dict], query: str, menu_names: list[str]) -> list[dict]:
     if not all(_is_noise_menu(e.get("menu")) for e in entities):
         return entities
@@ -60,6 +72,7 @@ def apply_discount_menu_fallback(entities: list[dict], query: str, menu_names: l
     return entities
 
 
+# options(이름만) 중 option_details 에 없는 것을 kind='other' 로 합쳐 하나의 목록으로
 def _merge_option_details(entity: dict) -> list[dict]:
     details = [dict(d) for d in entity.get("option_details", [])]
     seen = {d["name"] for d in details}
@@ -70,6 +83,8 @@ def _merge_option_details(entity: dict) -> list[dict]:
     return details
 
 
+# entity 목록 → 주문 목록. 메뉴 이름 앞의 '아이스 '/'핫 '을 떼서 온도로 옮기고,
+# 온도를 명시했는지(temp_explicit)를 기록한다(명시 안 했으면 기본 ICE).
 def entities_to_orders(entities: list[dict]) -> list[dict]:
     orders = []
     for entity in entities:
@@ -103,6 +118,7 @@ def entities_to_orders(entities: list[dict]) -> list[dict]:
     return orders
 
 
+# 주문을 '주문 가능'과 '품절 메뉴 이름 목록'으로 나눔
 def split_sold_out(orders: list[dict], sold_out_names: set[str]) -> tuple[list[dict], list[str]]:
     available = [o for o in orders if o["menu"] not in sold_out_names]
     sold_out: list[str] = []
@@ -112,6 +128,7 @@ def split_sold_out(orders: list[dict], sold_out_names: set[str]) -> tuple[list[d
     return available, sold_out
 
 
+# 재고 제한 적용: (재고 − 이미 담은 수 − 이번에 담는 수)만큼만 허용. 남는 게 없으면 제외, 부족하면 수량을 줄이고 안내 문구 생성
 def limit_by_stock(orders: list[dict], menus: list[dict], in_cart: dict[str, int]) -> tuple[list[dict], list[str]]:
     by_name = {m["name"]: m for m in menus}
     taken: dict[str, int] = {}
@@ -139,6 +156,7 @@ def limit_by_stock(orders: list[dict], menus: list[dict], in_cart: dict[str, int
     return kept, list(dict.fromkeys(notices))
 
 
+# 이 메뉴에서 선택 가능한 옵션 이름 목록(안내 문구용). '연하게'는 안내에서 제외
 def allowed_option_labels(menu_info: dict) -> list[str]:
     labels = [OPTION_LABELS[k] for k, cats in OPTION_ALLOWED_CATEGORIES.items()
               if k != "light" and menu_info.get("category") in cats]
@@ -147,6 +165,10 @@ def allowed_option_labels(menu_info: dict) -> list[str]:
     return labels
 
 
+# 메뉴가 지원하지 않는 옵션을 걸러내고 안내 문구 생성.
+#  - 온도가 한 가지뿐인 메뉴는 그 온도로 고정
+#  - 온도를 말 안 해서 기본(아이스)으로 담은 메뉴는 따로 모아 한 번에 안내
+#  - 카테고리/사이즈 허용 목록에 없는 옵션은 제거
 def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict], list[str]]:
     by_name = {m["name"]: m for m in menus}
     notices: list[str] = []
@@ -188,6 +210,7 @@ def validate_options(orders: list[dict], menus: list[dict]) -> tuple[list[dict],
     return orders, list(dict.fromkeys(notices))
 
 
+# 주문의 옵션을 ' (샷추가 ×2, 포장)' 형태 문자열로
 def _option_text(order: dict) -> str:
     parts = []
     for d in order.get("option_details", []):
@@ -197,6 +220,8 @@ def _option_text(order: dict) -> str:
     return f" ({', '.join(parts)})" if parts else ""
 
 
+# 장바구니 담기 결과 안내 문장 생성: 담은 메뉴 → 품절 안내(+대체 메뉴) → 기타 공지 순으로 이어 붙임.
+# pay_suffix 가 있으면 '담고 …'로 결제 안내를 이어서 말한다.
 def cart_answer(
     named: list[dict],
     sold_out: list[str],

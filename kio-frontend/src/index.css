@@ -1,7 +1,6 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
-/* 키오스크 전체 기본 글꼴: Pretendard (Tailwind 의 font-sans 도 같은 글꼴로 맞춘다) */
 @theme {
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic",
     "Apple SD Gothic Neo", sans-serif;
@@ -29,7 +28,6 @@ select {
   100% { transform: translateY(0) scaleX(1) scaleY(1); }
 }
 
-/* 먹고가기/가져가기 안내: 강조된 버튼 둘레로 분홍 물결 선이 물의 파동처럼 퍼져 나간다 */
 @keyframes kio-wave {
   0%   { inset: 0; border-radius: 1rem; opacity: 0.9; }
   100% { inset: -16px; border-radius: 2rem; opacity: 0; }
