@@ -244,6 +244,11 @@ def list_menus_public():
     return db.get_menus()
 
 
+@menus_public_router.get("/categories")
+def list_categories_public():
+    return db.get_categories()
+
+
 @discounts_public_router.get("/discounts")
 def list_discounts_public():
     return db.get_discounts(active_only=True)

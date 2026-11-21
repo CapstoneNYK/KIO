@@ -42,14 +42,6 @@ def get_state(session_id: str = "") -> ConversationState:
     return st
 
 
-# 세션 상태 삭제(session_id 를 안 주면 전부)
-def reset_state(session_id: str | None = None) -> None:
-    if session_id is None:
-        _STATES.clear()
-    else:
-        _STATES.pop(session_id, None)
-
-
 # ── 지금 처리 중인 요청의 세션 ──
 # 요청 처리 맨 앞에서 set_session(session_id) 를 부르면, 같은 요청 안의 어느 함수에서든 current_state() 로 그 세션 상태를 쓴다.
 # (async 요청마다 ContextVar 가 따로라 서로 섞이지 않는다)

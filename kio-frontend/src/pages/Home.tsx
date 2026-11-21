@@ -11,7 +11,7 @@ import { CartBar } from "../components/CartBar";
 import { CouponScanner } from "../components/CouponScanner";
 import { useCouponStore } from "../store/couponStore";
 import { PaymentModal } from "../components/PaymentModal";
-import { useMenuStore, CATEGORIES } from "../store/menuStore";
+import { useMenuStore } from "../store/menuStore";
 import type { MenuItem } from "../types/menu";
 
 const PAYMENT_GUIDE_SCREENS = ["payment", "payment_card", "payment_complete"];
@@ -33,6 +33,7 @@ export const Home = () => {
 
   const cartItems = useCartStore((s) => s.items);
   const menus = useMenuStore((s) => s.menus);
+  const categories = useMenuStore((s) => s.categories);
 
   const showStandalonePayment =
     PAYMENT_GUIDE_SCREENS.includes(guideScreen ?? "") && cartItems.length === 0;
@@ -55,7 +56,7 @@ export const Home = () => {
     <div className="flex flex-col h-dvh">
       <TopBar />
       <NavBar
-        categories={CATEGORIES}
+        categories={categories}
         activeCategory={activeCategory}
         onSelect={setActiveCategory}
       />

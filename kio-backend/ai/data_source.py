@@ -9,12 +9,6 @@ DISCOUNT_METHODS 를 가진 객체를 꽂으면 된다.
 _provider = None
 
 
-# 데이터 제공 객체 교체(None 이면 기본값인 app.admin.db 로 되돌림)
-def set_provider(provider) -> None:
-    global _provider
-    _provider = provider
-
-
 def _db():
     if _provider is not None:
         return _provider

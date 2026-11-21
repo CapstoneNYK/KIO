@@ -4,6 +4,7 @@ import { LuX } from "react-icons/lu";
 import { useMenuStore } from "../store/menuStore";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
+import { API_URL } from "../api/base";
 
 interface CouponResult {
   code: string;
@@ -34,7 +35,7 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
       const code = res.rawValue;
       try {
         const resp = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/coupon/scan?code=${encodeURIComponent(code)}`
+          `${API_URL}/api/coupon/scan?code=${encodeURIComponent(code)}`
         );
         if (!resp.ok) {
           setError("유효하지 않은 쿠폰입니다.");

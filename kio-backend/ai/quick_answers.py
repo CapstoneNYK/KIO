@@ -39,10 +39,7 @@ def _discount_menu_condition(first_line: str, menus: list[dict]) -> tuple[str, s
     hit = next((n for n in names if n in first_line), None)
     if not hit:
         return None
-    pos = first_line.find(hit)
-    temp = "ICE" if first_line[max(0, pos - 4):pos].strip().startswith("아이스") else (
-        "HOT" if first_line[max(0, pos - 4):pos].strip().startswith(("핫", "따뜻")) else None)
-    return hit, temp
+    return hit, None  # 온도는 따지지 않는다(예: T멤버십은 핫/아이스 아메리카노 모두 대상)
 
 
 # 받침 있으면 first, 없거나 한글이 아니면 second (영문으로 끝나는 이름은 '는/를' 로 읽는다)

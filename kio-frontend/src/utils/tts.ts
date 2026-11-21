@@ -71,13 +71,18 @@ function speakWithBrowser(text: string, mine: number, onDone?: () => void, onSta
 async function fetchServerAudio(text: string, signal: AbortSignal): Promise<string | null> {
   const cached = audioCache.get(text);
   if (cached) return cached;
-  const timeout = setTimeout(() => abort?.abort(), 8000);
+  if (signal.aborted) return null;
+  // 8초 제한은 이 요청만 끊는다(전역 abort 를 쓰면 그 사이 시작된 새 요청까지 끊긴다)
+  const local = new AbortController();
+  const onAbort = () => local.abort();
+  signal.addEventListener("abort", onAbort);
+  const timeout = setTimeout(() => local.abort(), 8000);
   try {
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
-      signal,
+      signal: local.signal,
     });
     if (!res.ok) return null;
     const url = URL.createObjectURL(await res.blob());
@@ -87,6 +92,7 @@ async function fetchServerAudio(text: string, signal: AbortSignal): Promise<stri
     return null;
   } finally {
     clearTimeout(timeout);
+    signal.removeEventListener("abort", onAbort);
   }
 }
 

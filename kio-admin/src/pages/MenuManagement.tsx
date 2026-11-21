@@ -3,8 +3,6 @@ import { FiEdit2, FiTrash2, FiUpload, FiX } from "react-icons/fi";
 import { PiToggleRightFill, PiToggleLeftFill, PiPlusBold } from "react-icons/pi";
 import { apiFetch, API, authHeaders } from "../api";
 
-const CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티", "논커피"];
-
 interface Menu {
   id: number;
   name: string;
@@ -170,6 +168,14 @@ export const MenuManagement = () => {
   const [editError, setEditError] = useState("");
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
+  // 카테고리 목록·순서는 서버(DB)에서 받는다(키오스크와 같은 목록)
+  const [serverCategories, setServerCategories] = useState<string[]>([]);
+  useEffect(() => {
+    apiFetch<string[]>("/api/categories").then(setServerCategories).catch(() => setServerCategories([]));
+  }, []);
+  // 서버에서 못 받았으면 메뉴에 나온 카테고리로 대신한다
+  const categories = ["전체", ...(serverCategories.length > 0 ? serverCategories : [...new Set(menus.map((m) => m.category))])];
+
   useEffect(() => {
     const load = () => {
       apiFetch<Menu[]>("/api/admin/menus")
@@ -182,8 +188,8 @@ export const MenuManagement = () => {
   }, []);
 
   const categoryRank = (category: string) => {
-    const i = CATEGORIES.indexOf(category);
-    return i === -1 ? CATEGORIES.length : i;
+    const i = categories.indexOf(category);
+    return i === -1 ? categories.length : i;
   };
   const filtered = activeCategory === "전체"
     ? [...menus].sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || a.id - b.id)
@@ -402,7 +408,7 @@ export const MenuManagement = () => {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-500">카테고리</label>
             <div className="flex flex-wrap gap-1.5">
-              {CATEGORIES.filter((c) => c !== "전체").map((cat) => (
+              {categories.filter((c) => c !== "전체").map((cat) => (
                 <button key={cat} onClick={() => setNewMenu((p) => ({ ...p, category: cat }))}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
                   style={{ backgroundColor: newMenu.category === cat ? "#F5A623" : "white", color: newMenu.category === cat ? "white" : "#6B7280", borderColor: newMenu.category === cat ? "#F5A623" : "#E5E7EB" }}>
@@ -478,7 +484,7 @@ export const MenuManagement = () => {
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button key={cat} onClick={() => setActiveCategory(cat)}
               className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors border"
               style={{ backgroundColor: activeCategory === cat ? "#F5A623" : "white", color: activeCategory === cat ? "white" : "#6B7280", borderColor: activeCategory === cat ? "#F5A623" : "#E5E7EB" }}>
@@ -567,7 +573,7 @@ export const MenuManagement = () => {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-gray-500">카테고리</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {CATEGORIES.filter((c) => c !== "전체").map((cat) => (
+                  {categories.filter((c) => c !== "전체").map((cat) => (
                     <button key={cat} onClick={() => setEditForm((p) => ({ ...p, category: cat }))}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
                       style={{ backgroundColor: editForm.category === cat ? "#F5A623" : "white", color: editForm.category === cat ? "white" : "#6B7280", borderColor: editForm.category === cat ? "#F5A623" : "#E5E7EB" }}>

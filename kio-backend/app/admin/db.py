@@ -29,7 +29,7 @@ INITIAL_DISCOUNTS = [
     (
         "T멤버십 T Day",
         "tmembership",
-        "매월 지정된 T Day(월 1회)에 아이스 아메리카노 구매 시 30% 할인 (단품 1잔에 한함)\n"
+        "매월 지정된 T Day(월 1회)에 아메리카노 구매 시 30% 할인 (단품 1잔에 한함)\n"
         "T멤버십 매직 바코드 제시 시 할인 적용\n"
         "할인을 선택한 T멤버십 회원만 이용 가능\n"
         "월 1회 한정, 중복 할인 불가",
@@ -42,6 +42,17 @@ INITIAL_DISCOUNTS = [
         "일부 품목 제외 및 매장별로 상이할 수 있음",
     ),
 ]
+
+# 쿠폰/상품권 초기 데이터(coupons 테이블이 비어 있을 때만 한 번 넣는다). 코드는 대문자·앞뒤 공백 없이 저장
+# (type, menu, balance, rate) 중 해당 종류에 필요한 것만 채운다
+INITIAL_COUPONS = [
+    ("EXAMPLE 1234", "product",  "아메리카노", None, None, "아메리카노 1잔 무료 상품권"),
+    ("EXAMPLE 4321", "amount",   None,         5000, None, "5,000원 금액 상품권"),
+    ("T MEMBERSHIP", "discount", "아메리카노", None, 0.3,  "T멤버십 아메리카노 1잔 30% 할인"),
+]
+
+# 메뉴 카테고리 순서(키오스크 탭·관리자 화면이 모두 이 순서를 따른다). categories 테이블이 비어 있을 때만 한 번 넣는다
+INITIAL_CATEGORIES = ["커피", "디카페인", "스무디", "에이드", "주스", "티", "논커피"]
 
 INITIAL_MENUS = [
     (1,  "아메리카노",          2000, "커피",    '["HOT","ICE"]', 0),
@@ -160,6 +171,24 @@ def init_db() -> None:
                 created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
+            CREATE TABLE IF NOT EXISTS coupons (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                code           TEXT    NOT NULL UNIQUE,
+                type           TEXT    NOT NULL CHECK (type IN ('product','amount','discount')),
+                menu           TEXT,
+                balance        INTEGER,
+                rate           REAL,
+                description    TEXT    NOT NULL DEFAULT '',
+                active         INTEGER NOT NULL DEFAULT 1,
+                created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+            );
+
+            CREATE TABLE IF NOT EXISTS categories (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL UNIQUE,
+                sort_order  INTEGER NOT NULL DEFAULT 0
+            );
+
             CREATE TABLE IF NOT EXISTS faqs (
                 id             INTEGER PRIMARY KEY AUTOINCREMENT,
                 question       TEXT    NOT NULL,
@@ -250,6 +279,33 @@ def init_db() -> None:
                 "INSERT INTO discounts (name, method_code, description) VALUES (?,?,?)",
                 INITIAL_DISCOUNTS,
             )
+
+        if conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0] == 0:
+            conn.executemany(
+                "INSERT INTO categories (name, sort_order) VALUES (?,?)",
+                [(name, i) for i, name in enumerate(INITIAL_CATEGORIES)],
+            )
+
+        # 예전에 만든 T멤버십 설명은 '아이스 아메리카노'로 되어 있다 → 규칙(핫/아이스 모두)에 맞게 한 번 고친다.
+        # 관리자가 이미 문구를 바꿔 두었다면 해당 문장이 없으므로 건드리지 않는다
+        conn.execute(
+            "UPDATE discounts SET description = REPLACE(description, '아이스 아메리카노 구매 시', '아메리카노 구매 시') "
+            "WHERE method_code='tmembership' AND description LIKE '%아이스 아메리카노 구매 시%'"
+        )
+
+        if conn.execute("SELECT COUNT(*) FROM coupons").fetchone()[0] == 0:
+            conn.executemany(
+                "INSERT INTO coupons (code, type, menu, balance, rate, description) VALUES (?,?,?,?,?,?)",
+                INITIAL_COUPONS,
+            )
+
+
+# 카테고리 이름을 정해진 순서대로. 메뉴에는 있는데 목록에 없는 이름은 뒤에 붙인다(탭에서 사라지지 않게)
+def get_categories() -> list[str]:
+    with get_conn() as conn:
+        names = [r["name"] for r in conn.execute("SELECT name FROM categories ORDER BY sort_order, id")]
+        extra = [r["category"] for r in conn.execute("SELECT DISTINCT category FROM menus ORDER BY category")]
+    return names + [c for c in extra if c not in names]
 
 
 def get_menus() -> list[dict]:
@@ -452,6 +508,22 @@ def delete_faq(faq_id: int) -> bool:
 def _faq_row(row: sqlite3.Row) -> dict:
     d = dict(row)
     d["active"] = bool(d["active"])
+    return d
+
+
+# 스캔한 쿠폰 코드로 쿠폰 한 건 조회(대소문자·앞뒤 공백 무시, 비활성은 없는 것으로 본다). 없으면 None
+def get_coupon_by_code(code: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM coupons WHERE UPPER(code)=? AND active=1", (code.strip().upper(),)
+        ).fetchone()
+    if row is None:
+        return None
+    # 프론트가 쓰는 모양: 종류에 해당하는 값만 담는다
+    d = {"code": row["code"], "type": row["type"], "description": row["description"]}
+    for key in ("menu", "balance", "rate"):
+        if row[key] is not None:
+            d[key] = row[key]
     return d
 
 
