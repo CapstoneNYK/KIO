@@ -10,6 +10,7 @@ from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from ai.dictionary import MENU_DICTIONARY
 from ai.llm import get_llm
 from ai import data_source
+from ai.season import season_hint
 
 
 # 질문 답변용 LLM (temperature=0 → 항상 같은 답)
@@ -117,6 +118,7 @@ _recommend_prompt = ChatPromptTemplate.from_template("""
 각 메뉴가 왜 어울리는지 한 줄로 설명하되, 맛 설명은 목록에 적힌 '맛' 항목의 단어만 사용하세요.
 목록에 없는 향·재료(바닐라, 카라멜, 시럽 등)를 지어내거나 다른 메뉴의 특징을 섞지 마세요.
 목록에 없는 메뉴는 절대 추천하지 마세요.
+{season_hint}
 메뉴 목록이 비어 있거나 요청에 맞는 메뉴가 없으면, answer에 "죄송합니다, 현재 해당 조건에 맞는 메뉴를 찾을 수 없습니다."라고 적고 menus는 빈 목록으로 응답하세요.
 
 반드시 아래 JSON 형식으로만 응답하세요. 다른 설명이나 코드블록 표시 없이 JSON만 출력하세요:
@@ -152,6 +154,7 @@ recommend_chain = (
     {
         "question": RunnablePassthrough(),
         "menus": RunnableLambda(lambda _: _build_menu_context()),
+        "season_hint": RunnableLambda(lambda _: season_hint()),
     }
     | _recommend_prompt
     | _recommend_llm

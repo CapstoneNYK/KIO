@@ -12,7 +12,7 @@ from ai import data_source
 from ai.faq import faq_answer
 from ai.cart_command import detect_cart_command, parse_cart
 from ai.dialog import answer_slot, current_question, start_dialog
-from ai.entity import extract_attributes, extract_menu, extract_multi_order, fix_stt_errors
+from ai.entity import extract_attributes, extract_menu, extract_multi_order, fix_stt_errors, unmatched_order_parts
 from ai.fast_intent import fast_classify
 from ai.followup import (
     affirm_to_order,
@@ -34,9 +34,10 @@ from ai.logging_utils import log_intent_query
 from ai.memo import memo_menu, memo_request, order_memo, with_memo
 from ai.emphasis import clean_terms, emphasize
 from ai.entity import extract_packaging
-from ai.menu_match import alias_answer, ingredient_answer, missing_menu_answer, resolve_owned_aliases
+from ai.menu_match import alias_answer, expand_partial_names, ingredient_answer, missing_menu_answer, resolve_owned_aliases
 from ai.order import (
     _is_noise_menu,
+    _josa,
     apply_discount_menu_fallback,
     cart_answer,
     entities_to_orders,
@@ -45,7 +46,9 @@ from ai.order import (
     validate_options,
 )
 from ai.payment import extract_payment_method, get_payment_response, payment_label
-from ai.preference import recommend_by_conditions
+from ai.preference import parse_conditions, recommend_by_conditions
+from ai.decaf import decaf_phrase, decaf_unavailable
+from ai.timeslot import slot_answer
 from ai.quick_answers import (
     CATEGORY_ASK,
     DISCOUNT_QUESTION_PATTERN,
@@ -233,7 +236,11 @@ class Ctx:
 # 질문·추천 같은 곁가지 답변이 나가도, 열려 있던 되묻기(dialog)는 잃지 않고 하던 질문을 답변 뒤에 이어서 다시 묻는다
 def handle_ask(query: str, cart_items: list, dialog: dict | None, session_id: str = "") -> dict:
     result = handle_ask_inner(query, cart_items, dialog, session_id)
-    if (dialog and result.get("intent") in ("qa", "recommend") and result.get("dialog") is None):
+    # 옵션 되묻기 도중 가격·정보 질문(qa)이면 답한 뒤 하던 질문을 이어 묻는다. 추천 '목록'을 보여 줬다면 마음을 바꾼 것이라
+    # 보고 하던 되묻기를 접는다 — 목록 뒤에 "샷 추가하시겠어요?"가 또 붙지 않게(프론트는 응답에 dialog 가 없으면 되묻기를 끝낸다).
+    # 목록 없이 끝난 추천(옆사람에게 한 혼잣말 등)은 하던 질문을 그대로 이어 간다
+    shown_list = result.get("intent") == "recommend" and bool(result.get("recommended_menus"))
+    if dialog and result.get("intent") in ("qa", "recommend") and not shown_list and result.get("dialog") is None:
         again = current_question(dialog)
         if again:
             result["dialog"] = dialog
@@ -244,21 +251,6 @@ def handle_ask(query: str, cart_items: list, dialog: dict | None, session_id: st
     return result
 
 
-# '카페인 없는 라떼' → '디카페인 라떼' (메뉴판에 디카페인 버전이 있을 때만). 안 바꾸면 카페인 있는 일반 라떼가 주문된다
-_RE_DECAF_WORDS = r"(?<!디)카페인\s*(?:이\s*)?(?:없는|안\s*들어간|안\s*든|빠진|뺀|프리)\s*"
-
-
-def _decaf_phrase(query: str, menus: list[dict]) -> str:
-    if not re.search(_RE_DECAF_WORDS, query):
-        return query
-    for m in menus:
-        name = m["name"]
-        base = name[len("디카페인"):].strip() if name.startswith("디카페인") else ""
-        if base:
-            query = re.sub("(" + _RE_DECAF_WORDS + ")(?=" + r"\s*".join(map(re.escape, base)) + ")", "디카페인 ", query)
-    return query
-
-
 def handle_ask_inner(query: str, cart_items: list, dialog: dict | None, session_id: str = "") -> dict:
     set_session(session_id)  # 이 요청이 쓸 세션 지정 → 이후 current_state() 가 이 세션의 상태를 돌려준다
 
@@ -266,10 +258,19 @@ def handle_ask_inner(query: str, cart_items: list, dialog: dict | None, session_
     query = fix_stt_errors(query)
     menus = data_source.get_menus()
     query = resolve_owned_aliases(query, menus, current_state().last_recommended)
-    query = _decaf_phrase(query, menus)
+    query = expand_partial_names(query, menus)  # "망고 요거트" → "망고 요거트 스무디"
+    query = decaf_phrase(query, menus)
     affirmed = affirm_to_order(query, bool(dialog))
     if affirmed:
         query = affirmed
+    if not affirmed and not dialog:
+        nodecaf = decaf_unavailable(query, menus)
+        if nodecaf:
+            remember_pending_temp(query)
+            remember_recommended([nodecaf["name"]])  # 다음 "응/그래" 는 이 메뉴 주문으로 이어진다
+            josa = "은" if (ord(nodecaf["name"][-1]) - 0xAC00) % 28 else "는"
+            return {"question": query, "intent": "qa",
+                    "answer": f"{nodecaf['name']}{josa} 디카페인으로 만들 수 없어요. 일반 {nodecaf['name']}로 드릴까요?"}
     ctx = Ctx(query, cart_items, dialog, session_id, menus)
 
     for step in (_step_dialog, _step_cart_command, _step_memo, _step_another, _step_quick_answers):
@@ -367,6 +368,12 @@ def _step_quick_answers(ctx: Ctx) -> dict | None:
         faq = faq_answer(query)
         if faq:
             return {"question": query, "intent": "qa", "answer": faq}
+    slot = None
+    if not extract_menu(query, menu_names) and parse_conditions(query).is_empty():  # 맛·종류 조건이 있으면 조건 추천이 맡는다
+        slot = slot_answer(query, menus)  # "오후에 뭐 마시지?" — 시간대별 인기/어울리는 메뉴
+    if slot:
+        remember_recommended(slot[1])
+        return {"question": query, "intent": "recommend", "answer": slot[0], "recommended_menus": slot[1]}
     if RE_POPULAR.search(qn):
         answer, popular = popular_answer(menus)
         remember_recommended(popular)
@@ -425,6 +432,9 @@ def _handle_order(ctx: Ctx) -> dict:
             return early
 
     orders, named, sold_out, stock_notices, notices = prepare_orders(entities, menus, ctx.cart_items)
+    if named:  # 여러 메뉴 중 못 알아들은 것이 있으면 조용히 빼지 않고 알려 준다
+        for guess in unmatched_order_parts(ctx.query, menu_names):
+            notices.append(f"{_josa(guess, '은', '는')} 메뉴에서 찾지 못해 빼고 담았어요.")
     if named and wants_pay_now(ctx.query):
         # "아아 두 잔 결제", "라떼 하나 카드요"처럼 주문과 결제를 한 번에 말하면 되묻지 않고 바로 결제로 간다
         return order_and_pay_now(ctx.query, orders, named, sold_out, menus, stock_notices + notices)

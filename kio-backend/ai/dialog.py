@@ -447,7 +447,9 @@ def _advance(queue: list, completed: list, menus: list[dict], prefix: str = "") 
         # 더 물을 게 없는 주문 → 완료 처리(담은 음료는 한 문장으로 모아 말함)
         added.append(_describe(order))
         completed.append(order)
-        lite_seen = lite_seen or head.get("lite", False)
+        # 여럿 주문(lite)에서는 샷·연하게를 묻지 않고 마지막에 안내만 한다. 샷·연하게가 되는 메뉴가 있을 때만 안내한다
+        can_option = any(info.get("category") in cats for cats in DIALOG_ASK_CATEGORIES.values())
+        lite_seen = lite_seen or (head.get("lite", False) and can_option)
         queue.pop(0)
     if added:
         notes.append(P.ADDED.format(items=", ".join(added)))

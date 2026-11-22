@@ -244,6 +244,23 @@ def list_menus_public():
     return db.get_menus()
 
 
+class OptionUpdate(BaseModel):
+    price: int = Field(ge=0, le=100000)
+
+
+@menus_public_router.get("/options")
+def list_options_public():
+    return db.get_options()
+
+
+@router.put("/options/{option_id}")
+def update_option(option_id: int, body: OptionUpdate):
+    updated = db.update_option_price(option_id, body.price)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="옵션을 찾을 수 없습니다.")
+    return updated
+
+
 @menus_public_router.get("/categories")
 def list_categories_public():
     return db.get_categories()

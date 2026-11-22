@@ -51,6 +51,10 @@ INITIAL_COUPONS = [
     ("T MEMBERSHIP", "discount", "아메리카노", None, 0.3,  "T멤버십 아메리카노 1잔 30% 할인"),
 ]
 
+# 메뉴에 붙는 옵션의 추가 금액(원). 관리자 '메뉴 관리'에서 고치고, 키오스크가 이 값으로 금액을 계산한다.
+# 이름은 주문에 쓰이는 옵션 이름과 같아야 한다. options 테이블이 비어 있을 때만 한 번 넣는다
+INITIAL_OPTIONS = [("샷추가", 500)]
+
 # 메뉴 카테고리 순서(키오스크 탭·관리자 화면이 모두 이 순서를 따른다). categories 테이블이 비어 있을 때만 한 번 넣는다
 INITIAL_CATEGORIES = ["커피", "디카페인", "스무디", "에이드", "주스", "티", "논커피"]
 
@@ -183,6 +187,13 @@ def init_db() -> None:
                 created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
 
+            CREATE TABLE IF NOT EXISTS options (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL UNIQUE,
+                price       INTEGER NOT NULL DEFAULT 0,
+                sort_order  INTEGER NOT NULL DEFAULT 0
+            );
+
             CREATE TABLE IF NOT EXISTS categories (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 name        TEXT    NOT NULL UNIQUE,
@@ -286,6 +297,12 @@ def init_db() -> None:
                 INITIAL_DISCOUNTS,
             )
 
+        if conn.execute("SELECT COUNT(*) FROM options").fetchone()[0] == 0:
+            conn.executemany(
+                "INSERT INTO options (name, price, sort_order) VALUES (?,?,?)",
+                [(name, price, i) for i, (name, price) in enumerate(INITIAL_OPTIONS)],
+            )
+
         if conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0] == 0:
             conn.executemany(
                 "INSERT INTO categories (name, sort_order) VALUES (?,?)",
@@ -312,6 +329,20 @@ def get_categories() -> list[str]:
         names = [r["name"] for r in conn.execute("SELECT name FROM categories ORDER BY sort_order, id")]
         extra = [r["category"] for r in conn.execute("SELECT DISTINCT category FROM menus ORDER BY category")]
     return names + [c for c in extra if c not in names]
+
+
+# 옵션 추가 금액. 관리자가 지우거나 못 읽어도 기본 금액으로 계산되도록 기본값을 함께 돌려준다
+def get_options() -> list[dict]:
+    with get_conn() as conn:
+        rows = conn.execute("SELECT id, name, price FROM options ORDER BY sort_order, id").fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_option_price(option_id: int, price: int) -> dict | None:
+    with get_conn() as conn:
+        conn.execute("UPDATE options SET price=? WHERE id=?", (price, option_id))
+        row = conn.execute("SELECT id, name, price FROM options WHERE id=?", (option_id,)).fetchone()
+    return dict(row) if row else None
 
 
 def get_menus() -> list[dict]:
@@ -802,6 +833,25 @@ def get_sales_trend(period: str) -> list[dict]:
         }
         for b in buckets
     ]
+
+
+# 지정한 시각(0~23시) 대에 최근 며칠간 많이 팔린 메뉴(무료 제공·취소 제외). 시간대별 추천에 쓴다
+def get_popular_by_hours(hours: list[int], days: int = 30, limit: int = 5) -> list[dict]:
+    if not hours:
+        return []
+    since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+    marks = ",".join("?" for _ in hours)
+    with get_conn() as conn:
+        rows = conn.execute(
+            f"""SELECT oi.menu_name AS name, SUM(oi.quantity) AS cnt
+                FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
+                  AND CAST(strftime('%H', o.created_at) AS INTEGER) IN ({marks})
+                GROUP BY oi.menu_name ORDER BY cnt DESC, oi.menu_name LIMIT ?""",
+            (since, *hours, limit),
+        ).fetchall()
+    return [{"name": r["name"], "count": r["cnt"]} for r in rows]
 
 
 def get_analytics() -> dict:

@@ -28,7 +28,7 @@ RE_DISCOUNT_SPECIFIC = re.compile(normalize_text(r"kt|티멤버십|t멤버십|�
 
 
 RE_POPULAR = re.compile(
-    normalize_text(r"잘나가|잘팔|베스트|많이(?:팔|시켜|주문|찾)|인기(?:메뉴|있는|많은|가많|제일|가장)|가장인기|제일인기|대표메뉴|시그니처")
+    normalize_text(r"잘나가|잘팔|베스트|많이(?:팔|시켜|주문|찾|나가|나간)|인기(?:메뉴|있는|많은|가많|제일|가장)|가장인기|제일인기|대표메뉴|시그니처|요즘뭐가")
 )
 
 

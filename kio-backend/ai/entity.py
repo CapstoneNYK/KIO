@@ -618,6 +618,39 @@ def _split_after_qty(text: str, menu_names: Optional[list]) -> list:
 #  0) STT 오타 교정
 #  1) 잔별 나눔('한 잔은… 한 잔은…') → 2) 이음말/수량 뒤 분리 → 3) 이음말 없이 메뉴 여러 개 → 4) 한 건으로 처리
 # 앞 단계에서 결과가 나오면 거기서 반환한다.
+# 수량이 붙은 말인데 메뉴 이름을 못 찾은 조각을 모은다("카페모카 두 잔 딸기 스무디 한 잔"의 '카페모카').
+# 여러 메뉴 주문에서는 이런 조각이 조용히 사라지므로, 호출한 쪽이 "…는 메뉴에 없어요"라고 알려 주는 데 쓴다
+_RE_QTY_PART = re.compile(r"(?:[한두세네]|\d+)\s*(?:잔|개|컵)|하나|둘|셋|넷")
+_RE_PART_FILLER = re.compile(r"(?:[한두세네]|\d+)\s*(?:잔|개|컵)|하나|둘|셋|넷|주세요|주셔|줘요?|주라|부탁(?:해요|드려요|드립니다)?|할게요?|드릴게요?|담아\s*줘?|으로|로|은|는|을|를|이랑|랑|하고|그리고|도|요(?=\s|$)")
+
+
+def unmatched_order_parts(text: str, menu_names: list) -> list:
+    text = fix_stt_errors(text)
+    parts = MULTI_SPLIT_PATTERN.split(text)
+    if len(parts) == 1:  # 이음말이 없으면 수량 말 뒤에서 나눈다(앞 조각의 메뉴를 못 알아봤어도 나눠야 하므로 메뉴 확인은 하지 않는다)
+        cuts, last = [], 0
+        for m in _QTY_END.finditer(text):
+            if m.end() > last and len(normalize_text(text[m.end():])) >= 3:
+                cuts.append(m.end())
+                last = m.end()
+        bounds = [0, *cuts, len(text)]
+        parts = [text[a:b] for a, b in zip(bounds, bounds[1:]) if text[a:b].strip()]
+    if len(parts) < 2:
+        return []  # 한 건짜리 주문은 기존 처리(못 찾았다고 답함)에 맡긴다
+    found = []
+    for part in parts:
+        part = part.strip()
+        if not part or not _RE_QTY_PART.search(part):
+            continue
+        ent = extract_entity(part, menu_names)
+        if ent["menu"] or ent["option_details"] or ent["options"] or ent["attributes"] or ent.get("packaging") is not None:
+            continue
+        guess = re.sub(r"\s+", " ", _RE_PART_FILLER.sub(" ", part)).strip()
+        if len(re.findall(r"[가-힣]", guess)) >= 2:
+            found.append(guess)
+    return found
+
+
 def extract_multi_order(text: str, menu_names: list = None) -> list:
     text = fix_stt_errors(text)
     # [1] 잔별로 나눠 말한 경우

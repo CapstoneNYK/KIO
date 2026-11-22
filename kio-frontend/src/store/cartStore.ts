@@ -35,6 +35,7 @@ interface CartStore {
 
 let nextId = 1;
 
+// 옵션 추가 금액. 서버(관리자 '메뉴 관리'에서 설정)에서 받아 menuStore 가 채운다. 못 받아도 기본 금액으로 계산한다
 export const OPTION_PRICES: Record<string, number> = { 샷추가: 500 };
 
 export const optionExtra = (options: MenuOption[]): number =>

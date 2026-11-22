@@ -67,6 +67,22 @@ def resolve_owned_aliases(query: str, menus: list[dict], confirmed: list[str]) -
     return query
 
 
+def expand_partial_names(query: str, menus: list[dict]) -> str:
+    """"망고 요거트 두 잔"처럼 세 단어 이상 메뉴 이름의 마지막 단어(스무디 등)만 뺀 말을 전체 이름("망고 요거트 스무디")으로 바꾼다.
+    다른 메뉴 이름의 일부이기도 하면(애매하면) 바꾸지 않는다. 안 바꾸면 그 메뉴가 주문에서 조용히 빠졌다."""
+    names = [m["name"] for m in menus]
+    for name in names:
+        words = name.split()
+        if len(words) < 3:
+            continue
+        part, tail = "".join(words[:-1]), words[-1]
+        if sum(1 for n in names if part in n.replace(" ", "")) != 1:
+            continue
+        pattern = r"(?<![가-힣])" + r"\s*".join(map(re.escape, part)) + r"(?!\s*" + re.escape(tail) + ")"
+        query = re.sub(pattern, name, query)
+    return query
+
+
 # 코코아·버블티처럼 메뉴판에 없는 이름을 말하면 비슷한 메뉴를 권하는 안내문과 후보 이름 목록을 반환(해당 없으면 None)
 def alias_answer(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
     """코코아·벨기에 초코라떼·버블티처럼 메뉴판에 없는 이름을 말하면 비슷한 우리 메뉴를 권한다."""

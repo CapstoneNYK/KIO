@@ -34,5 +34,11 @@ def discount_methods() -> dict:
     return _db().DISCOUNT_METHODS
 
 
+# 시간대(시각 목록)별 인기 메뉴. 데이터 제공 객체가 모르면 빈 목록
+def get_popular_by_hours(hours: list, days: int = 30, limit: int = 5) -> list:
+    getter = getattr(_db(), "get_popular_by_hours", None)
+    return getter(hours, days=days, limit=limit) if getter else []
+
+
 def get_analytics() -> dict:
     return _db().get_analytics()

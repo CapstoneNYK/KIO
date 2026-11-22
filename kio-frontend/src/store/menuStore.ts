@@ -3,6 +3,7 @@ import type { MenuItem } from "../types/menu";
 import { getMenuImage } from "../data/menuImages";
 
 import { API_URL } from "../api/base";
+import { OPTION_PRICES } from "./cartStore";
 
 interface BackendMenu {
   id: number;
@@ -45,6 +46,14 @@ export const useMenuStore = create<MenuState>((set) => ({
         const i = order.indexOf(category);
         return i === -1 ? order.length : i;
       };
+      // 옵션(샷 추가 등) 금액도 서버 설정을 따른다. 못 받으면 기본 금액을 그대로 쓴다
+      try {
+        const ores = await fetch(`${API_URL}/api/options`);
+        if (ores.ok) {
+          const opts: { name: string; price: number }[] = await ores.json();
+          for (const o of opts) OPTION_PRICES[o.name] = o.price;
+        }
+      } catch { /* 기본 금액 사용 */ }
       const menus: MenuItem[] = [...data]
         .sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || a.id - b.id)
         .map((m) => ({

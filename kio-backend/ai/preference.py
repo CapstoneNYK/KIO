@@ -6,6 +6,8 @@ from typing import Optional
 
 from ai.vocab import HOT_CORE, HOT_EXTRA_PREFERENCE, ICE_CORE, ICE_EXTRA_PREFERENCE
 from ai.korean import NUM_WORDS_5, normalize_text, rx as _rx, to_int
+from ai import season as _season
+from ai.season import season_of, seasonal_rank, sort_by_season
 
 
 
@@ -277,10 +279,12 @@ def _matches(menu: dict, c: Conditions, tags: list) -> bool:
     return True
 
 
-# 정렬: 저렴 요청이면 가격순, 아니면 메뉴 id 순
+# 정렬: 저렴 요청이면 가격순, 온도를 말했으면 메뉴 id 순, 아니면 계절에 맞는 메뉴(겨울=따뜻하게 되는 메뉴)를 먼저
 def _rank(menus: list, c: Conditions) -> list:
     if c.cheap:
         return sorted(menus, key=lambda m: (m["price"], m["id"]))
+    if c.temperature is None:
+        return sort_by_season(menus)
     return sorted(menus, key=lambda m: m["id"])
 
 # 디카페인 메뉴인지(카테고리 또는 이름)
@@ -303,6 +307,15 @@ def _diversify(menus: list, limit: int) -> list:
             if g and len(out) < limit:
                 out.append(g.pop(0))
     return out
+
+
+# 계절에 맞는 메뉴(겨울=따뜻하게 되는 메뉴, 여름=차갑게 되는 메뉴)를 먼저 고르되, 다른 메뉴가 있으면 한 자리는 남겨 둔다(다양하게)
+def _season_pick(menus: list, limit: int) -> list:
+    season = season_of(_season.today().month)
+    best = [m for m in menus if seasonal_rank(m, season) == 0]
+    rest = [m for m in menus if seasonal_rank(m, season) != 0]
+    first = _diversify(best, limit if not rest or limit < 2 else limit - 1)
+    return first + _diversify(rest, limit - len(first))
 
 
 # 추천 결과: 안내 문구 / 추천 메뉴 이름들 / 완화한(뺀) 조건 / 찾았는지 여부
@@ -364,7 +377,13 @@ def recommend_by_conditions(text: str, menus: list) -> Optional[Recommendation]:
         picked.sort(key=lambda m: (-len(set(required) & set(m.get("tags", []))),
                                    -(2 if any(w in m["name"] for w in c.prefer_names) else 1 if "과일" in m.get("tags", []) and c.audience in ("baby", "child") else 0),
                                    m["id"]))
-    picked = _diversify(picked, limit) if ((not c.categories or c.audience) and not c.cheap and not c.show_all) else picked[:limit]
+    diversify = (not c.categories or c.audience) and not c.cheap and not c.show_all
+    if diversify and c.temperature is None and season_of(_season.today().month) != "봄가을":
+        picked = _season_pick(picked, limit)  # 계절에 맞는 메뉴를 먼저 담고 한 자리는 다른 메뉴에 남긴다
+    elif diversify:
+        picked = _diversify(picked, limit)
+    else:
+        picked = picked[:limit]
 
     lines = [f"{i}. {_display_name(m, c)} ({m['price']:,}원)" for i, m in enumerate(picked, 1)]
 
