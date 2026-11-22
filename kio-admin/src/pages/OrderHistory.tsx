@@ -24,6 +24,49 @@ interface Order {
   items: OrderItem[];
 }
 
+// 요청사항("[아이스 딸기 라떼] 우유는 저지방으로 / 빨대 빼주세요")을 음료별로 나눈다
+interface MemoEntry {
+  target: string | null;
+  text: string;
+}
+
+const parseMemo = (memo: string): MemoEntry[] =>
+  memo.split(" / ").filter(Boolean).map((entry) => {
+    const m = entry.match(/^\[(.+?)\]\s*(.*)$/);
+    return m ? { target: m[1], text: m[2] } : { target: null, text: entry };
+  });
+
+const memoTargetsItem = (target: string, item: OrderItem) =>
+  target.split(", ").some((t) => {
+    const m = t.match(/^(아이스|따뜻한)\s*(.*)$/);
+    const temp = m ? (m[1] === "아이스" ? "ICE" : "HOT") : null;
+    const name = (m ? m[2] : t).replace(/\s/g, "");
+    return name === item.menu_name.replace(/\s/g, "") && (!temp || temp === item.temperature);
+  });
+
+// 음료를 알 수 있는 요청은 그 음료 아래로(perItem), 아니면 맨 아래(rest)로 보낸다
+const splitMemo = (order: Order) => {
+  const perItem: MemoEntry[][] = order.items.map(() => []);
+  const rest: MemoEntry[] = [];
+  for (const entry of parseMemo(order.memo ?? "")) {
+    const idx = entry.target ? order.items.findIndex((it) => memoTargetsItem(entry.target as string, it)) : -1;
+    (idx >= 0 ? perItem[idx] : rest).push(entry);
+  }
+  return { perItem, rest };
+};
+
+const MemoRow = ({ entry, showAll }: { entry: MemoEntry; showAll?: boolean }) => (
+  <p className="text-sm text-gray-700">
+    <span className="mr-2 text-xs font-bold px-1.5 py-0.5 rounded bg-pink-50 text-pink-600">요청사항</span>
+    {entry.target ? (
+      <span className="mr-1.5 text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{entry.target}</span>
+    ) : showAll ? (
+      <span className="mr-1.5 text-xs font-semibold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">주문 전체</span>
+    ) : null}
+    {entry.text}
+  </p>
+);
+
 const PAGE_SIZE = 50;
 const GRID_COLUMNS = "140px 1fr 110px 100px 90px 100px";
 
@@ -261,6 +304,7 @@ export const OrderHistory = () => {
 
             {!loading && visible.map((order) => {
               const expanded = expandedId === order.id;
+              const memoSplit = splitMemo(order);
               return (
                 <div key={order.id} className="border-b border-gray-50 last:border-0">
                   <button
@@ -289,7 +333,8 @@ export const OrderHistory = () => {
                       </p>
                       <div className="flex flex-col gap-2">
                         {order.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-sm">
+                          <div key={idx}>
+                          <div className="flex items-center gap-2 text-sm">
                             {item.temperature && (
                               <span
                                 className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0"
@@ -313,14 +358,21 @@ export const OrderHistory = () => {
                               ₩{(item.is_free ? 0 : item.unit_price * item.quantity).toLocaleString()}
                             </span>
                           </div>
+                          {memoSplit.perItem[idx].map((entry, i) => (
+                            <div key={i} className="mt-1.5 ml-2 pl-3 border-l-2 border-pink-200">
+                              <MemoRow entry={{ ...entry, target: null }} />
+                            </div>
+                          ))}
+                          </div>
                         ))}
                       </div>
-                      {order.memo ? (
-                        <p className="mt-3 text-sm text-gray-700">
-                          <span className="mr-2 text-xs font-bold px-1.5 py-0.5 rounded bg-pink-50 text-pink-600">요청사항</span>
-                          {order.memo}
-                        </p>
-                      ) : null}
+                      {memoSplit.rest.length > 0 && (
+                        <div className="mt-3 space-y-1">
+                          {memoSplit.rest.map((entry, i) => (
+                            <MemoRow key={i} entry={entry} showAll={order.items.length > 1} />
+                          ))}
+                        </div>
+                      )}
                       {order.status !== "CANCELLED" && (
                         <div className="mt-3 pt-3 border-t border-gray-200 flex items-center gap-2">
                           <button

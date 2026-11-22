@@ -3,8 +3,6 @@ import { FiEdit2, FiTrash2, FiUpload, FiX } from "react-icons/fi";
 import { PiToggleRightFill, PiToggleLeftFill, PiPlusBold } from "react-icons/pi";
 import { apiFetch, API, authHeaders } from "../api";
 
-const CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티", "논커피"];
-
 interface Menu {
   id: number;
   name: string;
@@ -170,6 +168,39 @@ export const MenuManagement = () => {
   const [editError, setEditError] = useState("");
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
+  // 카테고리 목록·순서는 서버(DB)에서 받는다(키오스크와 같은 목록)
+  const [serverCategories, setServerCategories] = useState<string[]>([]);
+  useEffect(() => {
+    apiFetch<string[]>("/api/categories").then(setServerCategories).catch(() => setServerCategories([]));
+  }, []);
+  // 서버에서 못 받았으면 메뉴에 나온 카테고리로 대신한다
+  // 옵션(샷 추가 등) 추가 금액 — 키오스크 금액 계산에 그대로 쓰인다
+  const [options, setOptions] = useState<{ id: number; name: string; price: number }[]>([]);
+  const [optionDraft, setOptionDraft] = useState<Record<number, string>>({});
+  const [optionMsg, setOptionMsg] = useState("");
+  useEffect(() => {
+    apiFetch<{ id: number; name: string; price: number }[]>("/api/options")
+      .then((list) => { setOptions(list); setOptionDraft(Object.fromEntries(list.map((o) => [o.id, String(o.price)]))); })
+      .catch(() => setOptions([]));
+  }, []);
+  const saveOption = async (id: number) => {
+    const price = Number(optionDraft[id]);
+    if (!Number.isInteger(price) || price < 0) { setOptionMsg("0 이상의 금액을 입력해 주세요."); return; }
+    try {
+      const updated = await apiFetch<{ id: number; name: string; price: number }>(`/api/admin/options/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ price }),
+      });
+      setOptions((prev) => prev.map((o) => (o.id === id ? updated : o)));
+      setOptionMsg("저장했어요.");
+    } catch (e) {
+      setOptionMsg(e instanceof Error ? e.message : "저장하지 못했어요.");
+    }
+  };
+
+  const categories = ["전체", ...(serverCategories.length > 0 ? serverCategories : [...new Set(menus.map((m) => m.category))])];
+
   useEffect(() => {
     const load = () => {
       apiFetch<Menu[]>("/api/admin/menus")
@@ -182,8 +213,8 @@ export const MenuManagement = () => {
   }, []);
 
   const categoryRank = (category: string) => {
-    const i = CATEGORIES.indexOf(category);
-    return i === -1 ? CATEGORIES.length : i;
+    const i = categories.indexOf(category);
+    return i === -1 ? categories.length : i;
   };
   const filtered = activeCategory === "전체"
     ? [...menus].sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || a.id - b.id)
@@ -381,6 +412,31 @@ export const MenuManagement = () => {
 
   return (
     <div className="flex flex-col gap-5">
+      {options.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <p className="text-sm font-bold text-gray-700 mb-1">옵션 추가 금액</p>
+          <p className="text-xs text-gray-400 mb-4">주문할 때 옵션을 고르면 메뉴 가격에 더해져요. 저장하면 키오스크에 바로(몇 초 안에) 반영돼요.</p>
+          <div className="flex flex-wrap items-end gap-4">
+            {options.map((o) => (
+              <div key={o.id} className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500">{o.name === "샷추가" ? "샷 추가" : o.name} (원)</label>
+                <div className="flex gap-2">
+                  <input type="number" min={0} value={optionDraft[o.id] ?? ""}
+                    onChange={(e) => setOptionDraft((p) => ({ ...p, [o.id]: e.target.value }))}
+                    className="w-28 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400 transition-colors" />
+                  <button onClick={() => saveOption(o.id)}
+                    disabled={String(o.price) === optionDraft[o.id]}
+                    className="px-4 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-40"
+                    style={{ backgroundColor: "#F5A623" }}>
+                    저장
+                  </button>
+                </div>
+              </div>
+            ))}
+            {optionMsg && <p className="text-xs text-gray-500 pb-2">{optionMsg}</p>}
+          </div>
+        </div>
+      )}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
         <p className="text-sm font-bold text-gray-700 flex items-center gap-1.5 mb-4">
           <PiPlusBold size={14} style={{ color: "#F5A623" }} />
@@ -402,7 +458,7 @@ export const MenuManagement = () => {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-500">카테고리</label>
             <div className="flex flex-wrap gap-1.5">
-              {CATEGORIES.filter((c) => c !== "전체").map((cat) => (
+              {categories.filter((c) => c !== "전체").map((cat) => (
                 <button key={cat} onClick={() => setNewMenu((p) => ({ ...p, category: cat }))}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
                   style={{ backgroundColor: newMenu.category === cat ? "#F5A623" : "white", color: newMenu.category === cat ? "white" : "#6B7280", borderColor: newMenu.category === cat ? "#F5A623" : "#E5E7EB" }}>
@@ -478,7 +534,7 @@ export const MenuManagement = () => {
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button key={cat} onClick={() => setActiveCategory(cat)}
               className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors border"
               style={{ backgroundColor: activeCategory === cat ? "#F5A623" : "white", color: activeCategory === cat ? "white" : "#6B7280", borderColor: activeCategory === cat ? "#F5A623" : "#E5E7EB" }}>
@@ -567,7 +623,7 @@ export const MenuManagement = () => {
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-gray-500">카테고리</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {CATEGORIES.filter((c) => c !== "전체").map((cat) => (
+                  {categories.filter((c) => c !== "전체").map((cat) => (
                     <button key={cat} onClick={() => setEditForm((p) => ({ ...p, category: cat }))}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
                       style={{ backgroundColor: editForm.category === cat ? "#F5A623" : "white", color: editForm.category === cat ? "white" : "#6B7280", borderColor: editForm.category === cat ? "#F5A623" : "#E5E7EB" }}>

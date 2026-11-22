@@ -23,6 +23,7 @@ export const useServerSTT = (language: string = "ko") => {
   const rafRef = useRef<number | null>(null);
   const spokeRef = useRef(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startingRef = useRef(false);
   const maxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cleanupAudioGraph = useCallback(() => {
@@ -108,7 +109,9 @@ export const useServerSTT = (language: string = "ko") => {
   }, [stopListening]);
 
   const startListening = useCallback(async () => {
-    if (listening) return;
+    // 이미 열려 있거나 여는 중이면 무시한다(인사말 도중에 먼저 연 뒤 인사말 끝에서 다시 호출돼도 두 번 열리지 않게)
+    if (listening || startingRef.current || recorderRef.current?.state === "recording") return;
+    startingRef.current = true;
     spokeRef.current = false;
     setTranscript("");
 
@@ -154,12 +157,14 @@ export const useServerSTT = (language: string = "ko") => {
       analyserRef.current = analyser;
 
       recorder.start();
+      startingRef.current = false;
       setListening(true);
       monitorSilence();
 
       maxTimerRef.current = setTimeout(stopListening, MAX_RECORDING_MS);
     } catch (error) {
       console.error("마이크 접근 실패:", error);
+      startingRef.current = false;
       setListening(false);
     }
   }, [listening, monitorSilence, stopListening, cleanupAudioGraph, releaseStream, sendForTranscription]);

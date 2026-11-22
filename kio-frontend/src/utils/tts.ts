@@ -48,17 +48,20 @@ export function stopSpeaking() {
   if (ttsSupported) window.speechSynthesis.cancel();
 }
 
-function speakWithBrowser(text: string, mine: number, onDone?: () => void) {
+function speakWithBrowser(text: string, mine: number, onDone?: () => void, onStart?: () => void) {
   if (!ttsSupported) {
     onDone?.();
     return;
   }
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "ko-KR";
-  u.rate = 0.9;
+  u.rate = 1.0;
   if (koVoice) u.voice = koVoice;
   const done = () => {
     if (mine === generation) onDone?.();
+  };
+  u.onstart = () => {
+    if (mine === generation) onStart?.();
   };
   u.onend = done;
   u.onerror = done;
@@ -68,13 +71,18 @@ function speakWithBrowser(text: string, mine: number, onDone?: () => void) {
 async function fetchServerAudio(text: string, signal: AbortSignal): Promise<string | null> {
   const cached = audioCache.get(text);
   if (cached) return cached;
-  const timeout = setTimeout(() => abort?.abort(), 8000);
+  if (signal.aborted) return null;
+  // 8초 제한은 이 요청만 끊는다(전역 abort 를 쓰면 그 사이 시작된 새 요청까지 끊긴다)
+  const local = new AbortController();
+  const onAbort = () => local.abort();
+  signal.addEventListener("abort", onAbort);
+  const timeout = setTimeout(() => local.abort(), 8000);
   try {
     const res = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
-      signal,
+      signal: local.signal,
     });
     if (!res.ok) return null;
     const url = URL.createObjectURL(await res.blob());
@@ -84,10 +92,12 @@ async function fetchServerAudio(text: string, signal: AbortSignal): Promise<stri
     return null;
   } finally {
     clearTimeout(timeout);
+    signal.removeEventListener("abort", onAbort);
   }
 }
 
-export async function speak(rawText: string, onDone?: () => void) {
+// onStart: 목소리가 실제로 나오기 시작하는 순간(음성 파일을 받아오는 시간은 빼고 센다)
+export async function speak(rawText: string, onDone?: () => void, onStart?: () => void) {
   const text = toSpoken(rawText);
   if (!text.trim()) {
     onDone?.();
@@ -107,10 +117,11 @@ export async function speak(rawText: string, onDone?: () => void) {
         if (mine === generation) onDone?.();
       };
       a.onerror = () => {
-        if (mine === generation) speakWithBrowser(text, mine, onDone);
+        if (mine === generation) speakWithBrowser(text, mine, onDone, onStart);
       };
       try {
         await a.play();
+        if (mine === generation) onStart?.();
         return;
       } catch {
         // 자동 재생이 막히면 아래 브라우저 음성으로 대신 읽는다
@@ -120,7 +131,7 @@ export async function speak(rawText: string, onDone?: () => void) {
     }
     if (mine !== generation) return;
   }
-  speakWithBrowser(text, mine, onDone);
+  speakWithBrowser(text, mine, onDone, onStart);
 }
 
 const MAX_SPEECH_CHARS = 110;
@@ -131,7 +142,21 @@ function copula(word: string): string {
   return isHangul && (code - 0xac00) % 28 === 0 ? "예요" : "이에요";
 }
 
+// 목록이 이보다 길면 메뉴를 하나씩 읽지 않고, 화면을 보고 번호나 이름을 말하라고만 안내한다
+const MAX_SPOKEN_ITEMS = 4;
+
+function longListSpeech(text: string, count: number): string {
+  const first = text.split("\n").map((l) => l.trim()).find((l) => l && !/^\d+\s*(?:번|\.)\s*\S/.test(l)) ?? "";
+  const intro = first.split(/(?<=[.!?。])\s+/)[0]?.replace(/[?？]$/, "").trim();
+  const head = intro && intro.length <= 60 ? intro.replace(/[.。]?$/, ".") : `메뉴가 ${count}가지 있어요.`;
+  return `${head} 화면을 보시고 번호나 이름으로 말씀해 주세요.`;
+}
+
 export function summarizeForSpeech(text: string, recommended?: string[]): string {
+  text = text.replace(/\*\*/g, ""); // 말풍선용 굵게 표시(**…**)는 소리로 읽지 않는다
+  if (recommended && recommended.length > MAX_SPOKEN_ITEMS) {
+    return longListSpeech(text, recommended.length);
+  }
   if (recommended && recommended.length > 0) {
     const list = recommended.map((m, i) => `${i + 1}번 ${m}`).join(", ");
     return `추천 메뉴는 ${list}예요. 원하시는 번호를 말씀해 주세요.`;
@@ -139,6 +164,9 @@ export function summarizeForSpeech(text: string, recommended?: string[]): string
 
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const numbered = lines.filter((l) => /^\d+\s*(?:번|\.)\s*\S/.test(l));
+  if (numbered.length > MAX_SPOKEN_ITEMS) {
+    return longListSpeech(text, numbered.length);
+  }
   if (numbered.length >= 2) {
     const names = numbered.map((l) =>
       l.replace(/^\d+\s*(?:번|\.)\s*/, "").split(/[:(]/)[0].trim()
@@ -160,9 +188,16 @@ export function summarizeForSpeech(text: string, recommended?: string[]): string
     .replace(/\s+/g, " ")
     .trim();
   const sentences = plain.split(/(?<=[.!?。])\s+/);
-  let out = sentences.slice(0, 2).join(" ");
-  if (out.length > MAX_SPEECH_CHARS) out = sentences[0].slice(0, MAX_SPEECH_CHARS);
-  return out;
+  // 끝 문장이 "결제할까요?", "더 필요한 건 없으세요?"처럼 핵심 안내라서 항상 끝까지 읽는다
+  if (sentences.length <= 2) {
+    const all = sentences.join(" ");
+    return all.length <= MAX_SPEECH_CHARS * 1.5 ? all : `${sentences[0].slice(0, MAX_SPEECH_CHARS)} ${sentences[sentences.length - 1]}`.trim();
+  }
+  const last = sentences[sentences.length - 1];
+  // 끝 두 문장이 "질문 + 안내"("…요청사항 있으세요? 없으면 '없어요'라고 말씀해 주세요.")면 둘 다 읽는다
+  const prev = sentences[sentences.length - 2];
+  const tail = /[?？]$/.test(prev) ? `${prev} ${last}` : last;
+  return `${sentences[0].slice(0, Math.max(40, MAX_SPEECH_CHARS - tail.length))} ${tail}`.trim();
 }
 
 export const GREETING_TEXT =

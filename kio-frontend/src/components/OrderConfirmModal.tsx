@@ -1,4 +1,4 @@
-import { LuX } from "react-icons/lu";
+import { LuSparkles, LuX } from "react-icons/lu";
 import { useCartStore, remainingStock, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
 import { useLearningStore } from "../store/learningStore";
@@ -12,8 +12,17 @@ interface OrderConfirmModalProps {
 
 const PAYMENT_SCREENS = ["payment", "payment_card", "payment_complete"];
 
+// 강조된 버튼 둘레로 분홍 물결 선이 물의 파동처럼 퍼져 나간다("여기를 눌러요" 안내).
+const RippleGuide = () => (
+  <>
+    <span aria-hidden="true" className="kio-wave" />
+    <span aria-hidden="true" className="kio-wave kio-wave-2" />
+    <span aria-hidden="true" className="kio-wave kio-wave-3" />
+  </>
+);
+
 export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) => {
-  const { items, updateQuantity, setPackagingAll, memo } = useCartStore();
+  const { items, updateQuantity, setPackagingAll, memo, packagingHint, packagingChosen } = useCartStore();
   const coupons = useCouponStore((s) => s.coupons);
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
@@ -32,9 +41,9 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
 
   const getOptionSummary = (cartItem: typeof items[number]) => {
     const parts: string[] = [];
-    parts.push(`${cartItem.item.title}(${cartItem.temperature})`);
+    parts.push(`${cartItem.item.title}(${cartItem.temperature === "ICE" ? "아이스" : "핫"})`);
     const activeOptions = cartItem.options.filter((o) => o.count > 0);
-    activeOptions.forEach((o) => parts.push(o.count > 1 ? `+${o.name} ×${o.count}` : `+${o.name}`));
+    activeOptions.forEach((o) => parts.push(`+${o.name}`));
     return parts;
   };
 
@@ -139,22 +148,37 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
           >
             이전
           </button>
-          <button
-            onClick={() => { setPackagingAll(false); setPaymentDetailOverlayOpen(true); }}
-            className="flex-1 flex flex-col items-center py-2.5 rounded-xl text-white font-bold active:brightness-95 transition"
-            style={{ backgroundColor: "#F5A623" }}
-          >
-            <span>먹고가기</span>
-            <span className="text-xs font-medium opacity-90">다회용컵</span>
-          </button>
-          <button
-            onClick={() => { setPackagingAll(true); setPaymentDetailOverlayOpen(true); }}
-            className="flex-1 flex flex-col items-center py-2.5 rounded-xl text-white font-bold active:brightness-95 transition"
-            style={{ backgroundColor: "#FCC200" }}
-          >
-            <span>가져가기</span>
-            <span className="text-xs font-medium opacity-90">일회용컵</span>
-          </button>
+          {([
+            { key: "dine", label: "먹고가기", sub: "다회용컵", onPick: () => setPackagingAll(false) },
+            { key: "take", label: "가져가기", sub: "일회용컵", onPick: () => setPackagingAll(true) },
+          ] as const).map((b) => {
+            // 말로 주문했을 때만 강조한다(결제수단 강조와 같은 모양).
+            // "먹고 갈게요"처럼 말했으면 그쪽만, 말로 결제를 시작했으면 두 버튼 모두 눌러 보라고 강조한다.
+            const voiceGuided = guideScreen === "order_confirm";
+            const hinted = !packagingChosen && packagingHint === b.key;
+            const highlighted = !packagingChosen && (packagingHint ? hinted : voiceGuided);
+            return (
+              <button
+                key={b.key}
+                onClick={() => { b.onPick(); setPaymentDetailOverlayOpen(true); }}
+                className={`relative flex-1 flex flex-col items-center py-3 rounded-2xl active:brightness-95 transition
+                  ${highlighted
+                    ? "border-2 border-pink-400 bg-pink-50 ring-2 ring-pink-300 ring-offset-1"
+                    : "border border-gray-200 bg-white"
+                  }`}
+              >
+                {highlighted && <RippleGuide />}
+                {hinted && (
+                  <span className="absolute top-1.5 right-2 flex items-center gap-0.5 text-xs font-bold text-pink-500">
+                    <LuSparkles className="w-3 h-3" />
+                    추천
+                  </span>
+                )}
+                <span className={`font-bold ${highlighted ? "text-pink-600" : "text-gray-700"}`}>{b.label}</span>
+                <span className="text-xs font-medium text-gray-500">{b.sub}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

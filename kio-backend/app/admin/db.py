@@ -29,7 +29,7 @@ INITIAL_DISCOUNTS = [
     (
         "T멤버십 T Day",
         "tmembership",
-        "매월 지정된 T Day(월 1회)에 아이스 아메리카노 구매 시 30% 할인 (단품 1잔에 한함)\n"
+        "매월 지정된 T Day(월 1회)에 아메리카노 구매 시 30% 할인 (단품 1잔에 한함)\n"
         "T멤버십 매직 바코드 제시 시 할인 적용\n"
         "할인을 선택한 T멤버십 회원만 이용 가능\n"
         "월 1회 한정, 중복 할인 불가",
@@ -42,6 +42,21 @@ INITIAL_DISCOUNTS = [
         "일부 품목 제외 및 매장별로 상이할 수 있음",
     ),
 ]
+
+# 쿠폰/상품권 초기 데이터(coupons 테이블이 비어 있을 때만 한 번 넣는다). 코드는 대문자·앞뒤 공백 없이 저장
+# (type, menu, balance, rate) 중 해당 종류에 필요한 것만 채운다
+INITIAL_COUPONS = [
+    ("EXAMPLE 1234", "product",  "아메리카노", None, None, "아메리카노 1잔 무료 상품권"),
+    ("EXAMPLE 4321", "amount",   None,         5000, None, "5,000원 금액 상품권"),
+    ("T MEMBERSHIP", "discount", "아메리카노", None, 0.3,  "T멤버십 아메리카노 1잔 30% 할인"),
+]
+
+# 메뉴에 붙는 옵션의 추가 금액(원). 관리자 '메뉴 관리'에서 고치고, 키오스크가 이 값으로 금액을 계산한다.
+# 이름은 주문에 쓰이는 옵션 이름과 같아야 한다. options 테이블이 비어 있을 때만 한 번 넣는다
+INITIAL_OPTIONS = [("샷추가", 500)]
+
+# 메뉴 카테고리 순서(키오스크 탭·관리자 화면이 모두 이 순서를 따른다). categories 테이블이 비어 있을 때만 한 번 넣는다
+INITIAL_CATEGORIES = ["커피", "디카페인", "스무디", "에이드", "주스", "티", "논커피"]
 
 INITIAL_MENUS = [
     (1,  "아메리카노",          2000, "커피",    '["HOT","ICE"]', 0),
@@ -68,7 +83,7 @@ INITIAL_MENUS = [
     (22, "히비스커스",          3000, "티",      '["HOT","ICE"]', 0),
 ]
 
-DEFAULT_SIZES = ["S", "M", "L"]
+DEFAULT_SIZES = ["16oz"]  # 원사이즈 매장: 16oz 한 가지
 INITIAL_MENU_ATTRS = {
     "아메리카노":          (True,  ["쌉쌀", "산미", "깔끔"]),
     "카페라떼":            (True,  ["고소", "부드러운"]),
@@ -159,6 +174,40 @@ def init_db() -> None:
                 image_url      TEXT,
                 created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
             );
+
+            CREATE TABLE IF NOT EXISTS coupons (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                code           TEXT    NOT NULL UNIQUE,
+                type           TEXT    NOT NULL CHECK (type IN ('product','amount','discount')),
+                menu           TEXT,
+                balance        INTEGER,
+                rate           REAL,
+                description    TEXT    NOT NULL DEFAULT '',
+                active         INTEGER NOT NULL DEFAULT 1,
+                created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+            );
+
+            CREATE TABLE IF NOT EXISTS options (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL UNIQUE,
+                price       INTEGER NOT NULL DEFAULT 0,
+                sort_order  INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS categories (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL UNIQUE,
+                sort_order  INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS faqs (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                question       TEXT    NOT NULL,
+                keywords       TEXT    NOT NULL DEFAULT '',
+                answer         TEXT    NOT NULL,
+                active         INTEGER NOT NULL DEFAULT 1,
+                created_at     TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+            );
         """)
 
         discount_columns = {row["name"] for row in conn.execute("PRAGMA table_info(discounts)")}
@@ -225,6 +274,12 @@ def init_db() -> None:
                      json.dumps(DEFAULT_SIZES), name),
                 )
 
+        # 카페인 값 바로잡기(DB 버전 1, 한 번만): 홍차 기반인 아이스티·흑당버블티는 카페인이 있다.
+        # 버전 표시를 남겨 두므로 이후 관리자가 직접 바꾼 값은 다시 덮어쓰지 않는다
+        if conn.execute("PRAGMA user_version").fetchone()[0] < 1:
+            conn.execute("UPDATE menus SET caffeine=1 WHERE name IN ('아이스티','흑당버블티')")
+            conn.execute("PRAGMA user_version = 1")
+
         admin_count = conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0]
         if admin_count == 0:
             bootstrap_username = os.getenv("ADMIN_USERNAME")
@@ -241,6 +296,53 @@ def init_db() -> None:
                 "INSERT INTO discounts (name, method_code, description) VALUES (?,?,?)",
                 INITIAL_DISCOUNTS,
             )
+
+        if conn.execute("SELECT COUNT(*) FROM options").fetchone()[0] == 0:
+            conn.executemany(
+                "INSERT INTO options (name, price, sort_order) VALUES (?,?,?)",
+                [(name, price, i) for i, (name, price) in enumerate(INITIAL_OPTIONS)],
+            )
+
+        if conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0] == 0:
+            conn.executemany(
+                "INSERT INTO categories (name, sort_order) VALUES (?,?)",
+                [(name, i) for i, name in enumerate(INITIAL_CATEGORIES)],
+            )
+
+        # 예전에 만든 T멤버십 설명은 '아이스 아메리카노'로 되어 있다 → 규칙(핫/아이스 모두)에 맞게 한 번 고친다.
+        # 관리자가 이미 문구를 바꿔 두었다면 해당 문장이 없으므로 건드리지 않는다
+        conn.execute(
+            "UPDATE discounts SET description = REPLACE(description, '아이스 아메리카노 구매 시', '아메리카노 구매 시') "
+            "WHERE method_code='tmembership' AND description LIKE '%아이스 아메리카노 구매 시%'"
+        )
+
+        if conn.execute("SELECT COUNT(*) FROM coupons").fetchone()[0] == 0:
+            conn.executemany(
+                "INSERT INTO coupons (code, type, menu, balance, rate, description) VALUES (?,?,?,?,?,?)",
+                INITIAL_COUPONS,
+            )
+
+
+# 카테고리 이름을 정해진 순서대로. 메뉴에는 있는데 목록에 없는 이름은 뒤에 붙인다(탭에서 사라지지 않게)
+def get_categories() -> list[str]:
+    with get_conn() as conn:
+        names = [r["name"] for r in conn.execute("SELECT name FROM categories ORDER BY sort_order, id")]
+        extra = [r["category"] for r in conn.execute("SELECT DISTINCT category FROM menus ORDER BY category")]
+    return names + [c for c in extra if c not in names]
+
+
+# 옵션 추가 금액. 관리자가 지우거나 못 읽어도 기본 금액으로 계산되도록 기본값을 함께 돌려준다
+def get_options() -> list[dict]:
+    with get_conn() as conn:
+        rows = conn.execute("SELECT id, name, price FROM options ORDER BY sort_order, id").fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_option_price(option_id: int, price: int) -> dict | None:
+    with get_conn() as conn:
+        conn.execute("UPDATE options SET price=? WHERE id=?", (price, option_id))
+        row = conn.execute("SELECT id, name, price FROM options WHERE id=?", (option_id,)).fetchone()
+    return dict(row) if row else None
 
 
 def get_menus() -> list[dict]:
@@ -393,6 +495,72 @@ def delete_discount(discount_id: int) -> bool:
 def _discount_row(row: sqlite3.Row) -> dict:
     d = dict(row)
     d["active"] = bool(d["active"])
+    return d
+
+
+# ── 자주 묻는 질문(FAQ): 키오스크가 LLM 없이 바로 답하는 매장 안내 ──
+def get_faqs(active_only: bool = False) -> list[dict]:
+    sql = "SELECT * FROM faqs" + (" WHERE active = 1" if active_only else "") + " ORDER BY id"
+    with get_conn() as conn:
+        rows = conn.execute(sql).fetchall()
+    return [_faq_row(r) for r in rows]
+
+
+def get_faq(faq_id: int) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM faqs WHERE id=?", (faq_id,)).fetchone()
+    return _faq_row(row) if row else None
+
+
+def create_faq(question: str, keywords: str, answer: str, active: bool = True) -> dict:
+    with get_conn() as conn:
+        cur = conn.execute(
+            "INSERT INTO faqs (question, keywords, answer, active) VALUES (?,?,?,?)",
+            (question, keywords, answer, int(active)),
+        )
+        row = conn.execute("SELECT * FROM faqs WHERE id=?", (cur.lastrowid,)).fetchone()
+    return _faq_row(row)
+
+
+def update_faq(faq_id: int, **fields) -> dict | None:
+    allowed = {"question", "keywords", "answer", "active"}
+    updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    if not updates:
+        return get_faq(faq_id)
+    if "active" in updates:
+        updates["active"] = int(updates["active"])
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    with get_conn() as conn:
+        conn.execute(f"UPDATE faqs SET {set_clause} WHERE id=?", (*updates.values(), faq_id))
+        row = conn.execute("SELECT * FROM faqs WHERE id=?", (faq_id,)).fetchone()
+    return _faq_row(row) if row else None
+
+
+def delete_faq(faq_id: int) -> bool:
+    with get_conn() as conn:
+        affected = conn.execute("DELETE FROM faqs WHERE id=?", (faq_id,)).rowcount
+    return affected > 0
+
+
+def _faq_row(row: sqlite3.Row) -> dict:
+    d = dict(row)
+    d["active"] = bool(d["active"])
+    return d
+
+
+# 스캔한 쿠폰 코드로 쿠폰 한 건 조회(대소문자·앞뒤 공백 무시, 비활성은 없는 것으로 본다). 없으면 None
+def get_coupon_by_code(code: str) -> dict | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT * FROM coupons WHERE UPPER(code)=? AND active=1", (code.strip().upper(),)
+        ).fetchone()
+    if row is None:
+        return None
+    # 프론트가 쓰는 모양: 종류에 해당하는 값만 담는다
+    d = {"code": row["code"], "type": row["type"], "description": row["description"]}
+    for key in ("menu", "balance", "rate"):
+        if row[key] is not None:
+            d[key] = row[key]
     return d
 
 
@@ -665,6 +833,25 @@ def get_sales_trend(period: str) -> list[dict]:
         }
         for b in buckets
     ]
+
+
+# 지정한 시각(0~23시) 대에 최근 며칠간 많이 팔린 메뉴(무료 제공·취소 제외). 시간대별 추천에 쓴다
+def get_popular_by_hours(hours: list[int], days: int = 30, limit: int = 5) -> list[dict]:
+    if not hours:
+        return []
+    since = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+    marks = ",".join("?" for _ in hours)
+    with get_conn() as conn:
+        rows = conn.execute(
+            f"""SELECT oi.menu_name AS name, SUM(oi.quantity) AS cnt
+                FROM order_items oi
+                JOIN orders o ON o.id = oi.order_id
+                WHERE o.created_at >= ? AND oi.is_free = 0 AND o.status != 'CANCELLED'
+                  AND CAST(strftime('%H', o.created_at) AS INTEGER) IN ({marks})
+                GROUP BY oi.menu_name ORDER BY cnt DESC, oi.menu_name LIMIT ?""",
+            (since, *hours, limit),
+        ).fetchall()
+    return [{"name": r["name"], "count": r["cnt"]} for r in rows]
 
 
 def get_analytics() -> dict:

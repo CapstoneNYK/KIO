@@ -4,6 +4,7 @@ import {
   PiChartPieBold,
   PiClipboardTextBold,
   PiForkKnifeBold,
+  PiChatCircleTextBold,
   PiStorefrontBold,
   PiTicketBold,
 } from "react-icons/pi";
@@ -14,6 +15,7 @@ const NAV_ITEMS: { id: PageId; label: string; icon: React.ComponentType<{ size?:
   { id: "orders", label: "주문 내역", icon: PiClipboardTextBold },
   { id: "menus", label: "메뉴 관리", icon: PiForkKnifeBold },
   { id: "discounts", label: "할인 혜택 관리", icon: PiTicketBold },
+  { id: "faqs", label: "자주 묻는 질문", icon: PiChatCircleTextBold },
 ];
 
 interface SidebarProps {

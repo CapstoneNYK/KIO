@@ -11,7 +11,7 @@ import { CartBar } from "../components/CartBar";
 import { CouponScanner } from "../components/CouponScanner";
 import { useCouponStore } from "../store/couponStore";
 import { PaymentModal } from "../components/PaymentModal";
-import { useMenuStore, CATEGORIES } from "../store/menuStore";
+import { useMenuStore } from "../store/menuStore";
 import type { MenuItem } from "../types/menu";
 
 const PAYMENT_GUIDE_SCREENS = ["payment", "payment_card", "payment_complete"];
@@ -19,7 +19,7 @@ const PAYMENT_GUIDE_SCREENS = ["payment", "payment_card", "payment_complete"];
 export const Home = () => {
   const { activeCategory, setCategory: setActiveCategory } = useCategoryStore();
   const [userSelectedItem, setUserSelectedItem] = useState<MenuItem | null>(null);
-  const { scanOpen, closeScan, scanSource } = useCouponStore();
+  const { scanOpen, closeScan } = useCouponStore();
   const location = useLocation();
   const setIsPackaging = useCartStore((s) => s.setIsPackaging);
 
@@ -30,15 +30,10 @@ export const Home = () => {
   const learningScreen = useLearningStore((s) => s.learningScreen);
   const guideScreen = useLearningStore((s) => s.guideScreen);
   const setGuideScreen = useLearningStore((s) => s.setGuideScreen);
-  const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
 
-  const handleGuideToVoucher = () => {
-    closeScan();
-    setHighlightPaymentMethod("voucher");
-    setGuideScreen("payment");
-  };
   const cartItems = useCartStore((s) => s.items);
   const menus = useMenuStore((s) => s.menus);
+  const categories = useMenuStore((s) => s.categories);
 
   const showStandalonePayment =
     PAYMENT_GUIDE_SCREENS.includes(guideScreen ?? "") && cartItems.length === 0;
@@ -61,7 +56,7 @@ export const Home = () => {
     <div className="flex flex-col h-dvh">
       <TopBar />
       <NavBar
-        categories={CATEGORIES}
+        categories={categories}
         activeCategory={activeCategory}
         onSelect={setActiveCategory}
       />
@@ -89,10 +84,7 @@ export const Home = () => {
       )}
 
       {scanOpen && (
-        <CouponScanner
-          onClose={closeScan}
-          onGuideToVoucher={scanSource === "assistant" ? handleGuideToVoucher : undefined}
-        />
+        <CouponScanner onClose={closeScan} />
       )}
 
       {showStandalonePayment && (

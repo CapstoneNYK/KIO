@@ -122,7 +122,7 @@ export const AssistantButton = () => {
       className="fixed top-4 right-4 z-9999 flex flex-row items-start gap-3"
     >
       <div
-        className={`kio-chat bg-white rounded-2xl shadow-2xl border-2 border-pink-400 ring-4 ring-pink-200/70 h-[40rem] max-h-[calc(100dvh-2rem)] flex flex-col shrink-0 overflow-hidden ${
+        className={`kio-chat bg-white rounded-2xl shadow-2xl border-2 border-pink-400 h-[40rem] max-h-[calc(100dvh-2rem)] flex flex-col shrink-0 overflow-hidden ${
           mode !== "voice" ? "hidden" : ""
         }`}
         style={{ "--kio-s": scale, width: "min(calc(26rem * var(--kio-s)), calc(100vw - 8rem))" } as React.CSSProperties}
@@ -167,7 +167,7 @@ export const AssistantButton = () => {
               }`}
               aria-pressed={ttsOn}
             >
-              {ttsOn ? "🔊 소리 켜짐" : "🔇 소리 꺼짐"}
+              {ttsOn ? "소리 켜짐" : "소리 꺼짐"}
             </button>
           )}
         </div>

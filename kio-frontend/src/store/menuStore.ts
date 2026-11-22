@@ -2,9 +2,8 @@ import { create } from "zustand";
 import type { MenuItem } from "../types/menu";
 import { getMenuImage } from "../data/menuImages";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
-
-export const CATEGORIES = ["전체", "커피", "디카페인", "스무디", "에이드", "주스", "티", "논커피"];
+import { API_URL } from "../api/base";
+import { OPTION_PRICES } from "./cartStore";
 
 interface BackendMenu {
   id: number;
@@ -19,6 +18,8 @@ interface BackendMenu {
 
 interface MenuState {
   menus: MenuItem[];
+  /** 탭에 보여 줄 카테고리("전체" + 서버(DB)에 정해 둔 순서) */
+  categories: string[];
   loading: boolean;
   error: string | null;
   fetchMenus: () => Promise<void>;
@@ -26,6 +27,7 @@ interface MenuState {
 
 export const useMenuStore = create<MenuState>((set) => ({
   menus: [],
+  categories: ["전체"],
   loading: true,
   error: null,
   fetchMenus: async () => {
@@ -33,10 +35,25 @@ export const useMenuStore = create<MenuState>((set) => ({
       const res = await fetch(`${API_URL}/api/menus`);
       if (!res.ok) throw new Error(`API ${res.status}`);
       const data: BackendMenu[] = await res.json();
+      // 카테고리 순서는 서버(DB)가 정한다. 못 받으면 메뉴에 나온 순서로 대신한다
+      let order: string[] = [];
+      try {
+        const cres = await fetch(`${API_URL}/api/categories`);
+        if (cres.ok) order = await cres.json();
+      } catch { /* 아래에서 메뉴 기준으로 대신 */ }
+      if (order.length === 0) order = [...new Set(data.map((m) => m.category))];
       const categoryRank = (category: string) => {
-        const i = CATEGORIES.indexOf(category);
-        return i === -1 ? CATEGORIES.length : i;
+        const i = order.indexOf(category);
+        return i === -1 ? order.length : i;
       };
+      // 옵션(샷 추가 등) 금액도 서버 설정을 따른다. 못 받으면 기본 금액을 그대로 쓴다
+      try {
+        const ores = await fetch(`${API_URL}/api/options`);
+        if (ores.ok) {
+          const opts: { name: string; price: number }[] = await ores.json();
+          for (const o of opts) OPTION_PRICES[o.name] = o.price;
+        }
+      } catch { /* 기본 금액 사용 */ }
       const menus: MenuItem[] = [...data]
         .sort((a, b) => categoryRank(a.category) - categoryRank(b.category) || a.id - b.id)
         .map((m) => ({
@@ -49,7 +66,7 @@ export const useMenuStore = create<MenuState>((set) => ({
         soldOut: m.sold_out,
         stock: m.stock ?? null,
       }));
-      set({ menus, loading: false, error: null });
+      set({ menus, categories: ["전체", ...order], loading: false, error: null });
     } catch (err) {
       set({
         loading: false,

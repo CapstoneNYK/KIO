@@ -1,14 +1,13 @@
 """어르신 주문 시나리오 시뮬레이터.
 
 프론트(SpeechInput)가 하는 일(장바구니 반영, 대화 상태 되돌려 보내기, 결제 이동)을 흉내 내서
-/api/ask 처리 함수(main._handle_ask)에 여러 발화를 차례로 보내 보고, 대화 전체와 최종 장바구니를 보여준다.
+/api/ask 처리 본체(ai.pipeline.handle_ask)에 여러 발화를 차례로 보내 보고, 대화 전체와 최종 장바구니를 보여준다.
 
   python -m eval.sim_elder            # LLM 없이(규칙 경로 + 주문 말버릇 어림 분류, 질문·추천 답변은 '[LLM필요]')
   python -m eval.sim_elder --llm      # 실제 Ollama LLM 사용
   python -m eval.sim_elder -v         # 모든 대화 출력 (기본은 실패한 시나리오만)
   python -m eval.sim_elder --cafe     # 카페 손님 유형별 시나리오만 (sim_scenarios_cafe.py)
 """
-import asyncio
 import sys
 import tempfile
 from pathlib import Path
@@ -22,7 +21,8 @@ if "--live" not in sys.argv:
     admin_db.DB_PATH = Path(tempfile.mkdtemp()) / "sim.db"
 admin_db.init_db()
 
-import main  # noqa: E402
+from ai import pipeline  # noqa: E402
+from ai.session import reset_state  # noqa: E402
 from ai.cart_command import clear_pending  # noqa: E402
 
 LLM_NEEDED = "[LLM필요]"
@@ -30,20 +30,19 @@ if not USE_LLM:
     import re as _re
     # LLM 대신 쓰는 어림 분류: 주문 말버릇이 있으면 order, 아니면 qa (규칙으로 안 잡힌 발화만 여기로 온다)
     _ORDER_HINT = _re.compile(r"주세요|주세여|주쇼|주라|줘|줄래|달라|부탁|하나|[한두세네]\s*[잔개]|\d\s*[잔개번]")
-    main.classify_intent = lambda q: "order" if _ORDER_HINT.search(q) else "qa"
+    pipeline.classify_intent = lambda q: "order" if _ORDER_HINT.search(q) else "qa"
 
     class _StubChain:
         def invoke(self, *_a, **_k):
             return LLM_NEEDED
 
-    main.qa_chain = _StubChain()
+    pipeline.qa_chain = _StubChain()
 
     class _Rec:
         answer, menus = LLM_NEEDED, []
 
-    main._recommend = lambda q: _Rec()
-main.log_interaction = lambda *a, **k: None
-main.log_intent_query = lambda *a, **k: None
+    pipeline.recommend_menus = lambda q: _Rec()
+pipeline.log_intent_query = lambda *a, **k: None
 
 
 class Kiosk:
@@ -56,9 +55,7 @@ class Kiosk:
         self.paid = False
         self.log: list[tuple[str, str]] = []
         clear_pending()
-        main._last_asked.clear()
-        main._pending_temp.clear()
-        main._last_recommended_menus.clear()
+        reset_state()  # 세션별 대화 상태(방금 추천·방금 물어본 메뉴·먼저 말한 온도) 비우기
 
     # --- 프론트가 서버로 보내는 장바구니 문자열
     def cart_items(self) -> list[str]:
@@ -134,8 +131,8 @@ class Kiosk:
                     self._add(a["to_menu"], l["temp"], l["qty"], l["options"], l.get("packaging", False))
 
     def say(self, text: str) -> dict:
-        req = main.QueryRequest(query=text, cart_items=self.cart_items(), dialog=self.dialog)
-        res = asyncio.run(main._handle_ask(req))
+        res = pipeline.handle_ask(text, self.cart_items(), self.dialog)
+        res = {**res, 'answer': res['answer'].replace('**', '')}  # (검증용) 강조 표시 제거: 시뮬레이터가 글자 모양으로 되묻기를 알아보기 때문
         self.dialog = res.get("dialog")
         if res.get("memo"):
             self.memo = f"{self.memo} / {res['memo']}" if self.memo else res["memo"]

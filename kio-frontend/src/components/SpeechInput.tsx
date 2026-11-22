@@ -1,5 +1,5 @@
 import { useServerSTT } from "../utils/serverSttUtil";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { askApi, sendFeedback } from "../api/askApi";
 import type { CartAction, DialogState } from "../api/askApi";
@@ -23,18 +23,39 @@ type Message = {
   reported?: boolean;
 };
 
+const NUMBERED_LINE = /^(\d+)\s*(?:번|\.)\s*(.+)$/;
+
+// 한 줄로 길게 이어진 안내는 문장마다 줄을 바꿔서 보여 준다(읽어 주는 음성은 원문 그대로)
+const splitSentences = (line: string) =>
+  line.split(/(?<=[.!?。])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+
+// **굵게** 로 표시된 부분(담은 메뉴·수량 등 중요한 내용)을 굵은 강조색 글씨로 그린다
+function renderBold(line: string): ReactNode {
+  return line.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+      <strong key={i} className="font-bold text-pink-600">{part.slice(2, -2)}</strong>
+    ) : (
+      part
+    )
+  );
+}
+
 function BotText({ text }: { text: string }) {
+  const rows = text.split("\n").flatMap((line) => (NUMBERED_LINE.test(line) ? [line] : splitSentences(line)));
+  // 되묻는 질문("…있으세요?")부터는 앞 내용과 간격을 벌려서 지금 답할 것이 눈에 띄게 한다
+  const askAt = rows.findIndex((row, i) => i > 0 && /[?？]$/.test(row) && !NUMBERED_LINE.test(row));
   return (
     <div className="flex flex-col gap-1.5">
-      {text.split("\n").map((line, idx) => {
-        const m = line.match(/^(\d+)\s*(?:번|\.)\s*(.+)$/);
-        if (!m) return <p key={idx} className="text-[1em] leading-relaxed break-keep">{line}</p>;
+      {rows.map((line, idx) => {
+        const m = line.match(NUMBERED_LINE);
+        const gap = idx === askAt ? " mt-2" : "";
+        if (!m) return <p key={idx} className={`text-[1em] leading-relaxed break-keep${gap}`}>{renderBold(line)}</p>;
         return (
-          <p key={idx} className="flex items-start gap-2 text-[1em] leading-relaxed break-keep">
+          <p key={idx} className={`flex items-start gap-2 text-[1em] leading-relaxed break-keep${gap}`}>
             <span className="mt-0.5 flex h-[1.5em] w-[1.5em] shrink-0 items-center justify-center rounded-full bg-pink-500 text-[0.8em] font-bold text-white">
               {m[1]}
             </span>
-            <span className="font-semibold">{m[2]}</span>
+            <span className="font-semibold">{renderBold(m[2])}</span>
           </p>
         );
       })}
@@ -70,6 +91,14 @@ const NUMBER_REF: { pattern: RegExp; index: number }[] = [
   { pattern: /2번|두\s*번째|둘째/, index: 1 },
 ];
 
+// 인사말이 끝나기 전에 마이크를 먼저 열면 스피커 소리(인사말)가 같이 녹음될 수 있어서, 그 부분을 걷어낸다.
+// 인사말 마지막 문장("어떤 음료 드릴까요?") 뒤의 말만 남기고, 인사말만 들어왔으면 빈 문자열을 돌려준다.
+function stripGreetingEcho(text: string): string {
+  const m = text.match(/드릴까요[?.!\s]*/);
+  if (m && m.index !== undefined) return text.slice(m.index + m[0].length).trim();
+  return /도우미|키오예요|말로\s*주문/.test(text) ? "" : text;
+}
+
 export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const {
     transcript,
@@ -88,9 +117,15 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const dialogRef = useRef<DialogState | null>(null);
   // 질문을 말한 뒤 마이크를 자동으로 다시 켤지
   const autoListen = useRef(false);
+  // 어르신이 인사말이 끝나기 전에 말을 꺼내도 놓치지 않도록, 인사말이 나오기 시작하고 1초 뒤에 마이크를 먼저 연다
+  const earlyMic = useRef(false);
+  const earlyMicTimer = useRef<number | undefined>(undefined);
   const ttsOn = useChatPrefs((s) => s.ttsOn) && ttsSupported;
   const spokenCount = useRef(0);
   const greeted = useRef(false);
+  // 결제 안내를 말하는 중에 창이 닫혀도 음성을 끊지 않기 위한 표시
+  const keepSpeaking = useRef(false);
+  const setPackagingHint = useCartStore((s) => s.setPackagingHint);
   const location = useLocation();
   const addItem = useCartStore((s) => s.addItem);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -109,6 +144,17 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   const dismissPaymentOverlay = useLearningStore(
     (s) => s.dismissPaymentOverlay
   );
+
+  // 결제 쪽으로 넘어가면서 안내를 끝까지 읽어 준다 (창이 닫혀도 음성은 이어진다)
+  const goToPayment = (method: string | null | undefined, spoken: string) => {
+    setHighlightPaymentMethod(method ?? null);
+    setGuideScreen("order_confirm"); // 먹고가기/가져가기를 먼저 고르게 하고, 고른 뒤 결제수단을 강조한다
+    if (ttsOn && spoken) {
+      keepSpeaking.current = true;
+      speak(spoken);
+    }
+    useChatPrefs.getState().closeChat();
+  };
 
   const applyCartActions = (actions: CartAction[]) => {
     const current = useCartStore.getState().items;
@@ -157,7 +203,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           if (line) removeItem(line.cartId);
         });
       } else if (action.type === "set_options") {
-        const line = current[action.index];
+        // 한 줄을 여러 번 나눠 적용할 수 있으니(하나는 연하게 하나는 샷 추가) 매번 최신 장바구니에서 그 줄을 다시 찾는다
+        const stale = current[action.index];
+        const line = stale && useCartStore.getState().items.find((i) => i.cartId === stale.cartId);
         if (line) {
           if (action.count >= line.quantity) {
             updateOptions(line.cartId, action.options);
@@ -166,6 +214,10 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
             addItem(line.item, action.count, line.temperature, action.options, line.isPackaging);
           }
         }
+      } else if (action.type === "set_packaging") {
+        // 메뉴 없이 "가지고 갈게요"만 말한 경우: 주문 확인 화면에서 해당 버튼을 미리 강조한다
+        setIsPackaging(action.packaging);
+        setPackagingHint(action.packaging ? "take" : "dine");
       } else if (action.type === "replace_item") {
         const found = lines(action.menu);
         const target = found[found.length - 1];
@@ -203,7 +255,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     const msg = messages[index];
     if (!msg?.asked || msg.reported) return;
     setMessages((prev) => prev.map((m, i) => (i === index ? { ...m, reported: true } : m)));
-    sendFeedback(msg.asked, msg.text, msg.intent ?? "").catch(() => {});
+    sendFeedback(msg.asked, msg.text.replace(/\*\*/g, ""), msg.intent ?? "").catch(() => {});
   };
 
   const handleAsk = async (query: string) => {
@@ -224,8 +276,18 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       });
       const res = await askApi(query, cartItemNames, dialogRef.current);
       dialogRef.current = res.dialog ?? null;
-      if (res.memo) useCartStore.getState().addMemo(res.memo);
-      autoListen.current = !!res.dialog; // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다
+      if (res.question && res.question !== query) {
+        // 서버가 음성 인식 오류를 고쳤으면("티카페인"→"디카페인") 말풍선에도 고친 문장을 보여 준다
+        setMessages((prev) => {
+          const idx = prev.map((m) => m.role).lastIndexOf("user");
+          return idx < 0 ? prev : prev.map((m, i) => (i === idx ? { ...m, text: res.question } : m));
+        });
+      }
+      if (res.memo) useCartStore.getState().addMemo(res.memo, res.memo_menu);
+      // 질문·추천에 답한 뒤에도 열린 대화가 있으면 계속 듣는다.
+      // 메뉴를 추천했으면 손님이 '1번 주세요'처럼 고를 차례이므로 대화 상태가 없어도 마이크를 다시 켠다.
+      autoListen.current =
+        !!res.dialog || (res.intent === "recommend" && (res.recommended_menus?.length ?? 0) > 0);
       useChatPrefs.getState().setDialogActive(dialogRef.current !== null);
       let botText = res.answer;
 
@@ -244,10 +306,16 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
           botText = "장바구니가 비어 있어요. 먼저 메뉴를 담아주세요.";
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
         } else {
-          setHighlightPaymentMethod(res.payment_method ?? null);
-          setGuideScreen(res.payment_method ? "payment" : "order_confirm");
-          setMessages([]);
-          useChatPrefs.getState().closeChat();
+          // "가져갈게, 교환권 쓸게"처럼 포장/매장을 같이 말했으면 그 버튼도 함께 강조한다
+          if (res.packaging === true || res.packaging === false) {
+            setIsPackaging(res.packaging);
+            setPackagingHint(res.packaging ? "take" : "dine");
+          }
+          const packName = res.packaging === true ? "가져가기" : res.packaging === false ? "먹고가기" : "먹고가기나 가져가기";
+          const hint = res.payment_method
+            ? `강조된 ${packName}를 먼저 눌러 주세요. 그다음 강조된 결제수단을 눌러 주세요.`
+            : `${packName}를 눌러 주세요.`;
+          goToPayment(res.payment_method, `${summarizeForSpeech(botText)} ${hint}`);
         }
         return;
       }
@@ -290,6 +358,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
               : (orderInfo.options ?? []).map((name) => ({ name, count: 1 }));
             const packaging = orderInfo.packaging === true;
             if (packaging) setIsPackaging(true);
+            if (orderInfo.packaging === true) setPackagingHint("take");
+            else if (orderInfo.packaging === false) setPackagingHint("dine");
             if (menuItem)
               addItem(
                 menuItem,
@@ -303,11 +373,9 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
 
         if (res.intent === "order_and_pay" || res.go_payment) {
           setMessages((prev) => [...prev, { role: "bot", text: botText }]);
-          setTimeout(() => {
-            setHighlightPaymentMethod(res.payment_method ?? null);
-            setGuideScreen(res.payment_method ? "payment" : "order_confirm");
-            useChatPrefs.getState().closeChat();
-          }, 1000);
+          // 말풍선의 음성은 messages 효과가 읽으니, 닫혀도 끊기지 않게만 해 둔다
+          keepSpeaking.current = ttsOn;
+          setTimeout(() => goToPayment(res.payment_method, ""), 1000);
           return;
         }
       }
@@ -359,6 +427,8 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
       useChatPrefs.getState().setDialogActive(false);
       greeted.current = false;
       spokenCount.current = 0;
+      window.clearTimeout(earlyMicTimer.current);
+      earlyMic.current = false;
       stopSpeaking();
     }
   }, [location.pathname, resetCount]);
@@ -366,6 +436,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
   useEffect(() => {
     if (isOpen) {
       resetTranscript();
+      earlyMic.current = false;
       // 되묻는 도중에 창이 다시 열렸으면 마지막 질문을 한 번 더 말하고 이어서 듣는다
       const lastBot = dialogRef.current
         ? [...messages].reverse().find((m) => m.role === "bot")
@@ -375,19 +446,43 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
         else startListening();
       } else if (ttsOn && !greeted.current && messages.length === 0) {
         greeted.current = true;
-        speak(GREETING_SPEECH, () => startListening());
+        speak(
+          GREETING_SPEECH,
+          () => { if (!earlyMic.current) startListening(); },
+          () => {
+            earlyMicTimer.current = window.setTimeout(() => {
+              earlyMic.current = true;
+              startListening();
+            }, 1000);
+          }
+        );
       } else {
         startListening();
       }
     } else {
+      window.clearTimeout(earlyMicTimer.current);
+      earlyMic.current = false;
       stopListening();
-      stopSpeaking();
+      if (keepSpeaking.current) keepSpeaking.current = false;
+      else stopSpeaking();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {
     if (!listening && transcript) {
+      if (earlyMic.current) {
+        earlyMic.current = false;
+        const spoken = stripGreetingEcho(transcript);
+        if (!spoken) {
+          // 인사말만 녹음된 경우: 주문으로 처리하지 않고 다시 듣는다
+          resetTranscript();
+          startListening();
+          return;
+        }
+        handleAsk(spoken);
+        return;
+      }
       handleAsk(transcript);
     }
   }, [listening, transcript]);
@@ -412,8 +507,7 @@ export const SpeechInput = ({ isOpen }: { isOpen: boolean }) => {
     }
     const text = bots
       .map((m) => summarizeForSpeech(m.text, m.recommended))
-      .join(" ")
-      .slice(0, 220);
+      .join(" ");
     speak(text, autoListen.current ? reopen : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);

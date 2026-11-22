@@ -42,7 +42,7 @@ class MenuCreate(BaseModel):
     image_url: str | None = None
     caffeine: bool = True
     tags: list[str] = []
-    sizes: list[str] = ["S", "M", "L"]
+    sizes: list[str] = ["16oz"]
     stock: int | None = Field(default=None, ge=0)
 
 
@@ -244,6 +244,28 @@ def list_menus_public():
     return db.get_menus()
 
 
+class OptionUpdate(BaseModel):
+    price: int = Field(ge=0, le=100000)
+
+
+@menus_public_router.get("/options")
+def list_options_public():
+    return db.get_options()
+
+
+@router.put("/options/{option_id}")
+def update_option(option_id: int, body: OptionUpdate):
+    updated = db.update_option_price(option_id, body.price)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="옵션을 찾을 수 없습니다.")
+    return updated
+
+
+@menus_public_router.get("/categories")
+def list_categories_public():
+    return db.get_categories()
+
+
 @discounts_public_router.get("/discounts")
 def list_discounts_public():
     return db.get_discounts(active_only=True)
@@ -300,3 +322,49 @@ def get_sales_trend(period: str = "today"):
 @router.get("/analytics")
 def get_analytics():
     return db.get_analytics()
+
+
+# ── 자주 묻는 질문(FAQ): 관리자가 등록하면 키오스크가 LLM 없이 바로 답한다 ──
+# keywords: 쉼표로 나눈 것 중 하나라도 손님 말에 있으면 답한다. '+' 로 묶으면 전부 있어야 한다(예: "와이파이+비번")
+class FaqCreate(BaseModel):
+    question: str = Field(min_length=1, max_length=100)
+    keywords: str = Field(min_length=1, max_length=300)
+    answer: str = Field(min_length=1, max_length=500)
+    active: bool = True
+
+
+class FaqUpdate(BaseModel):
+    question: str | None = Field(default=None, min_length=1, max_length=100)
+    keywords: str | None = Field(default=None, min_length=1, max_length=300)
+    answer: str | None = Field(default=None, min_length=1, max_length=500)
+    active: bool | None = None
+
+
+@router.get("/faqs")
+def list_faqs():
+    return db.get_faqs()
+
+
+@router.post("/faqs", status_code=201)
+def create_faq(body: FaqCreate):
+    question, keywords, answer = body.question.strip(), body.keywords.strip(), body.answer.strip()
+    if not (question and keywords and answer):
+        raise HTTPException(status_code=422, detail="질문, 키워드, 답변을 모두 입력해주세요.")
+    return db.create_faq(question, keywords, answer, body.active)
+
+
+@router.put("/faqs/{faq_id}")
+def update_faq(faq_id: int, body: FaqUpdate):
+    if db.get_faq(faq_id) is None:
+        raise HTTPException(status_code=404, detail="FAQ를 찾을 수 없습니다.")
+    fields = {k: (v.strip() if isinstance(v, str) else v) for k, v in body.model_dump(exclude_none=True).items()}
+    if any(v == "" for v in fields.values()):
+        raise HTTPException(status_code=422, detail="비어 있는 항목이 있어요.")
+    return db.update_faq(faq_id, **fields)
+
+
+@router.delete("/faqs/{faq_id}", status_code=204)
+def delete_faq(faq_id: int):
+    if db.get_faq(faq_id) is None:
+        raise HTTPException(status_code=404, detail="FAQ를 찾을 수 없습니다.")
+    db.delete_faq(faq_id)

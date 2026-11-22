@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { tpass_poster, t_poster, kt_poster, cafe_logo } from "../assets";
 import { useDiscountStore } from "../store/discountStore";
 import { useChatPrefs } from "../store/chatPrefsStore";
+import { useCategoryStore } from "../store/categoryStore";
+import { startNewSession } from "../utils/session";
+import { useCartStore } from "../store/cartStore";
+import { useCouponStore } from "../store/couponStore";
+import { useLearningStore } from "../store/learningStore";
 
 const FALLBACK_POSTERS = [tpass_poster, t_poster, kt_poster];
 const SLIDE_INTERVAL = 3500;
@@ -51,6 +56,17 @@ export const Splash = () => {
       return () => clearTimeout(timeout);
     }
   }, [transitionEnabled]);
+
+  // 처음 화면으로 돌아오면 카테고리를 '전체'로 되돌려, 다음 손님이 마지막에 보던 카테고리가 아니라 전체 메뉴부터 보게 한다
+  useEffect(() => {
+    useCategoryStore.getState().setCategory("전체");
+    startNewSession(); // 처음 화면으로 돌아오면 새 손님: 서버의 이전 대화 상태와 분리
+    // 처음 화면에 오면 이전 손님의 주문 흔적을 모두 비운다(장바구니·쿠폰·포장 선택·강조/결제 안내 화면). 브라우저 뒤로가기로 와도 같다
+    useCartStore.getState().clear();
+    useCartStore.getState().setIsPackaging(false);
+    useCouponStore.getState().clearCoupons();
+    useLearningStore.getState().dismissPaymentOverlay();
+  }, []);
 
   const dotIndex = currentIndex % POSTERS.length;
   const openChat = useChatPrefs((s) => s.openChat);

@@ -5,6 +5,7 @@ import { iconKT, iconCJONE, iconTMembership, iconTUzu, iconKakao, iconNaver } fr
 import { useLearningStore } from "../store/learningStore";
 import { useCartStore, unitPrice } from "../store/cartStore";
 import { useCouponStore, calcDiscount } from "../store/couponStore";
+import { useDiscountStore } from "../store/discountStore";
 
 interface PaymentModalProps {
   onClose: () => void;
@@ -19,7 +20,7 @@ const DISCOUNT_METHODS = [
 ];
 
 const DISCOUNT_INELIGIBLE_MSG: Record<string, string | null> = {
-  tmembership: "T멤버십은 아이스 아메리카노만 30% 할인 적용됩니다.",
+  tmembership: "T멤버십은 아메리카노만 30% 할인 적용됩니다.",
   kt: null,
   uzu: null,
   cjone: null,
@@ -47,6 +48,9 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
   const setHighlightPaymentMethod = useLearningStore((s) => s.setHighlightPaymentMethod);
   const items = useCartStore((s) => s.items);
   const coupons = useCouponStore((s) => s.coupons);
+  // 관리자 화면(DB)에서 켜 둔 할인수단만 보여 준다. 아직 못 불러왔으면 전부 보여 준다
+  const methodCodes = useDiscountStore((s) => s.methodCodes);
+  const discountMethods = methodCodes === null ? DISCOUNT_METHODS : DISCOUNT_METHODS.filter((m) => methodCodes.includes(m.id));
 
   const cartTotal = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
   const freeDiscount = items.reduce((sum, i) => (i.isFree ? sum + i.item.price : sum), 0);
@@ -67,6 +71,7 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
     setDiscountWarning(null);
 
     if (id === "tmembership") {
+      // 아메리카노(핫/아이스 모두)가 담겨 있으면 대상
       const hasEligible = items.some((i) =>
         TMEMBERSHIP_ELIGIBLE.some((name) =>
           i.item.title.replace(/\s/g, "").includes(name.replace(/\s/g, ""))
@@ -125,9 +130,10 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
             </div>
           )}
 
+          {discountMethods.length > 0 && (<>
           <p className="font-bold text-gray-800 text-lg mb-4">할인수단</p>
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {DISCOUNT_METHODS.map((m) => {
+            {discountMethods.map((m) => {
               const isHighlighted = highlightPaymentMethod === m.id;
               return (
                 <button
@@ -153,6 +159,7 @@ export const PaymentModal = ({ onClose, onSelect }: PaymentModalProps) => {
               );
             })}
           </div>
+          </>)}
 
           <p className="font-bold text-gray-800 text-lg mb-4">결제수단</p>
           <div className="grid grid-cols-2 gap-4">

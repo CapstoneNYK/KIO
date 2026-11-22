@@ -88,6 +88,8 @@ def eval_reco(menus):
         else:
             if not rec.menus:
                 problems.append("추천 결과 없음")
+            if "min_count" in cond and len(rec.menus) < cond["min_count"]:
+                problems.append(f"개수 {len(rec.menus)} (최소 {cond['min_count']})")
             if "limit" in cond and len(rec.menus) > cond["limit"]:
                 problems.append(f"개수 {len(rec.menus)} (최대 {cond['limit']})")
             for raw in rec.menus:
@@ -288,6 +290,71 @@ def eval_more(menus):
     return ok, n, fails
 
 
+def eval_features(menus):
+    """디카페인 없는 메뉴 안내 / 시간대 추천 / 인기 질문 인식."""
+    from ai.decaf import decaf_phrase, decaf_unavailable
+    from ai.korean import normalize_text
+    from ai.quick_answers import RE_POPULAR
+    from ai.preference import recommend_by_conditions
+    from ai.timeslot import detect_slot, slot_answer
+    from eval.cases_extra import DECAF_UNAVAILABLE_CASES, POPULAR_CASES, TIMESLOT_CASES
+    fails, ok, n = [], 0, 0
+
+    def check(text, got, want):
+        nonlocal ok, n
+        n += 1
+        if got == want:
+            ok += 1
+        else:
+            fails.append({"text": text, "problems": [f"결과 {got} (기대 {want})"]})
+
+    for text, want in DECAF_UNAVAILABLE_CASES:
+        m = decaf_unavailable(decaf_phrase(fix_stt_errors(text), menus), menus)
+        check(text, m["name"] if m else None, want)
+    for text, want in TIMESLOT_CASES:
+        found = detect_slot(text)
+        check(text, found[0] if found else None, want)
+        if want:  # 판매 기록이 없어도 어울리는 메뉴 1개 이상을 번호 목록으로 안내해야 한다
+            ans = slot_answer(text, menus)
+            check(text + " (목록)", bool(ans and ans[1]), True)
+    for text, want in POPULAR_CASES:
+        check(text, bool(RE_POPULAR.search(normalize_text(text))), want)
+    from ai.entity import unmatched_order_parts
+    from eval.cases_extra import UNMATCHED_PART_CASES
+    for text, want in UNMATCHED_PART_CASES:
+        check(text, unmatched_order_parts(text, [m["name"] for m in menus]), want)
+    from ai.menu_match import expand_partial_names
+    from eval.cases_extra import PARTIAL_NAME_CASES
+    for text, want in PARTIAL_NAME_CASES:
+        check(text, expand_partial_names(text, menus), want)
+    import datetime as _dt
+    from ai import season as _season
+    from eval.cases_extra import SEASON_CASES
+    by_name = {m["name"]: m for m in menus}
+    real_today = _season.today
+    try:
+        for month, text, want in SEASON_CASES:
+            _season.today = lambda month=month: _dt.datetime(2026, month, 15, 15, 0)
+            rec = recommend_by_conditions(text, menus)
+            names = [n.removeprefix("아이스 ").removeprefix("핫 ") for n in (rec.menus if rec else [])]
+            temps = [set(by_name[n]["temps"]) for n in names if n in by_name]
+            if want == "first_hot":
+                got = bool(temps) and "HOT" in temps[0]
+            elif want == "first_cold":
+                got = bool(temps) and temps[0] == {"ICE"}
+            elif want == "hot_in_top":
+                got = any("HOT" in t for t in temps[:3])
+            else:  # ice_kept: 아이스를 말했으면 모두 차갑게 되는 메뉴
+                got = bool(temps) and all("ICE" in t for t in temps)
+            check(f"[{month}월] {text}", got, True)
+    finally:
+        _season.today = real_today
+    print(f"\n=== [규칙] 디카페인 안내·시간대 추천·인기 질문: {ok}/{n} ({ok / n * 100:.1f}%)")
+    for f in fails:
+        print(f"  ✗ {f['text']}  {f['problems'][0]}")
+    return ok, n, fails
+
+
 def eval_intent_fast(menus):
     from ai.fast_intent import fast_classify
     from eval.cases_intent import INTENT_CASES
@@ -401,6 +468,8 @@ def main():
     report["대화형 / 옵션 되묻기(슬롯 채우기)"] = {"correct": s_ok, "total": s_n, "accuracy": round(s_ok / s_n * 100, 1), "failures": s_fails}
     m_ok, m_n, m_fails = eval_more(menus)
     report["대화형 / 더 주문·요청사항 단계"] = {"correct": m_ok, "total": m_n, "accuracy": round(m_ok / m_n * 100, 1), "failures": m_fails}
+    f_ok, f_n, f_fails = eval_features(menus)
+    report["규칙 / 디카페인 안내·시간대 추천·인기 질문"] = {"correct": f_ok, "total": f_n, "accuracy": round(f_ok / f_n * 100, 1), "failures": f_fails}
     report["intent_rules"] = eval_intent_fast(menus)
     report["장바구니 명령 경로 (로그 케이스)"] = eval_cart_route(menus)
     if "--intent" in sys.argv:

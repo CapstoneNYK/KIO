@@ -4,6 +4,7 @@ import { LuX } from "react-icons/lu";
 import { useMenuStore } from "../store/menuStore";
 import { useCartStore } from "../store/cartStore";
 import { useCouponStore } from "../store/couponStore";
+import { API_URL } from "../api/base";
 
 interface CouponResult {
   code: string;
@@ -34,7 +35,7 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
       const code = res.rawValue;
       try {
         const resp = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/coupon/scan?code=${encodeURIComponent(code)}`
+          `${API_URL}/api/coupon/scan?code=${encodeURIComponent(code)}`
         );
         if (!resp.ok) {
           setError("유효하지 않은 쿠폰입니다.");
@@ -96,7 +97,7 @@ export const CouponScanner = ({ onClose, onGuideToVoucher }: CouponScannerProps)
               className="relative mx-5 mt-5 mb-3 rounded-xl overflow-hidden bg-black"
               style={{ aspectRatio: "5 / 2" }}
             >
-              <video ref={ref} className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} autoPlay muted playsInline />
+              <video ref={ref} className="w-full h-full object-cover" autoPlay muted playsInline />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-4/5 h-3/4 border-2 border-white/80 rounded-xl" />
               </div>

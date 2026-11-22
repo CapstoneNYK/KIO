@@ -98,6 +98,13 @@ def respond(bot: str, wants: dict, rng):
     if "따뜻하게 드릴까요" in bot:
         return rng.choice(["따뜻하게요", "뜨거운 걸로", "따듯하게 주세요", "핫으로"]) if temp == "HOT" else \
             rng.choice(["차갑게요", "아이스로 주세요", "시원한 걸로", "차가운 걸로 주세요"])
+    if "샷 추가나 연하게 중에" in bot:  # 샷 추가·연하게를 한 번에 묻는 질문
+        want = []
+        if any(o.startswith("샷추가") for o in options):
+            want.append("샷 두 번 추가" if any("×2" in o for o in options) else "샷 추가")
+        if "연하게" in options:
+            want.append("연하게")
+        return " 하고 ".join(want) if want else rng.choice(["없어요", "아니요", "괜찮아요", "안 해도 돼요"])
     if "샷 추가해드릴까요" in bot:
         shots = [o for o in options if o.startswith("샷추가")]
         return "네" if shots else rng.choice(["아니요", "아뇨", "괜찮아요", "안 해도 돼요"])

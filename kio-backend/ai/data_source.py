@@ -1,0 +1,44 @@
+"""ai 패키지가 메뉴·할인 데이터를 가져오는 창구.
+
+예전에는 recommend.py / discount.py 가 `from app.admin import db` 를 맨 위에서 직접 불러서
+ai 가 app(서버 코드)에 묶여 있었다. 이제는 이 파일의 함수만 부르고, 실제 DB 는 처음 필요할 때
+(lazy) 불러온다. 테스트나 다른 저장소를 쓰고 싶으면 set_provider() 로 get_menus / get_discounts /
+DISCOUNT_METHODS 를 가진 객체를 꽂으면 된다.
+"""
+
+_provider = None
+
+
+def _db():
+    if _provider is not None:
+        return _provider
+    from app.admin import db  # 처음 필요할 때만 불러온다
+    return db
+
+
+def get_menus() -> list:
+    return _db().get_menus()
+
+
+def get_discounts(active_only: bool = True) -> list:
+    return _db().get_discounts(active_only=active_only)
+
+
+# 관리자가 등록한 자주 묻는 질문(FAQ). 데이터 제공 객체가 FAQ 를 모르면 빈 목록
+def get_faqs(active_only: bool = True) -> list:
+    getter = getattr(_db(), "get_faqs", None)
+    return getter(active_only=active_only) if getter else []
+
+
+def discount_methods() -> dict:
+    return _db().DISCOUNT_METHODS
+
+
+# 시간대(시각 목록)별 인기 메뉴. 데이터 제공 객체가 모르면 빈 목록
+def get_popular_by_hours(hours: list, days: int = 30, limit: int = 5) -> list:
+    getter = getattr(_db(), "get_popular_by_hours", None)
+    return getter(hours, days=days, limit=limit) if getter else []
+
+
+def get_analytics() -> dict:
+    return _db().get_analytics()

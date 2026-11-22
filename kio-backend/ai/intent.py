@@ -1,12 +1,17 @@
+# [intent.py] 규칙(fast_intent)으로 못 정한 말을 LLM(Ollama)에게 맡겨 의도 6가지 중 하나로 분류한다.
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from ai.llm import get_llm, OLLAMA_INTENT_MODEL
 
 
+# 의도 분류 전용 LLM. temperature=0(항상 같은 답), num_predict=12(최대 12토큰 → 단어 하나만 받으려는 목적).
 llm = get_llm(temperature=0, model=OLLAMA_INTENT_MODEL, num_predict=12)
 
+# 허용하는 의도 6가지. [겹침] fast_intent.fast_classify 가 돌려주는 값과 같은 집합이다.
 INTENTS = ["recommend", "qa", "order", "coupon", "payment", "order_and_pay"]
 
+# LLM 에 보내는 분류 프롬프트(의도 정의 + 예시). 의도 규칙이 fast_intent 의 정규식과 이중으로 존재하므로
+# 한쪽을 고치면 다른 쪽도 같이 확인해야 한다.
 intent_prompt = ChatPromptTemplate.from_template("""
 당신은 카페 키오스크 음성 주문 시스템의 AI입니다.
 
@@ -49,12 +54,14 @@ recommend / qa / order / coupon / payment / order_and_pay
 사용자 입력: {question}
 """)
 
+# 프롬프트 → LLM → 문자열 로 이어지는 LangChain 파이프라인.
 intent_chain = (
     intent_prompt
     | llm
     | StrOutputParser()
 )
 
+# LLM 으로 의도를 분류. 결과가 6개 중 하나가 아니거나 오류가 나면 안전하게 'qa' 로 처리한다.
 def classify_intent(question: str) -> str:
     try:
         result = intent_chain.invoke({"question": question})

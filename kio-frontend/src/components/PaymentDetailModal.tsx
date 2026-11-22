@@ -7,7 +7,7 @@ import { imgCardPayment, imgAppCard, imgBarcode, iconKakao, iconNaver } from "..
 import { PaymentCompleteModal } from "./PaymentCompleteModal";
 import { CouponScanner } from "./CouponScanner";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+import { API_URL } from "../api/base";
 
 const newRequestId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto

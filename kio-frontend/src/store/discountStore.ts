@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+import { API_URL } from "../api/base";
 
 interface BackendDiscount {
   id: number;
@@ -19,12 +19,15 @@ export interface Poster {
 
 interface DiscountState {
   posters: Poster[];
+  /** 관리자에서 켜져 있는 할인수단 코드(kt/tmembership/uzu/cjone). 아직 못 불러왔으면 null(결제창은 전부 보여 준다) */
+  methodCodes: string[] | null;
   loading: boolean;
   fetchDiscounts: () => Promise<void>;
 }
 
 export const useDiscountStore = create<DiscountState>((set) => ({
   posters: [],
+  methodCodes: null,
   loading: true,
   fetchDiscounts: async () => {
     try {
@@ -34,7 +37,7 @@ export const useDiscountStore = create<DiscountState>((set) => ({
       const posters: Poster[] = data
         .filter((d) => d.image_url)
         .map((d) => ({ id: d.id, name: d.name, url: `${API_URL}${d.image_url}` }));
-      set({ posters, loading: false });
+      set({ posters, methodCodes: data.map((d) => d.method_code), loading: false });
     } catch {
       set({ loading: false });
     }
