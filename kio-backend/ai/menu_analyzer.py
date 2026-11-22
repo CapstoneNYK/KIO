@@ -27,6 +27,8 @@ _CAFFEINE_FREE_TEA = re.compile(r"허브|캐모마일|카모마일|페퍼민트|
 def decide_caffeine(name: str, category: str) -> Optional[bool]:
     if "디카페인" in name or category == "디카페인":
         return False
+    if re.search(r"버블티|밀크티", name):  # 홍차 기반이라 카페인이 있다
+        return True
     if category in ("에이드", "주스", "스무디", "논커피"):
         return False if not re.search(r"커피|모카|말차|녹차|초코", name) else None
     if category == "커피":

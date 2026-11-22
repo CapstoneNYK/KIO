@@ -88,6 +88,8 @@ def eval_reco(menus):
         else:
             if not rec.menus:
                 problems.append("추천 결과 없음")
+            if "min_count" in cond and len(rec.menus) < cond["min_count"]:
+                problems.append(f"개수 {len(rec.menus)} (최소 {cond['min_count']})")
             if "limit" in cond and len(rec.menus) > cond["limit"]:
                 problems.append(f"개수 {len(rec.menus)} (최대 {cond['limit']})")
             for raw in rec.menus:

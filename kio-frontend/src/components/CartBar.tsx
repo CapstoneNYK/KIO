@@ -11,7 +11,7 @@ import { OrderConfirmModal } from "./OrderConfirmModal";
 // 담은 줄의 온도·옵션을 한 줄로("아이스 · 샷추가 ×2 · 포장") — 같은 메뉴의 다른 줄을 구분하고 음성으로 바꾼 옵션을 확인하게 한다
 const lineDetail = (c: { temperature: string; options: { name: string; count: number }[]; isPackaging: boolean; isFree?: boolean }) =>
   [
-    c.temperature === "ICE" ? "아이스" : "따뜻한",
+    c.temperature === "ICE" ? "아이스" : "핫",
     ...c.options.filter((o) => o.count > 0).map((o) => (o.count > 1 ? `${o.name} ×${o.count}` : o.name)),
     ...(c.isPackaging ? ["포장"] : []),
     ...(c.isFree ? ["무료쿠폰"] : []),

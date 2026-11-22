@@ -19,6 +19,18 @@ _FIXED = re.compile(
 )
 
 
+# 답변 속 용어 표기 바로잡기: LLM 이 가끔 'T멤bership'처럼 영문을 섞거나 '티멤버십'이라고 쓴다 → 'T멤버십'
+_MEMBERSHIP_LATIN = re.compile(r"(?i)멤\s*bership|membership")
+_TMEMBERSHIP = re.compile(r"(?<![가-힣A-Za-z])(?:T|t|티)\s*멤버십")
+
+
+def clean_terms(answer: str) -> str:
+    if not answer:
+        return answer
+    out = _MEMBERSHIP_LATIN.sub("멤버십", answer)
+    return _TMEMBERSHIP.sub("T멤버십", out)
+
+
 def _method_names() -> list[str]:
     names = set(_METHOD_LABELS.values()) | set(_SHORT_LABELS.values())
     return sorted(names, key=len, reverse=True)

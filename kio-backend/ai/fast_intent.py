@@ -28,7 +28,10 @@ _RE_PAY_VERB = _rx(r"결제|계산|지불|페이로|카드로|쓸게|쓰겠|할�
 # 주문 동사. [겹침] menu_match._RE_ORDER_WORD, cart_command._RE_ORDER_TALK 와 비슷한 목록이 따로 있다.
 _RE_ORDER_VERB = _rx(r"주세요|주셔|줘|줄래|주라|담아|담을게|넣어|주문|할게|하겠|부탁|드릴게|먹을게|마실게|시킬게|원해|원합니다")
 # '디카페인 뭐 있어?' 류 질문 → recommend. [겹침] preference._RE_NO_CAFFEINE 도 디카페인/카페인 없음을 따로 판별한다.
-_RE_CAFFEINE_ASK = _rx(r"(?:디카페인|카페인(?:이|은)?(?:없는|프리|안든|적은)).*(?:뭐|있|종류|메뉴|음료|거|것)|(?:뭐|어떤).*디카페인")
+_RE_CAFFEINE_ASK = _rx(r"(?:디카페인|카페인(?:이|은)?(?:없는|프리|안든|적은)).*(?:뭐|있|종류|메뉴|음료|거|것|알려|보여)|(?:뭐|어떤).*디카페인"
+                       r"|카페인(?:이|은)?(?:들어간|들어있는|들은|든|있는|많은).*(?:뭐|종류|메뉴|음료|거|것|다|전부|모두|알려|보여)")
+# '알려줘/보여줘'의 '줘'는 주문 동사가 아니라 정보 요청이다 → 디카페인·카페인 질문 판정에서만 이 말을 뺀 문장으로 주문 동사를 확인한다
+_RE_INFO_VERB = _rx(r"알려줘|알려주세요|알려줄래|보여줘|보여주세요|보여줄래|말해줘")
 # 쿠폰/바코드/상품권 언급, 그리고 그걸 '사용하겠다'는 행동 표현(_RE_COUPON_ACT).
 _RE_COUPON = _rx(r"쿠폰|바코드|상품권|기프티콘")
 _RE_COUPON_ACT = _rx(r"쓸게|쓰고|쓰려|사용|스캔|찍을|찍어|있어요|있는데|있습니다|있어|할게|등록")
@@ -79,7 +82,7 @@ def fast_classify(query: str, menu_names: Optional[list] = None) -> Optional[str
         return None
 
     # [4] 디카페인 질문. 주문 동사·수량·번호가 없을 때만 recommend
-    if _RE_CAFFEINE_ASK.search(t) and not _RE_ORDER_VERB.search(t) and not _RE_HAS_QTY.search(t) and not _RE_ORDINAL.search(t):
+    if _RE_CAFFEINE_ASK.search(t) and not _RE_ORDER_VERB.search(_RE_INFO_VERB.sub("", t)) and not _RE_HAS_QTY.search(t) and not _RE_ORDINAL.search(t):
         return "recommend"
 
     # [5] 추천 단어가 있는 경우. '2번으로 주세요'처럼 번호+주문동사면 추천이 아니라 order

@@ -132,6 +132,7 @@ class Kiosk:
 
     def say(self, text: str) -> dict:
         res = pipeline.handle_ask(text, self.cart_items(), self.dialog)
+        res = {**res, 'answer': res['answer'].replace('**', '')}  # (검증용) 강조 표시 제거: 시뮬레이터가 글자 모양으로 되묻기를 알아보기 때문
         self.dialog = res.get("dialog")
         if res.get("memo"):
             self.memo = f"{self.memo} / {res['memo']}" if self.memo else res["memo"]

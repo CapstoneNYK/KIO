@@ -190,6 +190,36 @@ def _menus_in(query: str, menus: list[dict]) -> list[dict]:
     return [m for _, m in sorted(found, key=lambda x: x[0])]
 
 
+# "얼그레이 카페인 있어?" / "녹차라떼에 카페인 들어갔어?" — 서술형 질문만(카페인 없는/있는 + 명사 같은 추천·주문 표현은 제외)
+RE_CAFFEINE_PRED = re.compile(normalize_text(
+    r"카페인(?:이|은|도|좀)?\s*(?:있(?:어|나|니|는지|습니까|을까|죠)|없(?:어|나|니|는지|습니까|을까|죠)|들(?:어|었)|들어있|함유|포함|많|적|세|약|얼마)"
+))
+RE_CAFFEINE_NOT_ASK = re.compile(normalize_text(r"추천|골라|뭐가|어떤|종류|메뉴\s*(?:뭐|알려)"))
+
+
+def caffeine_answer(query: str, menus: list[dict]) -> tuple[str, list[str]] | None:
+    """특정 메뉴의 카페인 유무 질문에 관리자 메뉴 설정(caffeine)을 그대로 답한다. 메뉴를 말하지 않았거나 해당 없으면 None."""
+    qn = normalize_text(query)
+    if "카페인" not in qn or RE_ORDER_WORDS.search(qn) or RE_CAFFEINE_NOT_ASK.search(qn) or not RE_CAFFEINE_PRED.search(qn):
+        return None
+    found = _menus_in(query, menus)
+    if not found or len(found) > 4:
+        return None
+    lines = []
+    for m in found:
+        name = m["name"]
+        decaf = m["category"] == "디카페인" or name.startswith("디카페인")
+        if m.get("caffeine", True):
+            lines.append(f"{_josa(name, '은', '는')} 카페인이 들어 있어요.")
+        elif decaf:
+            lines.append(f"{_josa(name, '은', '는')} 카페인을 뺀 메뉴라 카페인이 거의 없어요.")
+        elif re.search(r"초코|코코아|모카|오레오", name):  # 코코아에는 카페인이 아주 조금 들어 있다
+            lines.append(f"{_josa(name, '은', '는')} 카페인이 거의 없어요. 초코 성분 때문에 아주 소량 들어 있을 수 있어요.")
+        else:
+            lines.append(f"{_josa(name, '은', '는')} 카페인이 없어요.")
+    return " ".join(lines), [m["name"] for m in found]
+
+
 def _won(price: int) -> str:
     return f"{price:,}원"
 

@@ -39,8 +39,8 @@ _RE_HOT = _rx("|".join([HOT_CORE, HOT_EXTRA_PREFERENCE]))
 _RE_ICE = _rx("|".join([ICE_CORE, ICE_EXTRA_PREFERENCE]))
 
 # 카페인 없음 / 카페인 있음 표현. [겹침] fast_intent._RE_CAFFEINE_ASK 도 디카페인 질문을 따로 판별한다. ('피곤/졸려'는 카페인 있는 쪽으로 해석)
-_RE_NO_CAFFEINE = _rx(r"카페인(?:이|은|을|도)?(?:없|빼|안|적|낮|약|프리)|디카페인|잠못자|잠이안")
-_RE_CAFFEINE = _rx(r"카페인(?:이|은|을)?(?:있|충전|많|듬뿍)|잠깨|졸려|졸리|졸린|졸음|각성|피곤")
+_RE_NO_CAFFEINE = _rx(r"카페인(?:이|은|을|도)?(?:없|빼|안|적|낮|약|프리|들어가지|들지|넣지|함유되지|포함되지)|디카페인|잠못자|잠이안")
+_RE_CAFFEINE = _rx(r"카페인(?:이|은|을)?(?:있|충전|많|듬뿍|들어|든|들었|함유|포함)|잠깨|졸려|졸리|졸린|졸음|각성|피곤")
 
 # 음료 종류 말 → 카테고리(스무디/에이드/주스/티). '티'는 '티켓' 등 제외 패턴 포함
 _CATEGORY_PATTERNS = [
@@ -52,6 +52,30 @@ _CATEGORY_PATTERNS = [
 # '커피/라떼/아메리카노' — 커피 계열 언급. _RE_NOT_COFFEE 는 '커피 말고' 같은 제외 표현
 _RE_COFFEE = _rx(r"커피|라떼|아메리카노")
 _RE_NOT_COFFEE = _rx(r"커피말고|커피빼고|커피는빼|논커피|커피말구|커피안|커피제외|커피아닌")
+# 누가 마실 음료인지(연령대) 말 → 아래 _AUDIENCES 프로필. normalize_text 로 공백이 없어진 말에 쓴다.
+#  '아이스'(아이+스), '아기자기', '아가씨' 같은 말은 빼기 위해 뒤에 오는 글자를 막는다
+_RE_AUD_BABY = _rx(r"아기(?!자기)|애기|아가(?!씨)|영유아|유아|갓난|신생아|젖먹이|돌쟁이|베이비")
+_RE_AUD_CHILD = _rx(r"어린이|초등|유치원|꼬마|아이(?!스|디|템|폰|패드|돌|유|브|라|언|엄)|애들|얘들")
+_RE_AUD_TEEN = _rx(r"청소년|중학생|고등학생|중딩|고딩|십대|10대|사춘기")
+_RE_AUD_SENIOR = _rx(r"어르신|할머니|할아버지|노인|부모님|어머님|아버님|어머니|아버지|시부모|장인|장모")
+
+# 연령대 프로필: 사용자가 따로 말하지 않은 조건만 이 값으로 채운다(직접 말한 조건이 항상 우선).
+#  label 은 안내 머리말, exclude_names 는 이름에 이 말이 든 메뉴 제외(타피오카 등), prefer_names 는 먼저 보여 줄 메뉴 이름 단어
+_AUDIENCES = [
+    ("baby", _RE_AUD_BABY, dict(
+        label="아기가 먹기 좋은", caffeine=False, tags=["달콤"], categories=["스무디", "주스", "논커피"],
+        exclude_tags=["탄산"], exclude_names=["버블티"], prefer_names=["초코"])),
+    ("child", _RE_AUD_CHILD, dict(
+        label="아이들이 좋아하는", caffeine=False, tags=["달콤"], categories=["스무디", "주스", "논커피", "에이드"],
+        exclude_tags=[], exclude_names=[], prefer_names=["초코"])),
+    ("teen", _RE_AUD_TEEN, dict(
+        label="청소년이 좋아하는", caffeine=None, tags=[], categories=["에이드", "스무디", "논커피"],
+        exclude_tags=[], exclude_names=[], prefer_names=["버블티"])),
+    ("senior", _RE_AUD_SENIOR, dict(
+        label="어르신께 드리기 좋은", caffeine=None, tags=["부드러운"], categories=[], temperature="HOT",
+        exclude_tags=["탄산"], exclude_names=[], prefer_names=[])),
+]
+
 # 커피로 묶는 카테고리(커피 + 디카페인)
 _COFFEE_CATEGORIES = ["커피", "디카페인"]
 
@@ -66,6 +90,9 @@ _RE_PRICE_KO = _rx(r"([일이삼사오육칠팔구])(천|만)원?(?:이하|미�
 _NUM_WORDS = NUM_WORDS_5
 # '3개만', '두 가지' — 추천 개수 지정(1~MAX_LIMIT 로 제한)
 _RE_LIMIT = _rx(r"(\d+|한|하나|두|둘|세|셋|네|넷|다섯)(?:(?:개|가지|종류|잔)(?:만|정도|씩)?|만)")
+
+# '다 알려줘/전부 보여줘/목록' — 일부만 추천하지 말고 조건에 맞는 메뉴를 전부 보여 달라는 말
+_RE_SHOW_ALL = _rx(r"(?:다|모두|전부|전체|죄다|싹다|싹)(?:알려|보여|말해|나열)|목록|리스트|있는(?:거|것|음료|메뉴)(?:다|전부|모두)")
 
 # 추천 최대 개수 / 기본 개수
 MAX_LIMIT = 5
@@ -84,36 +111,43 @@ class Conditions:
     max_price: Optional[int] = None
     cheap: bool = False
     limit: Optional[int] = None
+    # 연령대 프로필로 채운 경우: 안내 머리말 / 이름에 들어 있으면 뺄 말 / 먼저 보여 줄 이름 단어 / 종류를 프로필이 정했는지
+    audience: str = ""
+    audience_label: str = ""
+    exclude_names: list = field(default_factory=list)
+    prefer_names: list = field(default_factory=list)
+    categories_from_profile: bool = False
+    show_all: bool = False  # 조건에 맞는 메뉴를 전부 보여 달라고 한 경우(개수 제한 없음)
 
     # 조건이 하나도 없는지(없으면 추천 규칙으로 처리하지 않음)
     def is_empty(self) -> bool:
         return not (
             self.temperature or self.caffeine is not None or self.tags or self.exclude_tags
-            or self.categories or self.exclude_categories or self.max_price or self.cheap
+            or self.categories or self.exclude_categories or self.max_price or self.cheap or self.audience
         )
 
     # 조건을 '카페인 없는 달콤한 시원한 커피' 같은 문구로 변환(안내문 머리말용)
     def describe(self, tags: Optional[list] = None) -> str:
-        parts = []
+        parts = [self.audience_label] if self.audience_label else []
         if self.exclude_categories and set(self.exclude_categories) >= set(_COFFEE_CATEGORIES):
             parts.append("커피 말고")
         if self.max_price:
             parts.append(f"{self.max_price:,}원 이하")
         elif self.cheap:
             parts.append("저렴한")
-        if self.caffeine is False:
+        if self.caffeine is False and not self.audience:  # 아기·어린이 프로필은 카페인 없음이 기본이라 말머리에서 뺀다
             parts.append("카페인 없는")
         elif self.caffeine is True:
             parts.append("카페인 있는")
         for t in (self.tags if tags is None else tags):
             parts.append(_TAG_ADJ.get(t, t))
-        for t in self.exclude_tags:
+        for t in ([] if self.audience else self.exclude_tags):
             parts.append(_TAG_EXCLUDE_ADJ.get(t, f"{t} 적은"))
         if self.temperature == "HOT":
             parts.append("따뜻한")
         elif self.temperature == "ICE":
             parts.append("시원한")
-        if self.categories:
+        if self.categories and not self.categories_from_profile:
             noun = "커피" if set(self.categories) == set(_COFFEE_CATEGORIES) else "/".join(self.categories)
         else:
             noun = "메뉴"
@@ -186,9 +220,27 @@ def parse_conditions(text: str) -> Conditions:
         if rx.search(scrubbed) and tag not in c.tags and tag not in c.exclude_tags:
             c.tags.append(tag)
 
+    # 연령대('아기가 먹을', '어르신 드릴')를 말했으면 그에 맞는 기본 조건으로 채운다(직접 말한 조건은 그대로 둔다)
+    for name, rx, prof in _AUDIENCES:
+        if rx.search(t):
+            c.audience, c.audience_label = name, prof["label"]
+            if c.caffeine is None and prof["caffeine"] is not None:
+                c.caffeine = prof["caffeine"]
+            if not c.categories and not c.exclude_categories and prof["categories"]:
+                c.categories, c.categories_from_profile = list(prof["categories"]), True
+            if not c.tags and not c.exclude_tags:
+                c.tags = list(prof["tags"])
+            c.exclude_tags += [x for x in prof["exclude_tags"] if x not in c.exclude_tags and x not in c.tags]
+            if c.temperature is None:
+                c.temperature = prof.get("temperature")
+            c.exclude_names, c.prefer_names = list(prof["exclude_names"]), list(prof["prefer_names"])
+            break
+
     # 가격 상한 / 저렴 정렬
     c.max_price = _parse_price(t)
     c.cheap = bool(_RE_CHEAP.search(t))
+
+    c.show_all = bool(_RE_SHOW_ALL.search(t))
 
     # 추천 개수(1~5)
     m = _RE_LIMIT.search(t)
@@ -219,6 +271,8 @@ def _matches(menu: dict, c: Conditions, tags: list) -> bool:
     if any(t in menu_tags for t in c.exclude_tags):
         return False
     if c.max_price and menu["price"] > c.max_price:
+        return False
+    if any(w in menu["name"] for w in c.exclude_names):
         return False
     return True
 
@@ -278,7 +332,7 @@ def recommend_by_conditions(text: str, menus: list) -> Optional[Recommendation]:
         return None
 
     # 추천 개수 / 필수 태그 목록 / 완화한 태그 기록
-    limit = c.limit or DEFAULT_LIMIT
+    limit = c.limit or (len(menus) if c.show_all else DEFAULT_LIMIT)  # '다 알려줘'면 맞는 메뉴 전부
     required = list(c.tags)
     relaxed = []
 
@@ -298,21 +352,24 @@ def recommend_by_conditions(text: str, menus: list) -> Optional[Recommendation]:
         )
 
     # 카페인 없는 걸 원하고 종류 지정이 없으면 디카페인 메뉴를 우선
-    if c.caffeine is False and not c.categories:
+    if c.caffeine is False and not c.categories and not c.show_all:  # '전부 보여줘'면 디카페인만 추리지 않는다
         decaf = [m for m in matched if _is_decaf(m)]
         if decaf:
             matched = decaf
 
     # 정렬(저렴순/태그 일치 많은 순) 후, 종류 지정이 없으면 다양하게 섞어서 개수만큼 선택
     picked = _rank(matched, c)
-    if required and not c.cheap:
-        picked.sort(key=lambda m: (-len(set(required) & set(m.get("tags", []))), m["id"]))
-    picked = _diversify(picked, limit) if (not c.categories and not c.cheap) else picked[:limit]
+    if (required or c.prefer_names) and not c.cheap:
+        # 맛 태그가 많이 맞는 순 → (연령대 프로필의) 먼저 보여 줄 이름 → 과일 맛 → 메뉴 번호 순
+        picked.sort(key=lambda m: (-len(set(required) & set(m.get("tags", []))),
+                                   -(2 if any(w in m["name"] for w in c.prefer_names) else 1 if "과일" in m.get("tags", []) and c.audience in ("baby", "child") else 0),
+                                   m["id"]))
+    picked = _diversify(picked, limit) if ((not c.categories or c.audience) and not c.cheap and not c.show_all) else picked[:limit]
 
     lines = [f"{i}. {_display_name(m, c)} ({m['price']:,}원)" for i, m in enumerate(picked, 1)]
 
     # 안내 머리말 + 번호 목록. 조건을 완화했으면 '그 조건을 빼고 골라봤어요'로 알려 준다
-    head = f"{c.describe(required)}로 골라봤어요."
+    head = f"{c.describe(required)}를 모두 보여드릴게요." if (c.show_all and not c.limit) else f"{c.describe(required)}로 골라봤어요."
     if relaxed:
         head = (f"'{'·'.join(reversed(relaxed))}' 조건까지 모두 맞는 메뉴는 없어서, "
                 f"그 조건을 빼고 {c.describe(required)}로 골라봤어요.")

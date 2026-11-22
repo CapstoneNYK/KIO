@@ -32,7 +32,7 @@ from ai.intent import classify_intent
 from ai.korean import normalize_text
 from ai.logging_utils import log_intent_query
 from ai.memo import memo_menu, memo_request, order_memo, with_memo
-from ai.emphasis import emphasize
+from ai.emphasis import clean_terms, emphasize
 from ai.entity import extract_packaging
 from ai.menu_match import alias_answer, ingredient_answer, missing_menu_answer, resolve_owned_aliases
 from ai.order import (
@@ -55,6 +55,7 @@ from ai.quick_answers import (
     RE_DISCOUNT_SPECIFIC,
     RE_POPULAR,
     ambiguous_menu_question,
+    caffeine_answer,
     category_question,
     discount_info_answer,
     menu_info_answer,
@@ -239,8 +240,23 @@ def handle_ask(query: str, cart_items: list, dialog: dict | None, session_id: st
             result["answer"] = f"{result.get('answer', '')} {again}".strip()
     # 화면 말풍선에서 잘 보이도록 중요한 단어를 굵게(**…**) 표시한다. 음성은 프론트가 별표를 걸러 읽는다
     if isinstance(result.get("answer"), str):
-        result["answer"] = emphasize(result["answer"], [m["name"] for m in data_source.get_menus()])
+        result["answer"] = emphasize(clean_terms(result["answer"]), [m["name"] for m in data_source.get_menus()])
     return result
+
+
+# '카페인 없는 라떼' → '디카페인 라떼' (메뉴판에 디카페인 버전이 있을 때만). 안 바꾸면 카페인 있는 일반 라떼가 주문된다
+_RE_DECAF_WORDS = r"(?<!디)카페인\s*(?:이\s*)?(?:없는|안\s*들어간|안\s*든|빠진|뺀|프리)\s*"
+
+
+def _decaf_phrase(query: str, menus: list[dict]) -> str:
+    if not re.search(_RE_DECAF_WORDS, query):
+        return query
+    for m in menus:
+        name = m["name"]
+        base = name[len("디카페인"):].strip() if name.startswith("디카페인") else ""
+        if base:
+            query = re.sub("(" + _RE_DECAF_WORDS + ")(?=" + r"\s*".join(map(re.escape, base)) + ")", "디카페인 ", query)
+    return query
 
 
 def handle_ask_inner(query: str, cart_items: list, dialog: dict | None, session_id: str = "") -> dict:
@@ -250,6 +266,7 @@ def handle_ask_inner(query: str, cart_items: list, dialog: dict | None, session_
     query = fix_stt_errors(query)
     menus = data_source.get_menus()
     query = resolve_owned_aliases(query, menus, current_state().last_recommended)
+    query = _decaf_phrase(query, menus)
     affirmed = affirm_to_order(query, bool(dialog))
     if affirmed:
         query = affirmed
@@ -364,6 +381,11 @@ def _step_quick_answers(ctx: Ctx) -> dict | None:
             remember_pending_temp(query)
             remember_recommended(shown)
             return {"question": query, "intent": "recommend", "answer": answer, "recommended_menus": shown}
+
+    caf = caffeine_answer(query, menus)  # "얼그레이 카페인 있어?" — 관리자 메뉴 설정(카페인 있음/없음) 그대로 답한다
+    if caf:
+        remember_asked(caf[1][0] if len(caf[1]) == 1 else None)
+        return {"question": query, "intent": "qa", "answer": caf[0]}
 
     size = size_answer(query, menus)  # "사이즈 뭐 있어요?" — 원사이즈라서 하나만 가능하다고 안내
     if size:

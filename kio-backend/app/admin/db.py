@@ -263,6 +263,12 @@ def init_db() -> None:
                      json.dumps(DEFAULT_SIZES), name),
                 )
 
+        # 카페인 값 바로잡기(DB 버전 1, 한 번만): 홍차 기반인 아이스티·흑당버블티는 카페인이 있다.
+        # 버전 표시를 남겨 두므로 이후 관리자가 직접 바꾼 값은 다시 덮어쓰지 않는다
+        if conn.execute("PRAGMA user_version").fetchone()[0] < 1:
+            conn.execute("UPDATE menus SET caffeine=1 WHERE name IN ('아이스티','흑당버블티')")
+            conn.execute("PRAGMA user_version = 1")
+
         admin_count = conn.execute("SELECT COUNT(*) FROM admins").fetchone()[0]
         if admin_count == 0:
             bootstrap_username = os.getenv("ADMIN_USERNAME")

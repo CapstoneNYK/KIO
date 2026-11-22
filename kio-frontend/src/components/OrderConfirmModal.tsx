@@ -41,7 +41,7 @@ export const OrderConfirmModal = ({ onClose, onNext }: OrderConfirmModalProps) =
 
   const getOptionSummary = (cartItem: typeof items[number]) => {
     const parts: string[] = [];
-    parts.push(`${cartItem.item.title}(${cartItem.temperature === "ICE" ? "아이스" : "따뜻한"})`);
+    parts.push(`${cartItem.item.title}(${cartItem.temperature === "ICE" ? "아이스" : "핫"})`);
     const activeOptions = cartItem.options.filter((o) => o.count > 0);
     activeOptions.forEach((o) => parts.push(`+${o.name}`));
     return parts;
